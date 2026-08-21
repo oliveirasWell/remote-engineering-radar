@@ -5,6 +5,7 @@ import {
   CITY_RESULTS_TEXT,
   CHICAGO_FORECAST,
   DISCLAIMER_TEXT,
+  FORECAST_UNIT_SUFFIXES,
   HOME_PATH,
   NO_RESULTS_QUERY,
   SEARCH_INPUT_SELECTOR,
@@ -29,8 +30,14 @@ describe('weather flow', () => {
     cy.contains(WEATHER_DISPLAY_TEXT.forecastHeading).should('be.visible');
     cy.contains(CITY_QUERY).should('be.visible');
     cy.contains(CHICAGO_FORECAST[0].label).should('be.visible');
+    cy.get('article').each(($card) => {
+      FORECAST_UNIT_SUFFIXES.forEach((suffix) => {
+        expect($card.text()).not.to.contain(suffix);
+      });
+    });
     cy.contains(DISCLAIMER_TEXT.sidebar).should('be.visible');
-    cy.contains(DISCLAIMER_TEXT.panel).should('be.visible');
+    cy.contains(DISCLAIMER_TEXT.panel.advice).should('be.visible');
+    cy.contains(DISCLAIMER_TEXT.panel.responsibility).should('be.visible');
   });
 
   it('shows no results for an empty geocode response', () => {

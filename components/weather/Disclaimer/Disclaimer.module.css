@@ -4,3 +4,11 @@
   line-height: var(--disclaimer-line-height);
   color: var(--color-text);
 }
+
+.disclaimer p {
+  margin: 0;
+}
+
+.disclaimer p + p {
+  margin-top: var(--disclaimer-paragraph-gap);
+}

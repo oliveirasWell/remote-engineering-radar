@@ -15,6 +15,7 @@ export const CITY_RESULT_LABEL = `${CHICAGO_CITY.name}, ${CHICAGO_CITY.state}, $
 export const NO_RESULTS_QUERY = 'asdfgh';
 export const SEARCH_INPUT_SELECTOR = `input[placeholder="${SEARCH_PANEL_TEXT.placeholder}"]`;
 export const WEATHER_ICON_SELECTOR = '[data-cy="weather-icon"]';
+export const FORECAST_UNIT_SUFFIXES = ['°C', '°F'] as const;
 
 export {
   APP_TEXT,

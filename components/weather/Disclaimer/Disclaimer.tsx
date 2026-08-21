@@ -1,9 +1,10 @@
+import type { ReactNode } from 'react';
 import styles from './Disclaimer.module.css';
 
 type DisclaimerProps = {
-  children: string;
+  children: ReactNode;
 };
 
 export const Disclaimer = ({ children }: DisclaimerProps) => (
-  <p className={styles.disclaimer}>{children}</p>
+  <div className={styles.disclaimer}>{children}</div>
 );

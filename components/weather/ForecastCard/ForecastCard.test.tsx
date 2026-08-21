@@ -16,10 +16,18 @@ describe('ForecastCard', () => {
     expect(screen.getByText(FORECAST_CARD_TEXT.lowPrefix)).toBeInTheDocument();
     expect(screen.getByText(FORECAST_CARD_TEXT.highPrefix)).toBeInTheDocument();
     expect(
-      screen.getByText(formatTemperature(day.low, TEMPERATURE_UNITS.fahrenheit)),
+      screen.getByText(
+        formatTemperature(day.low, TEMPERATURE_UNITS.fahrenheit, {
+          includeUnit: false,
+        }),
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(formatTemperature(day.high, TEMPERATURE_UNITS.fahrenheit)),
+      screen.getByText(
+        formatTemperature(day.high, TEMPERATURE_UNITS.fahrenheit, {
+          includeUnit: false,
+        }),
+      ),
     ).toBeInTheDocument();
   });
 });

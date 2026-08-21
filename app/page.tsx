@@ -47,7 +47,10 @@ const Home = () => {
             unit={temperatureUnit}
           />
         </div>
-        <Disclaimer>{DISCLAIMER_TEXT.panel}</Disclaimer>
+        <Disclaimer>
+          <p>{DISCLAIMER_TEXT.panel.advice}</p>
+          <p>{DISCLAIMER_TEXT.panel.responsibility}</p>
+        </Disclaimer>
       </section>
     </main>
   );
