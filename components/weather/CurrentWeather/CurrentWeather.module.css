@@ -10,6 +10,7 @@
   margin: 0;
   font-size: var(--city-font-size);
   font-weight: 300;
+  text-shadow: var(--panel-text-shadow);
 }
 
 .icon {
@@ -21,4 +22,5 @@
   margin: 0;
   font-size: var(--temperature-font-size);
   font-weight: 200;
+  text-shadow: var(--panel-text-shadow);
 }

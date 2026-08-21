@@ -8,11 +8,13 @@
   padding: var(--panel-padding);
   color: var(--color-on-panel);
   text-shadow: var(--card-text-shadow);
+  box-shadow: var(--card-shadow);
 }
 
 .label {
   margin: 0;
   font-size: var(--card-label-font-size);
+  text-align: center;
 }
 
 .icon {
@@ -24,14 +26,17 @@
 .temperatures {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
 }
 
 .temperatureLabels {
   font-size: var(--card-label-font-size);
+  font-weight: 400;
 }
 
 .temperatures {
   font-size: var(--card-temperature-font-size);
+  font-weight: 400;
 }
 
 .temperatureLabels span:last-child,
