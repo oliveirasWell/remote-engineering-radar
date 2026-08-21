@@ -29,6 +29,7 @@ describe('visual weather layout', () => {
 
     cy.contains('Search').should('be.visible');
     cy.contains('Weather').should('be.visible');
+    cy.get('i.wi').should('be.visible');
     cy.contains('5-Day Forecast').should('be.visible');
     cy.contains('Today').should('be.visible');
     cy.contains('The information provided by this weather application').should(

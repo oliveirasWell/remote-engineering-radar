@@ -100,11 +100,11 @@ covers behavior, while semantic markup and decorative-icon handling cover the re
 
 ### Weather icons
 
-The installed `weather-icons@1.3.2` package does not contain the requested `wi-owm-*` classes,
-and its stylesheet/font wiring was not active in the application. The non-functional icon map
-and wrapper were removed rather than shipping blank glyphs. The debt and the exact restoration
-work are recorded in [`specs/tech-debt.md`](specs/tech-debt.md), to be addressed with verified
-font loading and visual validation.
+The installed `weather-icons@1.3.2` package does not contain the requested `wi-owm-*` classes.
+The application therefore uses a hand-written OWM range map with the package's available
+`wi-*` classes. The stylesheet is imported globally and the E2E suite verifies that the icon
+element is visible. The remaining risk is a deeper visual glyph comparison against the
+reference at all target viewport sizes.
 
 ### Card background
 
