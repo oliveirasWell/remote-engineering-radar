@@ -7,6 +7,7 @@
   background: var(--card-bg);
   padding: var(--panel-padding);
   color: var(--color-on-panel);
+  text-shadow: var(--card-text-shadow);
 }
 
 .label {
@@ -21,8 +22,8 @@
 
 .temperatureLabels,
 .temperatures {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .temperatureLabels {
@@ -31,4 +32,9 @@
 
 .temperatures {
   font-size: var(--card-temperature-font-size);
+}
+
+.temperatureLabels span:last-child,
+.temperatures span:last-child {
+  text-align: right;
 }

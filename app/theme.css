@@ -34,6 +34,7 @@
   --card-icon-size: 56px;
   --card-label-font-size: 22px;
   --card-temperature-font-size: 32px;
+  --card-text-shadow: 0 2px 4px rgba(0, 0, 0, 0.28);
   --icon-margin: 16px;
   --disclaimer-font-size: 11px;
   --disclaimer-line-height: 1.5;
