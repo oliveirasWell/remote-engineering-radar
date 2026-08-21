@@ -40,6 +40,10 @@ describe('weather flow', () => {
     cy.contains(DISCLAIMER_TEXT.sidebar).should('be.visible');
     cy.contains(DISCLAIMER_TEXT.panel.advice).should('be.visible');
     cy.contains(DISCLAIMER_TEXT.panel.responsibility).should('be.visible');
+    if (Cypress.env('capture')) {
+      cy.viewport(1366, 871);
+      cy.screenshot('current-layout-1366');
+    }
   });
 
   it('shows no results for an empty geocode response', () => {
