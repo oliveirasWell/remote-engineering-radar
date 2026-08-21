@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import type {
   CurrentWeather as CurrentWeatherData,
   ForecastDay,
@@ -32,27 +31,33 @@ export const WeatherDisplay = ({
   forecastError,
   unit,
 }: WeatherDisplayProps) => {
-  let content: ReactNode = null;
-
-  if (hasSelection && (isPending || forecastPending)) {
-    content = <Spinner />;
-  } else if (hasSelection && (isError || forecastError)) {
-    content = <p>{WEATHER_API_ERRORS.weather}</p>;
-  } else if (weather) {
-    content = (
-      <>
-        <CurrentWeather weather={weather} unit={unit} />
-        {forecast && (
-          <>
-            <h2 className={styles.heading}>
-              {WEATHER_DISPLAY_TEXT.forecastHeading}
-            </h2>
-            <ForecastGrid days={forecast} unit={unit} />
-          </>
-        )}
-      </>
-    );
+  if (!hasSelection) {
+    return null;
   }
 
-  return content;
+  const currentContent = isPending && !weather ? (
+    <Spinner />
+  ) : isError && !weather ? (
+    <p>{WEATHER_API_ERRORS.weather}</p>
+  ) : weather ? (
+    <CurrentWeather weather={weather} unit={unit} />
+  ) : null;
+
+  const forecastContent = forecastPending ? (
+    <Spinner />
+  ) : forecastError ? (
+    <p>{WEATHER_API_ERRORS.weather}</p>
+  ) : forecast ? (
+    <>
+      <h2 className={styles.heading}>{WEATHER_DISPLAY_TEXT.forecastHeading}</h2>
+      <ForecastGrid days={forecast} unit={unit} />
+    </>
+  ) : null;
+
+  return (
+    <>
+      {currentContent}
+      {forecastContent}
+    </>
+  );
 };

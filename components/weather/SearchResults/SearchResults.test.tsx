@@ -13,6 +13,12 @@ describe('SearchResults', () => {
     vi.unstubAllGlobals();
   });
 
+  it('renders nothing before a valid query', () => {
+    renderWithQueryClient(<SearchResults query="" onSelect={vi.fn()} />);
+
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+  });
+
   it('renders a spinner while the search is loading', () => {
     vi.stubGlobal('fetch', () => new Promise(() => {}));
 

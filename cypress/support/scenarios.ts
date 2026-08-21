@@ -10,7 +10,7 @@ import {
 } from '../fixtures/domain/chicagoWeather';
 
 export const HOME_PATH = '/';
-export const CITY_QUERY = CHICAGO_CITY.name;
+export const CITY_QUERY = CHICAGO_CITY.name.toLowerCase();
 export const CITY_RESULT_LABEL = `${CHICAGO_CITY.name}, ${CHICAGO_CITY.state}, ${CHICAGO_CITY.country}`;
 export const NO_RESULTS_QUERY = 'asdfgh';
 export const SEARCH_INPUT_SELECTOR = `input[placeholder="${SEARCH_PANEL_TEXT.placeholder}"]`;

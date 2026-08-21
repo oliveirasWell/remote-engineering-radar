@@ -44,6 +44,8 @@ Tests use committed API fixtures and do not need an API key.
 | `pnpm e2e` | Run Cypress end-to-end tests |
 | `pnpm check` | Run lint, typecheck, and unit tests |
 | `pnpm quality` | Run check, build, dead-code, and circular-dependency checks |
+| `pnpm deadcode` | Find unused files, dependencies, and exports |
+| `pnpm circular` | Check the dependency graph for cycles |
 
 ## Technical Decisions
 
@@ -93,8 +95,8 @@ unit toggle does not create a second server cache entry for the same city.
 There is no geolocation because city search is the defined product flow. There is no search
 history, favourites, dark mode, or internationalized copy because they are outside the focused
 assessment scope. There is no rate limiting because deployment-level controls are outside this
-application slice. There is no visual-regression service or full accessibility audit; Cypress
-covers behavior, while semantic markup and decorative-icon handling cover the required baseline.
+application slice. Cypress covers behavior rather than pixel-diff visual regression; semantic
+markup and decorative-icon handling cover the required accessibility baseline.
 
 ## Deviations
 
@@ -103,8 +105,7 @@ covers behavior, while semantic markup and decorative-icon handling cover the re
 The installed `weather-icons@1.3.2` package does not contain the requested `wi-owm-*` classes.
 The application therefore uses a hand-written OWM range map with the package's available
 `wi-*` classes. The stylesheet is imported globally and the E2E suite verifies that the icon
-element is visible. The remaining risk is a deeper visual glyph comparison against the
-reference at all target viewport sizes.
+element is visible. Pixel-level comparison remains a manual design-review activity.
 
 ### Card background
 
@@ -123,6 +124,7 @@ out only the sidebar disclaimer.
 ```text
 app/
   api/
+    parseCoordinates.ts
     forecast/route.ts
     geocode/route.ts
     weather/route.ts
@@ -131,27 +133,34 @@ app/
   providers.tsx
   theme.css
 components/
-  ui/
+  ui/ (primitive components)
   weather/
-    client-facing components and hooks
+    feature components, hooks, and CSS Modules
+  Disclaimer/
+cypress/
+  e2e/weather-flow.cy.ts
+  fixtures/domain/
+  support/
 lib/
   searchQuery/
   weather/
-    client/
-    openweather/
-    schemas/
-    temperature/
-    types.ts
-    provider.ts
+    client/       # browser access to our route handlers
+    openweather/  # server-only external provider adapter
+    schemas/      # raw provider validation
+    temperature/  # canonical Celsius and presentation conversion
+    types.ts      # domain data
+    provider.ts   # provider port
 test/
   factories/
   fixtures/
   http/
+  render/
 ```
 
-The boundaries are enforced by ESLint zones and CI greps. Components can use domain types and
-client-safe weather helpers, but cannot import the OpenWeather adapter or raw schemas. The
-weather library does not depend on React, Next.js, or components.
+The boundaries are enforced by ESLint zones and CI greps. Components can use domain types,
+constants, client helpers, and temperature presentation helpers, but cannot import the
+OpenWeather adapter or raw schemas. The weather library does not depend on React, Next.js, or
+components.
 
 ## Development Workflow
 

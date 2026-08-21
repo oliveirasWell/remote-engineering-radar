@@ -90,12 +90,10 @@ describe('Home weather selection', () => {
       .getByRole('button', { name: SELECT_CITY_LABEL })
       .click();
     expect(
-      await screen.findByRole('status'),
-    ).toBeInTheDocument();
+      await screen.findAllByRole('status'),
+    ).toHaveLength(2);
 
     rejectRequest(new Error(NETWORK_FAILURE_MESSAGE));
-    expect(
-      await screen.findByText(WEATHER_API_ERRORS.weather),
-    ).toBeInTheDocument();
+    expect(await screen.findAllByText(WEATHER_API_ERRORS.weather)).toHaveLength(2);
   });
 });

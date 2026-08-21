@@ -3,6 +3,7 @@ import {
   CITY_QUERY,
   CITY_RESULT_LABEL,
   CITY_RESULTS_TEXT,
+  CHICAGO_CITY,
   CHICAGO_FORECAST,
   DISCLAIMER_TEXT,
   FORECAST_UNIT_SUFFIXES,
@@ -22,13 +23,15 @@ describe('weather flow', () => {
   it('shows the weather flow and disclaimers', () => {
     cy.visit(HOME_PATH);
     cy.get(SEARCH_INPUT_SELECTOR).type(CITY_QUERY);
+    cy.wait('@geocode');
     cy.contains(CITY_RESULT_LABEL).click();
+    cy.wait(['@weather', '@forecast']);
     cy.contains(CITY_RESULT_LABEL).should('not.exist');
 
     cy.contains(APP_TEXT.weatherHeading).should('be.visible');
     cy.get(WEATHER_ICON_SELECTOR).should('be.visible');
     cy.contains(WEATHER_DISPLAY_TEXT.forecastHeading).should('be.visible');
-    cy.contains(CITY_QUERY).should('be.visible');
+    cy.contains(CHICAGO_CITY.name).should('be.visible');
     cy.get('[data-weather-section="current"]').should('not.contain', '°C');
     cy.get('[data-weather-section="current"]').should('not.contain', '°F');
     cy.contains(CHICAGO_FORECAST[0].label).should('be.visible');

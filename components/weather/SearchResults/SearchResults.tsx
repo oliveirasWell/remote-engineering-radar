@@ -16,6 +16,10 @@ export const SearchResults = ({ query, onSelect }: SearchResultsProps) => {
   const hasValidQuery = isSearchQueryValid(query);
   const search = useCitySearch(query);
 
+  if (!hasValidQuery) {
+    return null;
+  }
+
   if (search.isPending && hasValidQuery) {
     return <Spinner />;
   }
