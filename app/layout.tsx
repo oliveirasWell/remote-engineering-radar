@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   description: 'Search cities and view current weather conditions.',
 };
 
-const RootLayout = ({ children }: LayoutProps<'/'>) => {
+const RootLayout = ({ children }: { children: ReactNode }) => {
   return (
     <html lang="en" className={inter.variable}>
       <body>
