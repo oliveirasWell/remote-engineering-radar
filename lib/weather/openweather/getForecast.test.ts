@@ -17,9 +17,8 @@ describe('OpenWeather forecast', () => {
     expect(result).toHaveLength(5);
     expect(context.fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/data/2.5/forecast'),
-      expect.objectContaining({ next: { revalidate: 600 } }),
     );
-    const [url] = context.fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url] = context.fetchMock.mock.calls[0] as [string];
     expect(url).toContain('units=metric');
   });
 

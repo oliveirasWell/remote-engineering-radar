@@ -82,11 +82,15 @@ with `Intl.NumberFormat`, so switching units never creates a second cache entry.
 
 ```text
 app/
-  api/         # route handlers: geocode, weather, forecast
-  page.tsx
+  page.tsx              # layout: Search + WeatherBody
+  components/
+    Search/             # search screen
+    WeatherBody/        # weather panel
+  api/                  # route handlers compose the provider
+    weatherProvider.ts  # Next cache + OpenWeather adapter
+  useWeatherSearch/     # query + selected city
 components/
-  ui/          # primitives
-  weather/     # feature components, hooks, CSS Modules
+  ui/                   # primitives
   Disclaimer/
 lib/
   searchQuery/
@@ -101,5 +105,4 @@ cypress/
 test/            # factories, fixtures, http, render helpers
 ```
 
-Components use domain types and client helpers; they cannot import the OpenWeather adapter or
-raw schemas. `lib/weather` does not depend on React or Next.js. ESLint zones and CI enforce it.
+The page composes Search and WeatherBody. Routes talk to `WeatherProvider`; Next fetch cache lives in the app composition, not in the adapter. Components use domain types and client helpers; they cannot import the OpenWeather adapter or raw schemas. `lib/weather` does not depend on React or Next.js. ESLint zones and CI enforce it.

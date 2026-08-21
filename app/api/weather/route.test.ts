@@ -9,8 +9,10 @@ const { getCurrentWeatherMock } = vi.hoisted(() => ({
   getCurrentWeatherMock: vi.fn(),
 }));
 
-vi.mock('@/lib/weather/openweather', () => ({
-  getCurrentWeather: getCurrentWeatherMock,
+vi.mock('@/app/api/weatherProvider', () => ({
+  weatherProvider: {
+    getCurrentWeather: getCurrentWeatherMock,
+  },
 }));
 
 const current = createCurrentWeather();

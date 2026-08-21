@@ -12,7 +12,6 @@ const LATITUDE_PARAM = `lat=${CHICAGO.lat}`;
 const LONGITUDE_PARAM = `lon=${CHICAGO.lon}`;
 const API_KEY_PARAM = `appid=${TEST_API_KEY}`;
 const METRIC_UNITS_PARAM = 'units=metric';
-const WEATHER_REVALIDATE_SECONDS = 600;
 
 describe('OpenWeather current weather', () => {
   beforeEach(context.setup);
@@ -38,12 +37,9 @@ describe('OpenWeather current weather', () => {
     await getCurrentWeather(CHICAGO.lat, CHICAGO.lon);
 
     expect(context.fetchMock).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        next: { revalidate: WEATHER_REVALIDATE_SECONDS },
-      }),
+      expect.stringContaining(CURRENT_WEATHER_ENDPOINT_PATH),
     );
-    const [url] = context.fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url] = context.fetchMock.mock.calls[0] as [string];
     expect(url).toContain(CURRENT_WEATHER_ENDPOINT_PATH);
     expect(url).toContain(LATITUDE_PARAM);
     expect(url).toContain(LONGITUDE_PARAM);

@@ -1,3 +1,15 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--sidebar-padding);
+  background: var(--color-sidebar-bg);
+}
+
+.sidebar > :last-child {
+  margin-top: auto;
+}
+
 .section h2 {
   margin: 0 0 var(--panel-padding);
   font-size: var(--heading-font-size);
@@ -11,4 +23,14 @@
   border-radius: var(--input-radius);
   background: var(--color-input-bg);
   padding: 0 var(--panel-padding);
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    min-height: auto;
+  }
+
+  .sidebar > :last-child {
+    margin-top: var(--panel-padding);
+  }
 }

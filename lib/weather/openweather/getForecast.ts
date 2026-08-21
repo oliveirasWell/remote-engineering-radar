@@ -6,16 +6,13 @@ import {
   type ForecastResponse,
 } from '../schemas/forecastResponse';
 import type { ForecastDay } from '../types';
-import type { WeatherProvider } from '../provider';
-import { WeatherProviderError } from './WeatherProviderError';
+import { OPENWEATHER_ENDPOINTS, WEATHER_UNITS } from './constants';
+import { fetchOpenWeatherJson } from './fetchOpenWeatherJson';
 
-const FORECAST_ENDPOINT = 'https://api.openweathermap.org/data/2.5/forecast';
-const WEATHER_REVALIDATE_SECONDS = 600;
-const WEATHER_UNITS = 'metric';
-
-export const getForecast: WeatherProvider['getForecast'] = async (
-  lat,
-  lon,
+export const getForecast = async (
+  lat: number,
+  lon: number,
+  fetchFn: typeof fetch = fetch,
 ): Promise<ForecastDay[]> => {
   const params = new URLSearchParams({
     lat: String(lat),
@@ -23,16 +20,11 @@ export const getForecast: WeatherProvider['getForecast'] = async (
     units: WEATHER_UNITS,
     appid: process.env.OPENWEATHER_API_KEY ?? '',
   });
-  const response = await fetch(`${FORECAST_ENDPOINT}?${params.toString()}`, {
-    next: { revalidate: WEATHER_REVALIDATE_SECONDS },
-  });
-
-  if (!response.ok) {
-    throw new WeatherProviderError(response.status);
-  }
-
   const payload: ForecastResponse = forecastResponseSchema.parse(
-    await response.json(),
+    await fetchOpenWeatherJson(
+      `${OPENWEATHER_ENDPOINTS.forecast}?${params.toString()}`,
+      fetchFn,
+    ),
   );
   return aggregate(payload.list, payload.city.timezone);
 };

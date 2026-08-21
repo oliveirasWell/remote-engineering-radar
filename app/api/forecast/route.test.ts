@@ -8,8 +8,10 @@ const { getForecastMock } = vi.hoisted(() => ({
   getForecastMock: vi.fn(),
 }));
 
-vi.mock('@/lib/weather/openweather', () => ({
-  getForecast: getForecastMock,
+vi.mock('@/app/api/weatherProvider', () => ({
+  weatherProvider: {
+    getForecast: getForecastMock,
+  },
 }));
 
 const forecast = createForecastDays();

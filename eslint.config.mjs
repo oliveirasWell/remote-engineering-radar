@@ -25,6 +25,20 @@ const eslintConfig = defineConfig([
                 "components/ may import lib/weather types, constants, client, and temperature helpers only. The openweather adapter and schemas are server-side detail.",
             },
             {
+              target: "./app/components",
+              from: "./lib/weather",
+              except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
+              message:
+                "app/components/ may import lib/weather types, constants, client, and temperature helpers only. The openweather adapter and schemas are server-side detail.",
+            },
+            {
+              target: "./app/useWeatherSearch",
+              from: "./lib/weather",
+              except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
+              message:
+                "app/useWeatherSearch may import lib/weather types, constants, client, and temperature helpers only.",
+            },
+            {
               target: "./lib/weather",
               from: "./components",
               message: "lib/weather/ must not depend on the UI layer.",
@@ -36,7 +50,7 @@ const eslintConfig = defineConfig([
             },
             {
               target: "./components/ui",
-              from: "./components/weather",
+              from: "./app/components",
               message:
                 "components/ui/ takes primitive props and knows nothing about the weather domain.",
             },

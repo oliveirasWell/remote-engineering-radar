@@ -5,7 +5,7 @@ import { isSearchQueryValid } from '@/lib/searchQuery';
 import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
 import { CityResults } from '../CityResults/CityResults';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
-import { useCitySearch } from '../hooks/useCitySearch/useCitySearch';
+import { useCitySearch } from '../useCitySearch/useCitySearch';
 
 type SearchResultsProps = {
   query: string;
