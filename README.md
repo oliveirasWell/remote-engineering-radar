@@ -1,13 +1,27 @@
 # Weather Forecast
 
-A weather search application built with Next.js, React, TypeScript, TanStack Query,
-Zod, Vitest, React Testing Library, and Cypress.
+City search with current conditions and a 5-day forecast.
+
+**Live:** https://dev-pro-weather.vercel.app
+
+![Weather Forecast](docs/screenshot.png)
+
+## Stack
+
+- **Next.js** — App Router, route handlers proxy OpenWeather so the API key stays server-side
+- **React + TypeScript** — strict mode, no `any`
+- **TanStack Query** — server state, caching, and deduplication
+- **Zod** — validates raw provider responses at the adapter boundary
+- **CSS Modules** — styling colocated with each component
+- **Vitest + React Testing Library** — unit and component tests
+- **Cypress** — end-to-end tests against intercepted routes
+- **ESLint + Knip + Madge** — lint zones, dead code, and dependency cycles
 
 ## Requirements
 
 - Node.js 22
 - pnpm 11.22.0
-- An OpenWeather API key for the running application
+- An OpenWeather API key
 
 ## Getting Started
 
@@ -16,7 +30,7 @@ pnpm install
 cp .env.example .env.local
 ```
 
-Set `OPENWEATHER_API_KEY` in `.env.local`, then start the development server:
+Set `OPENWEATHER_API_KEY` in `.env.local`, then:
 
 ```bash
 pnpm dev
@@ -24,11 +38,8 @@ pnpm dev
 
 Open http://localhost:3000.
 
-The key intentionally has no `NEXT_PUBLIC_` prefix. It is read only on the server by the
-OpenWeather adapter. A public environment variable would be included in the browser bundle
-and visible to anyone using the application.
-
-Tests use committed API fixtures and do not need an API key.
+The key has no `NEXT_PUBLIC_` prefix on purpose — that would inline it into the browser bundle.
+Tests run on committed fixtures and need no key.
 
 ## Commands
 
@@ -49,122 +60,46 @@ Tests use committed API fixtures and do not need an API key.
 
 ## Technical Decisions
 
-### Server-side API key
+**Server-side API key** — a `NEXT_PUBLIC_` variable is inlined into the client bundle, so the key
+is read only by the server-only adapter and browser requests go through our own route handlers.
 
-The OpenWeather key stays server-side because a `NEXT_PUBLIC_` variable is inlined into the
-client bundle and can be read through browser developer tools. The key is read only by the
-server-only OpenWeather adapter. Browser requests go to the application's own route handlers,
-which never return the key or the upstream `appid` parameter.
+**Adapter boundary** — the adapter absorbs OpenWeather's shape (ambiguous geocoding matches, forty
+three-hour blocks, numeric condition IDs) so the rest of the application sees domain values.
 
-### Adapter boundary
+**Caching** — geocoding caches for thirty days because coordinates rarely change; current weather
+and forecast cache for ten minutes because conditions do.
 
-The adapter absorbs OpenWeather's hostile response shape: geocoding returns ambiguous matches,
-forecast data arrives as forty three-hour blocks, temperatures are attached to individual
-blocks, and conditions use numeric IDs plus day/night icon suffixes. The rest of the application
-receives domain values instead of learning OpenWeather field names or grouping rules.
+**Separate geocoding** — a city name is not a unique location, so the user picks the intended city
+before any weather is requested.
 
-### Caching
+**State management** — TanStack Query owns server state and the workflow hook owns the search
+query, selected city, and unit, so a state library would only add indirection.
 
-Geocoding uses a thirty-day cache because city coordinates change rarely. Current weather and
-forecast use a ten-minute cache because conditions change frequently. The cache durations live
-in the upstream fetch options and are asserted by adapter tests; the client query cache has
-separate millisecond stale-time constants. This distinction prevents mixing server revalidation
-seconds with client freshness milliseconds.
-
-### Separate geocoding
-
-Geocoding is a separate request because a city name is not a unique location. `Springfield`
-returns multiple matches and even `Chicago` can return cities in several countries. The user
-must choose the intended city before weather data is requested.
-
-### State management
-
-TanStack Query owns server state, including loading, errors, caching, and deduplication. The
-weather workflow hook owns only the search query, selected city, presentation unit, and query
-results. A state library would add indirection for values that are local to one page.
-
-### Temperature units
-
-Weather data uses canonical Celsius in the domain and the provider always requests metric data.
-The `°C`/`°F` choice is presentation state, defaulting to Fahrenheit to match the reference.
-Conversion and locale-aware formatting happen at render time with `Intl.NumberFormat`, so a
-unit toggle does not create a second server cache entry for the same city.
-
-### Out of scope
-
-There is no geolocation because city search is the defined product flow. There is no search
-history, favourites, dark mode, or internationalized copy because they are outside the focused
-assessment scope. There is no rate limiting because deployment-level controls are outside this
-application slice. Cypress covers behavior rather than pixel-diff visual regression; semantic
-markup and decorative-icon handling cover the required accessibility baseline.
-
-## Deviations
-
-### Weather icons
-
-The installed `weather-icons@1.3.2` package does not contain the requested `wi-owm-*` classes.
-The application therefore uses a hand-written OWM range map with the package's available
-`wi-*` classes. The stylesheet is imported globally and the E2E suite verifies that the icon
-element is visible. Pixel-level comparison remains a manual design-review activity.
-
-### Card background
-
-The brief describes a flat translucent card, but sampling the reference shows a vertical
-white-to-black gradient. The implementation follows the reference because visual fidelity is
-the acceptance criterion.
-
-### Two disclaimers
-
-The reference contains one disclaimer pinned to the sidebar and another below the forecast
-grid. Both are implemented from the same `Disclaimer` component, even though the brief calls
-out only the sidebar disclaimer.
+**Temperature units** — the domain stores canonical Celsius and the °C/°F toggle converts at render
+with `Intl.NumberFormat`, so switching units never creates a second cache entry.
 
 ## Architecture
 
 ```text
 app/
-  api/
-    parseCoordinates.ts
-    forecast/route.ts
-    geocode/route.ts
-    weather/route.ts
-  layout.tsx
+  api/         # route handlers: geocode, weather, forecast
   page.tsx
-  providers.tsx
-  theme.css
 components/
-  ui/ (primitive components)
-  weather/
-    feature components, hooks, and CSS Modules
+  ui/          # primitives
+  weather/     # feature components, hooks, CSS Modules
   Disclaimer/
-cypress/
-  e2e/weather-flow.cy.ts
-  fixtures/domain/
-  support/
 lib/
   searchQuery/
   weather/
     client/       # browser access to our route handlers
-    openweather/  # server-only external provider adapter
+    openweather/  # server-only provider adapter
     schemas/      # raw provider validation
-    temperature/  # canonical Celsius and presentation conversion
+    temperature/  # canonical Celsius, presentation conversion
     types.ts      # domain data
     provider.ts   # provider port
-test/
-  factories/
-  fixtures/
-  http/
-  render/
+cypress/
+test/            # factories, fixtures, http, render helpers
 ```
 
-The boundaries are enforced by ESLint zones and CI greps. Components can use domain types,
-constants, client helpers, and temperature presentation helpers, but cannot import the
-OpenWeather adapter or raw schemas. The weather library does not depend on React, Next.js, or
-components.
-
-## Development Workflow
-
-Behavioral work follows RED-GREEN-REFACTOR. Tests fail first for the intended assertion, the
-smallest implementation makes them pass, and cleanup happens only while the suite remains
-green. Unit and component tests use committed fixtures; Cypress intercepts application routes
-and never calls OpenWeather.
+Components use domain types and client helpers; they cannot import the OpenWeather adapter or
+raw schemas. `lib/weather` does not depend on React or Next.js. ESLint zones and CI enforce it.
