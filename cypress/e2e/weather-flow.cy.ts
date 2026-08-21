@@ -29,6 +29,8 @@ describe('weather flow', () => {
     cy.get(WEATHER_ICON_SELECTOR).should('be.visible');
     cy.contains(WEATHER_DISPLAY_TEXT.forecastHeading).should('be.visible');
     cy.contains(CITY_QUERY).should('be.visible');
+    cy.get('[data-weather-section="current"]').should('not.contain', '°C');
+    cy.get('[data-weather-section="current"]').should('not.contain', '°F');
     cy.contains(CHICAGO_FORECAST[0].label).should('be.visible');
     cy.get('article').each(($card) => {
       FORECAST_UNIT_SUFFIXES.forEach((suffix) => {

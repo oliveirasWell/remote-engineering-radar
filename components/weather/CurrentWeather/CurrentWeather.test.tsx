@@ -20,7 +20,9 @@ describe('CurrentWeather', () => {
 
     expect(screen.getByText(weather.city)).toBeInTheDocument();
     expect(
-      screen.getByText(formatTemperature(weather.temp, UNIT)),
+      screen.getByText(
+        formatTemperature(weather.temp, UNIT, { includeUnit: false }),
+      ),
     ).toBeInTheDocument();
   });
 });

@@ -20,7 +20,7 @@ export const CurrentWeather = ({ weather, unit }: CurrentWeatherProps) => (
     />
     <h2 className={styles.city}>{weather.city}</h2>
     <p className={styles.temperature}>
-      {formatTemperature(weather.temp, unit)}
+      {formatTemperature(weather.temp, unit, { includeUnit: false })}
     </p>
   </section>
 );
