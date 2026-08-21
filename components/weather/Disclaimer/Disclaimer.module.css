@@ -1,0 +1,15 @@
+.disclaimer {
+  margin-top: auto;
+  padding-top: var(--panel-disclaimer-padding-top);
+  font-size: var(--disclaimer-font-size);
+  line-height: var(--disclaimer-line-height);
+  color: var(--color-text);
+}
+
+.disclaimer p {
+  margin: 0;
+}
+
+.disclaimer p + p {
+  margin-top: var(--disclaimer-paragraph-gap);
+}

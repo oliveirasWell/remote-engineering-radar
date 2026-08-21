@@ -1,7 +1,7 @@
 import { getCurrentWeather } from '@/lib/weather/openweather';
 import { WeatherProviderError } from '@/lib/weather/openweather/WeatherProviderError';
 import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
-import { parseCoordinates } from './parseCoordinates';
+import { parseCoordinates } from '../parseCoordinates';
 
 export const GET = async (request: Request) => {
   const params = new URL(request.url).searchParams;

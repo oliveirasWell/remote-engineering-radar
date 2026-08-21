@@ -1,15 +1,11 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import type { ReactNode } from 'react';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
 });
 
@@ -18,9 +14,9 @@ export const metadata: Metadata = {
   description: 'Search cities and view current weather conditions.',
 };
 
-const RootLayout = ({ children }: LayoutProps<'/'>) => {
+const RootLayout = ({ children }: { children: ReactNode }) => {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="en" className={inter.variable}>
       <body>
         <Providers>{children}</Providers>
       </body>

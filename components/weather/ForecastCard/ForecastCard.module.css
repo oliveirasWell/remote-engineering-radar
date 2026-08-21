@@ -1,0 +1,42 @@
+.card {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: var(--card-height);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  padding: var(--panel-padding);
+  color: var(--color-on-panel);
+  text-shadow: var(--card-text-shadow);
+  box-shadow: var(--card-shadow);
+}
+
+.label {
+  margin: 0;
+  font-size: var(--card-label-font-size);
+  text-align: center;
+}
+
+.icon {
+  align-self: center;
+  font-size: var(--card-icon-size);
+}
+
+.temperatureLabels,
+.temperatures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  text-align: center;
+}
+
+.temperatureLabels {
+  font-size: var(--card-label-font-size);
+  font-weight: 400;
+}
+
+.temperatures {
+  font-size: var(--card-temperature-font-size);
+  font-weight: 400;
+}

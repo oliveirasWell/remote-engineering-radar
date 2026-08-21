@@ -1,0 +1,46 @@
+@import 'weather-icons/css/weather-icons.min.css';
+
+:root {
+  --color-sidebar-bg: #f7f7f7;
+  --color-panel-from: #0168c3;
+  --color-panel-to: #52d9ff;
+  --color-text: #1a1a1a;
+  --color-on-panel: #ffffff;
+  --color-input-border: #aeaeae;
+  --color-input-bg: #ffffff;
+  --card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(0, 0, 0, 0.28));
+  --sidebar-width: 340px;
+  --sidebar-padding: 12px;
+  --panel-padding: 24px;
+  --card-radius: 14px;
+  --card-height: 256px;
+  --card-gap: 26px;
+  --input-height: 44px;
+  --input-radius: 2px;
+  --input-border-width: 1px;
+  --control-gap: 8px;
+  --control-padding-y: 10px;
+  --control-padding-x: 12px;
+  --sidebar-list-gap: 8px;
+  --current-weather-min-height: 290px;
+  --current-weather-heading-margin: 42px;
+  --current-weather-copy-gap: 8px;
+  --toggle-offset: -38px;
+  --color-hover: rgba(0, 0, 0, 0.08);
+  --toggle-border: rgba(255, 255, 255, 0.65);
+  --heading-font-size: 32px;
+  --city-font-size: 64px;
+  --temperature-font-size: 96px;
+  --current-icon-size: 200px;
+  --card-icon-size: 56px;
+  --card-label-font-size: 22px;
+  --card-temperature-font-size: 32px;
+  --card-text-shadow: 0 2px 4px rgba(0, 0, 0, 0.28);
+  --card-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+  --panel-text-shadow: 0 2px 3px rgba(0, 0, 0, 0.12);
+  --icon-margin: 16px;
+  --disclaimer-font-size: 11px;
+  --disclaimer-line-height: 1.5;
+  --disclaimer-paragraph-gap: 8px;
+  --panel-disclaimer-padding-top: 24px;
+}

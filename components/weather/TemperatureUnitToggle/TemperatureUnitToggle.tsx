@@ -1,4 +1,5 @@
 import type { TemperatureUnit } from '@/lib/weather/types';
+import styles from './TemperatureUnitToggle.module.css';
 
 type TemperatureUnitToggleProps = {
   unit: TemperatureUnit;
@@ -12,8 +13,9 @@ export const TemperatureUnitToggle = ({
   unit,
   onChange,
 }: TemperatureUnitToggleProps) => (
-  <div role="group" aria-label="Temperature unit">
+  <div className={styles.group} role="group" aria-label="Temperature unit">
     <button
+      className={styles.button}
       type="button"
       aria-pressed={unit === 'celsius'}
       onClick={() => onChange('celsius')}
@@ -21,6 +23,7 @@ export const TemperatureUnitToggle = ({
       {CELSIUS_LABEL}
     </button>
     <button
+      className={styles.button}
       type="button"
       aria-pressed={unit === 'fahrenheit'}
       onClick={() => onChange('fahrenheit')}

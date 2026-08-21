@@ -9,9 +9,7 @@ export const formatTemperature = (
 ): string => {
   const value =
     unit === 'fahrenheit' ? celsius * FAHRENHEIT_SCALE + FAHRENHEIT_OFFSET : celsius;
-  return new Intl.NumberFormat(undefined, {
-    style: 'unit',
-    unit,
+  return `${new Intl.NumberFormat(undefined, {
     maximumFractionDigits: 0,
-  }).format(value);
+  }).format(value)}°`;
 };

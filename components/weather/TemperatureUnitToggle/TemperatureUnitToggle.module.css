@@ -1,0 +1,20 @@
+.group {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--control-gap);
+  margin-top: var(--toggle-offset);
+}
+
+.button {
+  border: var(--input-border-width) solid var(--toggle-border);
+  border-radius: var(--card-radius);
+  background: transparent;
+  padding: var(--control-padding-y) var(--control-padding-x);
+  color: var(--color-on-panel);
+  cursor: pointer;
+}
+
+.button[aria-pressed='true'] {
+  background: var(--color-on-panel);
+  color: var(--color-text);
+}

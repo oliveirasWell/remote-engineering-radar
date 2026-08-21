@@ -16,3 +16,12 @@ export type CurrentWeather = {
   iconCode: number;
   isDay: boolean;
 };
+
+export type ForecastDay = {
+  date: string;
+  label: string;
+  low: number;
+  high: number;
+  iconCode: number;
+  isPartial: boolean;
+};

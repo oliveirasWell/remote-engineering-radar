@@ -1,15 +1,21 @@
 // @vitest-environment jsdom
 import { screen, waitFor } from '@testing-library/react';
 import type { CityMatch } from '@/lib/weather/types';
-import { createCityMatch, createCurrentWeather } from '@/test/factories/domain';
+import {
+  createCityMatch,
+  createCurrentWeather,
+  createForecastDays,
+} from '@/test/factories/domain';
 import { jsonResponse } from '@/test/http';
 import { renderWithQueryClient } from '@/test/render/renderWithQueryClient';
 import { buildCurrentWeatherUrl } from '@/lib/weather/client/buildCurrentWeatherUrl';
+import { buildForecastUrl } from '@/lib/weather/client/buildForecastUrl';
 import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
 import Home from './page';
 
 const city = createCityMatch();
 const currentWeather = createCurrentWeather();
+const forecast = createForecastDays();
 const SELECT_CITY_LABEL = `Select ${city.name}`;
 const NETWORK_FAILURE_MESSAGE = 'network failure';
 
@@ -46,9 +52,15 @@ describe('Home weather selection', () => {
   });
 
   it('fetches current weather using the selected city coordinates', async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(jsonResponse(currentWeather));
+    const fetchMock = vi.fn((url: string) =>
+      Promise.resolve(
+        jsonResponse(
+          url === buildForecastUrl(city.lat, city.lon)
+            ? forecast
+            : currentWeather,
+        ),
+      ),
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     renderHome();
@@ -78,12 +90,10 @@ describe('Home weather selection', () => {
       .getByRole('button', { name: SELECT_CITY_LABEL })
       .click();
     expect(
-      await screen.findByRole('status'),
-    ).toBeInTheDocument();
+      await screen.findAllByRole('status'),
+    ).toHaveLength(2);
 
     rejectRequest(new Error(NETWORK_FAILURE_MESSAGE));
-    expect(
-      await screen.findByText(WEATHER_API_ERRORS.weather),
-    ).toBeInTheDocument();
+    expect(await screen.findAllByText(WEATHER_API_ERRORS.weather)).toHaveLength(2);
   });
 });

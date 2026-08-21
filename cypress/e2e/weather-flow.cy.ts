@@ -1,0 +1,59 @@
+import {
+  APP_TEXT,
+  CITY_QUERY,
+  CITY_RESULT_LABEL,
+  CITY_RESULTS_TEXT,
+  CHICAGO_CITY,
+  CHICAGO_FORECAST,
+  DISCLAIMER_TEXT,
+  FORECAST_UNIT_SUFFIXES,
+  HOME_PATH,
+  NO_RESULTS_QUERY,
+  SEARCH_INPUT_SELECTOR,
+  WEATHER_DISPLAY_TEXT,
+  WEATHER_ICON_SELECTOR,
+} from '../support/scenarios';
+import { interceptEmptyGeocode, interceptWeatherApi } from '../support/weatherApi';
+
+describe('weather flow', () => {
+  beforeEach(() => {
+    interceptWeatherApi();
+  });
+
+  it('shows the weather flow and disclaimers', () => {
+    cy.visit(HOME_PATH);
+    cy.get(SEARCH_INPUT_SELECTOR).type(CITY_QUERY);
+    cy.wait('@geocode');
+    cy.contains(CITY_RESULT_LABEL).click();
+    cy.wait(['@weather', '@forecast']);
+    cy.contains(CITY_RESULT_LABEL).should('not.exist');
+
+    cy.contains(APP_TEXT.weatherHeading).should('be.visible');
+    cy.get(WEATHER_ICON_SELECTOR).should('be.visible');
+    cy.contains(WEATHER_DISPLAY_TEXT.forecastHeading).should('be.visible');
+    cy.contains(CHICAGO_CITY.name).should('be.visible');
+    cy.get('[data-weather-section="current"]').should('not.contain', '°C');
+    cy.get('[data-weather-section="current"]').should('not.contain', '°F');
+    cy.contains(CHICAGO_FORECAST[0].label).should('be.visible');
+    cy.get('article').each(($card) => {
+      FORECAST_UNIT_SUFFIXES.forEach((suffix) => {
+        expect($card.text()).not.to.contain(suffix);
+      });
+    });
+    cy.contains(DISCLAIMER_TEXT.sidebar).should('be.visible');
+    cy.contains(DISCLAIMER_TEXT.panel.advice).should('be.visible');
+    cy.contains(DISCLAIMER_TEXT.panel.responsibility).should('be.visible');
+    if (Cypress.env('capture')) {
+      cy.viewport(1366, 871);
+      cy.screenshot('current-layout-1366');
+    }
+  });
+
+  it('shows no results for an empty geocode response', () => {
+    interceptEmptyGeocode();
+    cy.visit(HOME_PATH);
+    cy.get(SEARCH_INPUT_SELECTOR).type(NO_RESULTS_QUERY);
+
+    cy.contains(CITY_RESULTS_TEXT.noResults).should('be.visible');
+  });
+});

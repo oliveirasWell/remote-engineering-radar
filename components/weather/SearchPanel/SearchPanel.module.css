@@ -1,0 +1,14 @@
+.section h2 {
+  margin: 0 0 var(--panel-padding);
+  font-size: var(--heading-font-size);
+  font-weight: 700;
+}
+
+.input {
+  width: 100%;
+  height: var(--input-height);
+  border: var(--input-border-width) solid var(--color-input-border);
+  border-radius: var(--input-radius);
+  background: var(--color-input-bg);
+  padding: 0 var(--panel-padding);
+}
