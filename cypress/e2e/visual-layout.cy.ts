@@ -26,6 +26,8 @@ describe('visual weather layout', () => {
     cy.visit('/');
     cy.get('input[placeholder="Search by city"]').type('Chicago');
     cy.contains('Chicago, Illinois, US').click();
+    cy.contains('Chicago, Illinois, US').should('not.exist');
+    cy.contains('clear sky').should('not.exist');
 
     cy.contains('Search').should('be.visible');
     cy.contains('Weather').should('be.visible');

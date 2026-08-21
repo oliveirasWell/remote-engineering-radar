@@ -17,11 +17,6 @@
   font-size: var(--current-icon-size);
 }
 
-.condition {
-  margin: 0;
-  font-size: var(--condition-font-size);
-}
-
 .temperature {
   margin: 0;
   font-size: var(--temperature-font-size);

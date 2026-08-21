@@ -33,7 +33,7 @@ describe('useWeatherSearch', () => {
       hook.result.current.selectCity(city);
     });
 
-    expect(hook.result.current.query).toBe(QUERY);
+    expect(hook.result.current.query).toBe(EMPTY_QUERY);
     expect(hook.result.current.selectedCity).toEqual(city);
     await waitFor(() =>
       expect(hook.result.current.currentWeatherQuery.data).toEqual(currentWeather),

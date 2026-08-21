@@ -15,12 +15,16 @@ export const useWeatherSearch = () => {
   );
   const currentWeatherQuery = useCurrentWeather(selectedCity);
   const forecastQuery = useForecast(selectedCity);
+  const selectCityAndClearQuery = (city: CityMatch) => {
+    setQuery('');
+    selectCity(city);
+  };
 
   return {
     query,
     selectedCity,
     setQuery,
-    selectCity,
+    selectCity: selectCityAndClearQuery,
     temperatureUnit,
     setTemperatureUnit,
     currentWeatherQuery,

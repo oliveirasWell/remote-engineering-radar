@@ -19,7 +19,16 @@
   font-size: var(--card-icon-size);
 }
 
-.temperature {
-  margin: 0;
+.temperatureLabels,
+.temperatures {
+  display: flex;
+  justify-content: space-between;
+}
+
+.temperatureLabels {
+  font-size: var(--card-label-font-size);
+}
+
+.temperatures {
   font-size: var(--card-temperature-font-size);
 }

@@ -15,11 +15,10 @@ const weather = createCurrentWeather({
 });
 
 describe('CurrentWeather', () => {
-  it('renders the city, condition and formatted temperature', () => {
+  it('renders the icon, city and formatted temperature', () => {
     render(<CurrentWeather weather={weather} unit={UNIT} />);
 
     expect(screen.getByText(weather.city)).toBeInTheDocument();
-    expect(screen.getByText(weather.condition)).toBeInTheDocument();
     expect(
       screen.getByText(formatTemperature(weather.temp, UNIT)),
     ).toBeInTheDocument();

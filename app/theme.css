@@ -16,6 +16,7 @@
   --card-height: 256px;
   --card-gap: 26px;
   --input-height: 44px;
+  --input-radius: 2px;
   --input-border-width: 1px;
   --control-gap: 8px;
   --control-padding-y: 10px;
@@ -28,7 +29,6 @@
   --color-hover: rgba(0, 0, 0, 0.08);
   --heading-font-size: 32px;
   --city-font-size: 64px;
-  --condition-font-size: 24px;
   --temperature-font-size: 96px;
   --current-icon-size: 200px;
   --card-icon-size: 56px;

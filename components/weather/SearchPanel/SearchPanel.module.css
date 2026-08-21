@@ -8,7 +8,7 @@
   width: 100%;
   height: var(--input-height);
   border: var(--input-border-width) solid var(--color-input-border);
-  border-radius: var(--card-radius);
+  border-radius: var(--input-radius);
   background: var(--color-input-bg);
   padding: 0 var(--panel-padding);
 }

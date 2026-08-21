@@ -13,15 +13,13 @@ describe('ForecastCard', () => {
     render(<ForecastCard day={day} unit={TEMPERATURE_UNITS.fahrenheit} />);
 
     expect(screen.getByText(day.label)).toBeInTheDocument();
+    expect(screen.getByText(FORECAST_CARD_TEXT.lowPrefix)).toBeInTheDocument();
+    expect(screen.getByText(FORECAST_CARD_TEXT.highPrefix)).toBeInTheDocument();
     expect(
-      screen.getByText(
-        `${FORECAST_CARD_TEXT.lowPrefix} ${formatTemperature(day.low, TEMPERATURE_UNITS.fahrenheit)}`,
-      ),
+      screen.getByText(formatTemperature(day.low, TEMPERATURE_UNITS.fahrenheit)),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        `${FORECAST_CARD_TEXT.highPrefix} ${formatTemperature(day.high, TEMPERATURE_UNITS.fahrenheit)}`,
-      ),
+      screen.getByText(formatTemperature(day.high, TEMPERATURE_UNITS.fahrenheit)),
     ).toBeInTheDocument();
   });
 });

@@ -13,11 +13,13 @@ export const ForecastCard = ({ day, unit }: ForecastCardProps) => (
   <article className={styles.card}>
     <h3 className={styles.label}>{day.label}</h3>
     <WeatherIcon className={styles.icon} iconCode={day.iconCode} />
-    <p className={styles.temperature}>
-      {FORECAST_CARD_TEXT.lowPrefix} {formatTemperature(day.low, unit)}
-    </p>
-    <p className={styles.temperature}>
-      {FORECAST_CARD_TEXT.highPrefix} {formatTemperature(day.high, unit)}
-    </p>
+    <div className={styles.temperatureLabels}>
+      <span>{FORECAST_CARD_TEXT.lowPrefix}</span>
+      <span>{FORECAST_CARD_TEXT.highPrefix}</span>
+    </div>
+    <div className={styles.temperatures}>
+      <span>{formatTemperature(day.low, unit)}</span>
+      <span>{formatTemperature(day.high, unit)}</span>
+    </div>
   </article>
 );
