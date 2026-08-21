@@ -15,6 +15,7 @@ const Home = () => {
     temperatureUnit,
     setTemperatureUnit,
     currentWeatherQuery,
+    forecastQuery,
   } = useWeatherSearch();
 
   return (
@@ -30,6 +31,9 @@ const Home = () => {
         isPending={currentWeatherQuery.isPending}
         isError={currentWeatherQuery.isError}
         weather={currentWeatherQuery.data}
+        forecast={forecastQuery.data}
+        forecastPending={forecastQuery.isPending}
+        forecastError={forecastQuery.isError}
         unit={temperatureUnit}
       />
     </main>
