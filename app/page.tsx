@@ -1,6 +1,7 @@
 'use client';
 
 import styles from './page.module.css';
+import { APP_TEXT } from './constants';
 import { SearchPanel } from '@/components/weather/SearchPanel/SearchPanel';
 import { SearchResults } from '@/components/weather/SearchResults/SearchResults';
 import { WeatherDisplay } from '@/components/weather/WeatherDisplay/WeatherDisplay';
@@ -29,7 +30,7 @@ const Home = () => {
         <Disclaimer>{DISCLAIMER_TEXT.sidebar}</Disclaimer>
       </aside>
       <section className={styles.panel}>
-        <h1>Weather</h1>
+        <h1>{APP_TEXT.weatherHeading}</h1>
         <TemperatureUnitToggle
           unit={temperatureUnit}
           onChange={setTemperatureUnit}

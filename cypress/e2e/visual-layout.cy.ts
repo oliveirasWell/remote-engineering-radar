@@ -1,3 +1,5 @@
+import { APP_TEXT } from '../../app/constants';
+
 describe('visual weather layout', () => {
   const currentWeather = {
     city: 'Chicago',
@@ -30,7 +32,7 @@ describe('visual weather layout', () => {
     cy.contains('clear sky').should('not.exist');
 
     cy.contains('Search').should('be.visible');
-    cy.contains('Weather').should('be.visible');
+    cy.contains(APP_TEXT.weatherHeading).should('be.visible');
     cy.get('i.wi').should('be.visible');
     cy.contains('5-Day Forecast').should('be.visible');
     cy.contains('Today').should('be.visible');
