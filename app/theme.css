@@ -1,0 +1,27 @@
+:root {
+  --color-sidebar-bg: #f7f7f7;
+  --color-panel-from: #0168c3;
+  --color-panel-to: #52d9ff;
+  --color-text: #1a1a1a;
+  --color-on-panel: #ffffff;
+  --color-input-border: #aeaeae;
+  --color-input-bg: #ffffff;
+  --card-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(0, 0, 0, 0.28));
+  --sidebar-width: 340px;
+  --sidebar-padding: 12px;
+  --panel-padding: 24px;
+  --card-radius: 14px;
+  --card-height: 256px;
+  --card-gap: 26px;
+  --input-height: 44px;
+  --input-border-width: 1px;
+  --control-gap: 8px;
+  --control-padding-y: 10px;
+  --control-padding-x: 12px;
+  --sidebar-list-gap: 8px;
+  --current-weather-min-height: 290px;
+  --current-weather-heading-margin: 42px;
+  --current-weather-copy-gap: 8px;
+  --toggle-offset: -38px;
+  --color-hover: rgba(0, 0, 0, 0.08);
+}
