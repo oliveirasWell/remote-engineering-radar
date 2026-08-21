@@ -18,8 +18,8 @@ export const ForecastCard = ({ day, unit }: ForecastCardProps) => (
       <span>{FORECAST_CARD_TEXT.highPrefix}</span>
     </div>
     <div className={styles.temperatures}>
-      <span>{formatTemperature(day.low, unit, { includeUnit: false })}</span>
-      <span>{formatTemperature(day.high, unit, { includeUnit: false })}</span>
+      <span>{formatTemperature(day.low, unit)}</span>
+      <span>{formatTemperature(day.high, unit)}</span>
     </div>
   </article>
 );
