@@ -34,16 +34,18 @@ const Home = () => {
           unit={temperatureUnit}
           onChange={setTemperatureUnit}
         />
-        <WeatherDisplay
-          hasSelection={selectedCity !== null}
-          isPending={currentWeatherQuery.isPending}
-          isError={currentWeatherQuery.isError}
-          weather={currentWeatherQuery.data}
-          forecast={forecastQuery.data}
-          forecastPending={forecastQuery.isPending}
-          forecastError={forecastQuery.isError}
-          unit={temperatureUnit}
-        />
+        <div className={styles.weatherDisplay}>
+          <WeatherDisplay
+            hasSelection={selectedCity !== null}
+            isPending={currentWeatherQuery.isPending}
+            isError={currentWeatherQuery.isError}
+            weather={currentWeatherQuery.data}
+            forecast={forecastQuery.data}
+            forecastPending={forecastQuery.isPending}
+            forecastError={forecastQuery.isError}
+            unit={temperatureUnit}
+          />
+        </div>
         <Disclaimer>{DISCLAIMER_TEXT.panel}</Disclaimer>
       </section>
     </main>

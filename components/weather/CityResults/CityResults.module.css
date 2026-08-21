@@ -1,0 +1,25 @@
+.list {
+  display: grid;
+  gap: var(--sidebar-list-gap);
+  margin: var(--panel-padding) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.button {
+  width: 100%;
+  border: 0;
+  border-radius: var(--card-radius);
+  background: transparent;
+  padding: var(--control-padding-y) var(--control-padding-x);
+  text-align: left;
+  cursor: pointer;
+}
+
+.button:hover {
+  background: var(--color-hover);
+}
+
+.noResults {
+  margin-top: var(--panel-padding);
+}

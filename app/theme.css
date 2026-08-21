@@ -1,3 +1,5 @@
+@import 'weather-icons/css/weather-icons.min.css';
+
 :root {
   --color-sidebar-bg: #f7f7f7;
   --color-panel-from: #0168c3;
@@ -24,4 +26,15 @@
   --current-weather-copy-gap: 8px;
   --toggle-offset: -38px;
   --color-hover: rgba(0, 0, 0, 0.08);
+  --heading-font-size: 32px;
+  --city-font-size: 64px;
+  --condition-font-size: 24px;
+  --temperature-font-size: 96px;
+  --current-icon-size: 200px;
+  --card-icon-size: 56px;
+  --card-label-font-size: 22px;
+  --card-temperature-font-size: 32px;
+  --icon-margin: 16px;
+  --disclaimer-font-size: 11px;
+  --disclaimer-line-height: 1.5;
 }

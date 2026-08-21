@@ -1,0 +1,29 @@
+.section {
+  display: grid;
+  min-height: var(--current-weather-min-height);
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.city {
+  margin: 0;
+  font-size: var(--city-font-size);
+  font-weight: 300;
+}
+
+.icon {
+  margin: var(--icon-margin) 0;
+  font-size: var(--current-icon-size);
+}
+
+.condition {
+  margin: 0;
+  font-size: var(--condition-font-size);
+}
+
+.temperature {
+  margin: 0;
+  font-size: var(--temperature-font-size);
+  font-weight: 200;
+}

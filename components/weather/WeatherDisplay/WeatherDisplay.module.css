@@ -1,0 +1,5 @@
+.heading {
+  margin: var(--current-weather-heading-margin) 0 0;
+  font-size: var(--heading-font-size);
+  font-weight: 700;
+}

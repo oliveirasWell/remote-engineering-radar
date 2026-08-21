@@ -1,0 +1,25 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: var(--card-height);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  padding: var(--panel-padding);
+  color: var(--color-on-panel);
+}
+
+.label {
+  margin: 0;
+  font-size: var(--card-label-font-size);
+}
+
+.icon {
+  align-self: center;
+  font-size: var(--card-icon-size);
+}
+
+.temperature {
+  margin: 0;
+  font-size: var(--card-temperature-font-size);
+}

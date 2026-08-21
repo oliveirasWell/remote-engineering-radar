@@ -8,6 +8,7 @@ import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { CurrentWeather } from '../CurrentWeather/CurrentWeather';
 import { ForecastGrid } from '../ForecastGrid/ForecastGrid';
+import styles from './WeatherDisplay.module.css';
 
 type WeatherDisplayProps = {
   hasSelection: boolean;
@@ -42,7 +43,7 @@ export const WeatherDisplay = ({
         <CurrentWeather weather={weather} unit={unit} />
         {forecast && (
           <>
-            <h2>5-Day Forecast</h2>
+            <h2 className={styles.heading}>5-Day Forecast</h2>
             <ForecastGrid days={forecast} unit={unit} />
           </>
         )}
