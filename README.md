@@ -58,6 +58,26 @@ Tests run on committed fixtures and need no key.
 | `pnpm deadcode` | Find unused files, dependencies, and exports |
 | `pnpm circular` | Check the dependency graph for cycles |
 
+## Technical Decisions
+
+**Server-side API key** — a `NEXT_PUBLIC_` variable is inlined into the client bundle, so the key
+is read only by the server-only adapter and browser requests go through our own route handlers.
+
+**Adapter boundary** — the adapter absorbs OpenWeather's shape (ambiguous geocoding matches, forty
+three-hour blocks, numeric condition IDs) so the rest of the application sees domain values.
+
+**Caching** — geocoding caches for thirty days because coordinates rarely change; current weather
+and forecast cache for ten minutes because conditions do.
+
+**Separate geocoding** — a city name is not a unique location, so the user picks the intended city
+before any weather is requested.
+
+**State management** — TanStack Query owns server state and the workflow hook owns the search
+query, selected city, and unit, so a state library would only add indirection.
+
+**Temperature units** — the domain stores canonical Celsius and the °C/°F toggle converts at render
+with `Intl.NumberFormat`, so switching units never creates a second cache entry.
+
 ## Architecture
 
 ```text
