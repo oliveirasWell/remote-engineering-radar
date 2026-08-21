@@ -18,6 +18,7 @@
     "deadcode": "knip",
     "circular": "madge --circular --extensions ts,tsx .",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "quality": "pnpm check && pnpm build && pnpm deadcode && pnpm circular",
     "prepare": "husky"
   },
   "dependencies": {

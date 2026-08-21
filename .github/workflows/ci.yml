@@ -16,7 +16,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm check
+      - run: pnpm quality
       - name: Boundary greps
         run: |
           ! grep -rE "temp_min|dt_txt|weather\[0\]" components/
