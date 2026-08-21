@@ -9,6 +9,7 @@ type WeatherIconProps = {
 export const WeatherIcon = ({ iconCode, isDay, className }: WeatherIconProps) => (
   <i
     className={`wi ${iconClass(iconCode, isDay)} ${className ?? ''}`}
+    data-cy="weather-icon"
     aria-hidden="true"
   />
 );

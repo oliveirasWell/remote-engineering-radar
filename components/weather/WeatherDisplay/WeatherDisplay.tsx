@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { CurrentWeather } from '../CurrentWeather/CurrentWeather';
 import { ForecastGrid } from '../ForecastGrid/ForecastGrid';
 import styles from './WeatherDisplay.module.css';
+import { WEATHER_DISPLAY_TEXT } from './constants';
 
 type WeatherDisplayProps = {
   hasSelection: boolean;
@@ -43,7 +44,9 @@ export const WeatherDisplay = ({
         <CurrentWeather weather={weather} unit={unit} />
         {forecast && (
           <>
-            <h2 className={styles.heading}>5-Day Forecast</h2>
+            <h2 className={styles.heading}>
+              {WEATHER_DISPLAY_TEXT.forecastHeading}
+            </h2>
             <ForecastGrid days={forecast} unit={unit} />
           </>
         )}
