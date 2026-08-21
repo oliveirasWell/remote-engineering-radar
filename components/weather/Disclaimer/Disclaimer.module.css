@@ -1,5 +1,5 @@
 .disclaimer {
-  margin-top: var(--panel-padding);
+  margin-top: auto;
   font-size: var(--disclaimer-font-size);
   line-height: var(--disclaimer-line-height);
   color: var(--color-text);
