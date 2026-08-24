@@ -6,8 +6,7 @@ if grep -rE 'temp_min|dt_txt|weather\[0\]' components/ app/components/; then
   exit 1
 fi
 
-# The key must stay server-side. Split the token so this file is not a hit.
-name=OPENWEATHER
-if git grep -n "NEXT_PUBLIC_${name}" -- ':!specs' ':!.github' ':!scripts'; then
+# The key must stay server-side. This script is excluded so it is not its own hit.
+if git grep -n 'NEXT_PUBLIC_OPENWEATHER' -- ':!specs' ':!.github' ':!scripts'; then
   exit 1
 fi

@@ -8,10 +8,8 @@ const { searchCitiesMock } = vi.hoisted(() => ({
   searchCitiesMock: vi.fn(),
 }));
 
-vi.mock('@/app/api/weatherProvider', () => ({
-  weatherProvider: {
-    searchCities: searchCitiesMock,
-  },
+vi.mock('@/lib/weather/openweather', () => ({
+  searchCities: searchCitiesMock,
 }));
 
 const city = createCityMatch();

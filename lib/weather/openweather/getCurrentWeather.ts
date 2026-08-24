@@ -1,18 +1,22 @@
 import 'server-only';
 
 import type { CurrentWeather } from '../types';
+import type { WeatherProvider } from '../provider';
 import {
   currentWeatherResponseSchema,
   type CurrentWeatherResponse,
 } from '../schemas/currentWeatherResponse';
 import { roundTemperature } from '../roundTemperature/roundTemperature';
-import { OPENWEATHER_ENDPOINTS, WEATHER_UNITS } from './constants';
+import {
+  OPENWEATHER_ENDPOINTS,
+  WEATHER_REVALIDATE_SECONDS,
+  WEATHER_UNITS,
+} from './constants';
 import { fetchOpenWeatherJson } from './fetchOpenWeatherJson';
 
-export const getCurrentWeather = async (
-  lat: number,
-  lon: number,
-  fetchFn: typeof fetch = fetch,
+export const getCurrentWeather: WeatherProvider['getCurrentWeather'] = async (
+  lat,
+  lon,
 ): Promise<CurrentWeather> => {
   const params = new URLSearchParams({
     lat: String(lat),
@@ -23,7 +27,7 @@ export const getCurrentWeather = async (
   const payload: CurrentWeatherResponse = currentWeatherResponseSchema.parse(
     await fetchOpenWeatherJson(
       `${OPENWEATHER_ENDPOINTS.currentWeather}?${params.toString()}`,
-      fetchFn,
+      WEATHER_REVALIDATE_SECONDS,
     ),
   );
   const [primaryCondition] = payload.weather;

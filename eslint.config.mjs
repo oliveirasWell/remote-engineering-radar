@@ -18,25 +18,11 @@ const eslintConfig = defineConfig([
         {
           zones: [
             {
-              target: "./components",
+              target: ["./components", "./app/components", "./app/useWeatherSearch"],
               from: "./lib/weather",
               except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
               message:
-                "components/ may import lib/weather types, constants, client, and temperature helpers only. The openweather adapter and schemas are server-side detail.",
-            },
-            {
-              target: "./app/components",
-              from: "./lib/weather",
-              except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
-              message:
-                "app/components/ may import lib/weather types, constants, client, and temperature helpers only. The openweather adapter and schemas are server-side detail.",
-            },
-            {
-              target: "./app/useWeatherSearch",
-              from: "./lib/weather",
-              except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
-              message:
-                "app/useWeatherSearch may import lib/weather types, constants, client, and temperature helpers only.",
+                "The UI layer may import lib/weather types, constants, client, and temperature helpers only. The openweather adapter and schemas are server-side detail.",
             },
             {
               target: "./lib/weather",

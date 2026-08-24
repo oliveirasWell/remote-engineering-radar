@@ -1,18 +1,22 @@
 import 'server-only';
 
 import type { CityMatch } from '../types';
+import type { WeatherProvider } from '../provider';
 import {
   geocodeResponseSchema,
   type GeocodeResponse,
 } from '../schemas/geocodeResponse';
-import { GEOCODE_LIMIT, OPENWEATHER_ENDPOINTS } from './constants';
+import {
+  GEOCODE_LIMIT,
+  GEOCODE_REVALIDATE_SECONDS,
+  OPENWEATHER_ENDPOINTS,
+} from './constants';
 import { fetchOpenWeatherJson } from './fetchOpenWeatherJson';
 
 const EMPTY_QUERY_STATUSES = [400, 404] as const;
 
-export const searchCities = async (
-  query: string,
-  fetchFn: typeof fetch = fetch,
+export const searchCities: WeatherProvider['searchCities'] = async (
+  query,
 ): Promise<CityMatch[]> => {
   const params = new URLSearchParams({
     q: query,
@@ -21,7 +25,7 @@ export const searchCities = async (
   });
   const payload = await fetchOpenWeatherJson(
     `${OPENWEATHER_ENDPOINTS.geocode}?${params.toString()}`,
-    fetchFn,
+    GEOCODE_REVALIDATE_SECONDS,
     EMPTY_QUERY_STATUSES,
   );
 

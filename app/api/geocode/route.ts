@@ -1,4 +1,4 @@
-import { weatherProvider } from '../weatherProvider';
+import { searchCities } from '@/lib/weather/openweather';
 import { jsonProviderResponse } from '../jsonProviderResponse';
 import { normalizeSearchQuery } from '@/lib/searchQuery';
 import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
@@ -8,7 +8,7 @@ export const GET = async (request: Request) => {
   const normalizedQuery = normalizeSearchQuery(query);
 
   return jsonProviderResponse(
-    () => weatherProvider.searchCities(normalizedQuery),
+    () => searchCities(normalizedQuery),
     WEATHER_API_ERRORS.search,
   );
 };

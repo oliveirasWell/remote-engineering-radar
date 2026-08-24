@@ -6,13 +6,17 @@ import {
   type ForecastResponse,
 } from '../schemas/forecastResponse';
 import type { ForecastDay } from '../types';
-import { OPENWEATHER_ENDPOINTS, WEATHER_UNITS } from './constants';
+import type { WeatherProvider } from '../provider';
+import {
+  OPENWEATHER_ENDPOINTS,
+  WEATHER_REVALIDATE_SECONDS,
+  WEATHER_UNITS,
+} from './constants';
 import { fetchOpenWeatherJson } from './fetchOpenWeatherJson';
 
-export const getForecast = async (
-  lat: number,
-  lon: number,
-  fetchFn: typeof fetch = fetch,
+export const getForecast: WeatherProvider['getForecast'] = async (
+  lat,
+  lon,
 ): Promise<ForecastDay[]> => {
   const params = new URLSearchParams({
     lat: String(lat),
@@ -23,7 +27,7 @@ export const getForecast = async (
   const payload: ForecastResponse = forecastResponseSchema.parse(
     await fetchOpenWeatherJson(
       `${OPENWEATHER_ENDPOINTS.forecast}?${params.toString()}`,
-      fetchFn,
+      WEATHER_REVALIDATE_SECONDS,
     ),
   );
   return aggregate(payload.list, payload.city.timezone);

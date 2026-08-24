@@ -1,4 +1,4 @@
-import { weatherProvider } from '../weatherProvider';
+import { getForecast } from '@/lib/weather/openweather';
 import { jsonProviderResponse } from '../jsonProviderResponse';
 import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
 import { parseCoordinates } from '../parseCoordinates';
@@ -11,7 +11,7 @@ export const GET = async (request: Request) => {
   }
 
   return jsonProviderResponse(
-    () => weatherProvider.getForecast(coordinates.lat, coordinates.lon),
+    () => getForecast(coordinates.lat, coordinates.lon),
     WEATHER_API_ERRORS.weather,
   );
 };

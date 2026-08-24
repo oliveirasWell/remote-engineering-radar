@@ -6,3 +6,5 @@ export const OPENWEATHER_ENDPOINTS = {
 
 export const WEATHER_UNITS = 'metric';
 export const GEOCODE_LIMIT = 5;
+export const GEOCODE_REVALIDATE_SECONDS = 2_592_000;
+export const WEATHER_REVALIDATE_SECONDS = 600;

@@ -2,6 +2,7 @@ import current from '../fixtures/current-chicago.json';
 import { CHICAGO } from '@/test/fixtures/chicago';
 import { TEST_API_KEY } from '@/test/http';
 import { roundTemperature } from '../roundTemperature/roundTemperature';
+import { WEATHER_REVALIDATE_SECONDS } from './constants';
 import { getCurrentWeather } from './getCurrentWeather';
 import { createOpenWeatherTestContext } from '@/test/factories/openweather/createOpenWeatherTestContext';
 
@@ -31,15 +32,16 @@ describe('OpenWeather current weather', () => {
     });
   });
 
-  it('requests the canonical metric units', async () => {
+  it('requests the canonical metric units and caches the response', async () => {
     context.mockJsonResponse(current);
 
     await getCurrentWeather(CHICAGO.lat, CHICAGO.lon);
 
     expect(context.fetchMock).toHaveBeenCalledWith(
       expect.stringContaining(CURRENT_WEATHER_ENDPOINT_PATH),
+      { next: { revalidate: WEATHER_REVALIDATE_SECONDS } },
     );
-    const [url] = context.fetchMock.mock.calls[0] as [string];
+    const [url] = context.fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain(CURRENT_WEATHER_ENDPOINT_PATH);
     expect(url).toContain(LATITUDE_PARAM);
     expect(url).toContain(LONGITUDE_PARAM);

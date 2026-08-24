@@ -4,10 +4,12 @@ import { WeatherProviderError } from './WeatherProviderError';
 
 export const fetchOpenWeatherJson = async (
   url: string,
-  fetchFn: typeof fetch,
+  revalidateSeconds: number,
   emptyStatuses: readonly number[] = [],
 ): Promise<unknown> => {
-  const response = await fetchFn(url);
+  const response = await fetch(url, {
+    next: { revalidate: revalidateSeconds },
+  });
 
   if (emptyStatuses.includes(response.status)) {
     return null;

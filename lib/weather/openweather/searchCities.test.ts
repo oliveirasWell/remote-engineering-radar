@@ -3,6 +3,7 @@ import empty from '../fixtures/geocode-empty.json';
 import { createOpenWeatherTestContext } from '@/test/factories/openweather/createOpenWeatherTestContext';
 import { NAIROBI } from '@/test/fixtures/nairobi';
 import { TEST_API_KEY } from '@/test/http';
+import { GEOCODE_REVALIDATE_SECONDS } from './constants';
 import { searchCities } from './searchCities';
 
 const context = createOpenWeatherTestContext();
@@ -77,15 +78,16 @@ describe('OpenWeather city search', () => {
     },
   );
 
-  it('sends the query, key and limit', async () => {
+  it('sends the query, key, limit and cache lifetime', async () => {
     context.mockJsonResponse([]);
 
     await searchCities(CITY_QUERY);
 
     expect(context.fetchMock).toHaveBeenCalledWith(
       expect.stringContaining(GEOCODE_ENDPOINT_PATH),
+      { next: { revalidate: GEOCODE_REVALIDATE_SECONDS } },
     );
-    const [url] = context.fetchMock.mock.calls[0] as [string];
+    const [url] = context.fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toContain(GEOCODE_ENDPOINT_PATH);
     expect(url).toContain(CITY_QUERY_PARAM);
     expect(url).toContain(GEOCODE_LIMIT_PARAM);
