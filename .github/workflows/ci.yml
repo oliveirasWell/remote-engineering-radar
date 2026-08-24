@@ -17,7 +17,3 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm quality
-      - name: Boundary greps
-        run: |
-          ! grep -rE "temp_min|dt_txt|weather\[0\]" components/ app/components/
-          ! grep -rn "NEXT_PUBLIC_OPENWEATHER" . --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=specs --exclude-dir=.github

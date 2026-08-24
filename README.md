@@ -54,9 +54,10 @@ Tests run on committed fixtures and need no key.
 | `pnpm test:watch` | Run Vitest in watch mode |
 | `pnpm e2e` | Run Cypress end-to-end tests |
 | `pnpm check` | Run lint, typecheck, and unit tests |
-| `pnpm quality` | Run check, build, dead-code, and circular-dependency checks |
+| `pnpm quality` | Run check, build, dead-code, circular-dependency, and boundary checks |
 | `pnpm deadcode` | Find unused files, dependencies, and exports |
 | `pnpm circular` | Check the dependency graph for cycles |
+| `pnpm boundaries` | Fail if UI code uses raw OpenWeather fields or a public API key |
 
 ## Technical Decisions
 
