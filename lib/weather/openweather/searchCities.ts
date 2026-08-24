@@ -1,40 +1,35 @@
 import 'server-only';
 
 import type { CityMatch } from '../types';
-import type { WeatherProvider } from '../provider';
 import {
   geocodeResponseSchema,
   type GeocodeResponse,
 } from '../schemas/geocodeResponse';
-import { WeatherProviderError } from './WeatherProviderError';
+import { GEOCODE_LIMIT, OPENWEATHER_ENDPOINTS } from './constants';
+import { fetchOpenWeatherJson } from './fetchOpenWeatherJson';
 
-const GEOCODE_ENDPOINT = 'https://api.openweathermap.org/geo/1.0/direct';
-const GEOCODE_LIMIT = 5;
-const GEOCODE_REVALIDATE_SECONDS = 2_592_000;
+const EMPTY_QUERY_STATUSES = [400, 404] as const;
 
-export const searchCities: WeatherProvider['searchCities'] = async (
-  query,
+export const searchCities = async (
+  query: string,
+  fetchFn: typeof fetch = fetch,
 ): Promise<CityMatch[]> => {
   const params = new URLSearchParams({
     q: query,
     limit: String(GEOCODE_LIMIT),
     appid: process.env.OPENWEATHER_API_KEY ?? '',
   });
-  const response = await fetch(`${GEOCODE_ENDPOINT}?${params.toString()}`, {
-    next: { revalidate: GEOCODE_REVALIDATE_SECONDS },
-  });
+  const payload = await fetchOpenWeatherJson(
+    `${OPENWEATHER_ENDPOINTS.geocode}?${params.toString()}`,
+    fetchFn,
+    EMPTY_QUERY_STATUSES,
+  );
 
-  if (response.status === 400 || response.status === 404) {
+  if (payload === null) {
     return [];
   }
 
-  if (!response.ok) {
-    throw new WeatherProviderError(response.status);
-  }
-
-  const geocodePayload: GeocodeResponse = geocodeResponseSchema.parse(
-    await response.json(),
-  );
+  const geocodePayload: GeocodeResponse = geocodeResponseSchema.parse(payload);
   return geocodePayload.map((city) => ({
     id: `${city.lat},${city.lon}`,
     name: city.name,

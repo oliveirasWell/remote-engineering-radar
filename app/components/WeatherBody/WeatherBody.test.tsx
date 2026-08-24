@@ -1,6 +1,5 @@
 // @vitest-environment jsdom
 import { screen, waitFor } from '@testing-library/react';
-import type { CityMatch } from '@/lib/weather/types';
 import {
   createCityMatch,
   createCurrentWeather,
@@ -11,32 +10,19 @@ import { renderWithQueryClient } from '@/test/render/renderWithQueryClient';
 import { buildCurrentWeatherUrl } from '@/lib/weather/client/buildCurrentWeatherUrl';
 import { buildForecastUrl } from '@/lib/weather/client/buildForecastUrl';
 import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
-import Home from './page';
+import { WeatherBody } from './WeatherBody';
 
 const city = createCityMatch();
 const currentWeather = createCurrentWeather();
 const forecast = createForecastDays();
-const SELECT_CITY_LABEL = `Select ${city.name}`;
 const NETWORK_FAILURE_MESSAGE = 'network failure';
 
-vi.mock('@/components/weather/SearchPanel/SearchPanel', () => ({
-  SearchPanel: () => null,
-}));
+const jsonForUrl = (url: string) =>
+  jsonResponse(
+    url === buildForecastUrl(city.lat, city.lon) ? forecast : currentWeather,
+  );
 
-vi.mock('@/components/weather/SearchResults/SearchResults', () => ({
-  SearchResults: ({ onSelect }: { onSelect: (city: CityMatch) => void }) => (
-    <button
-      type={"button"}
-      onClick={() => onSelect(city)}
-    >
-      {SELECT_CITY_LABEL}
-    </button>
-  ),
-}));
-
-const renderHome = () => renderWithQueryClient(<Home />);
-
-describe('Home weather selection', () => {
+describe('WeatherBody', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -45,28 +31,17 @@ describe('Home weather selection', () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
 
-    renderHome();
+    renderWithQueryClient(<WeatherBody city={null} />);
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('fetches current weather using the selected city coordinates', async () => {
-    const fetchMock = vi.fn((url: string) =>
-      Promise.resolve(
-        jsonResponse(
-          url === buildForecastUrl(city.lat, city.lon)
-            ? forecast
-            : currentWeather,
-        ),
-      ),
-    );
+    const fetchMock = vi.fn((url: string) => Promise.resolve(jsonForUrl(url)));
     vi.stubGlobal('fetch', fetchMock);
 
-    renderHome();
-    screen
-      .getByRole('button', { name: SELECT_CITY_LABEL })
-      .click();
+    renderWithQueryClient(<WeatherBody city={city} />);
 
     await waitFor(() =>
       expect(screen.getByText(city.name)).toBeInTheDocument(),
@@ -85,15 +60,12 @@ describe('Home weather selection', () => {
     );
     vi.stubGlobal('fetch', fetchMock);
 
-    renderHome();
-    screen
-      .getByRole('button', { name: SELECT_CITY_LABEL })
-      .click();
-    expect(
-      await screen.findAllByRole('status'),
-    ).toHaveLength(2);
+    renderWithQueryClient(<WeatherBody city={city} />);
+    expect(await screen.findAllByRole('status')).toHaveLength(2);
 
     rejectRequest(new Error(NETWORK_FAILURE_MESSAGE));
-    expect(await screen.findAllByText(WEATHER_API_ERRORS.weather)).toHaveLength(2);
+    expect(
+      await screen.findAllByText(WEATHER_API_ERRORS.weather),
+    ).toHaveLength(2);
   });
 });

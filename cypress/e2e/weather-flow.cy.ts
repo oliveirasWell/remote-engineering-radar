@@ -1,5 +1,4 @@
 import {
-  APP_TEXT,
   CITY_QUERY,
   CITY_RESULT_LABEL,
   CITY_RESULTS_TEXT,
@@ -10,6 +9,7 @@ import {
   HOME_PATH,
   NO_RESULTS_QUERY,
   SEARCH_INPUT_SELECTOR,
+  WEATHER_BODY_TEXT,
   WEATHER_DISPLAY_TEXT,
   WEATHER_ICON_SELECTOR,
 } from '../support/scenarios';
@@ -28,7 +28,7 @@ describe('weather flow', () => {
     cy.wait(['@weather', '@forecast']);
     cy.contains(CITY_RESULT_LABEL).should('not.exist');
 
-    cy.contains(APP_TEXT.weatherHeading).should('be.visible');
+    cy.contains(WEATHER_BODY_TEXT.heading).should('be.visible');
     cy.get(WEATHER_ICON_SELECTOR).should('be.visible');
     cy.contains(WEATHER_DISPLAY_TEXT.forecastHeading).should('be.visible');
     cy.contains(CHICAGO_CITY.name).should('be.visible');

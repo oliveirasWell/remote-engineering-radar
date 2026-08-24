@@ -77,16 +77,15 @@ describe('OpenWeather city search', () => {
     },
   );
 
-  it('sends the query, key, limit and cache lifetime', async () => {
+  it('sends the query, key and limit', async () => {
     context.mockJsonResponse([]);
 
     await searchCities(CITY_QUERY);
 
     expect(context.fetchMock).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ next: { revalidate: 2_592_000 } }),
+      expect.stringContaining(GEOCODE_ENDPOINT_PATH),
     );
-    const [url] = context.fetchMock.mock.calls[0] as [string, RequestInit];
+    const [url] = context.fetchMock.mock.calls[0] as [string];
     expect(url).toContain(GEOCODE_ENDPOINT_PATH);
     expect(url).toContain(CITY_QUERY_PARAM);
     expect(url).toContain(GEOCODE_LIMIT_PARAM);

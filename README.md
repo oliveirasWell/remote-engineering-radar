@@ -54,9 +54,10 @@ Tests run on committed fixtures and need no key.
 | `pnpm test:watch` | Run Vitest in watch mode |
 | `pnpm e2e` | Run Cypress end-to-end tests |
 | `pnpm check` | Run lint, typecheck, and unit tests |
-| `pnpm quality` | Run check, build, dead-code, and circular-dependency checks |
+| `pnpm quality` | Run check, build, dead-code, circular-dependency, and boundary checks |
 | `pnpm deadcode` | Find unused files, dependencies, and exports |
 | `pnpm circular` | Check the dependency graph for cycles |
+| `pnpm boundaries` | Fail if UI code uses raw OpenWeather fields or a public API key |
 
 ## Technical Decisions
 
@@ -82,11 +83,15 @@ with `Intl.NumberFormat`, so switching units never creates a second cache entry.
 
 ```text
 app/
-  api/         # route handlers: geocode, weather, forecast
-  page.tsx
+  page.tsx              # layout: Search + WeatherBody
+  components/
+    Search/             # search screen
+    WeatherBody/        # weather panel
+  api/                  # route handlers compose the provider
+    weatherProvider.ts  # Next cache + OpenWeather adapter
+  useWeatherSearch/     # query + selected city
 components/
-  ui/          # primitives
-  weather/     # feature components, hooks, CSS Modules
+  ui/                   # primitives
   Disclaimer/
 lib/
   searchQuery/
@@ -101,5 +106,4 @@ cypress/
 test/            # factories, fixtures, http, render helpers
 ```
 
-Components use domain types and client helpers; they cannot import the OpenWeather adapter or
-raw schemas. `lib/weather` does not depend on React or Next.js. ESLint zones and CI enforce it.
+The page composes Search and WeatherBody. Routes talk to `WeatherProvider`; Next fetch cache lives in the app composition, not in the adapter. Components use domain types and client helpers; they cannot import the OpenWeather adapter or raw schemas. `lib/weather` does not depend on React or Next.js. ESLint zones and CI enforce it.

@@ -1,22 +1,18 @@
 import 'server-only';
 
 import type { CurrentWeather } from '../types';
-import type { WeatherProvider } from '../provider';
 import {
   currentWeatherResponseSchema,
   type CurrentWeatherResponse,
 } from '../schemas/currentWeatherResponse';
 import { roundTemperature } from '../roundTemperature/roundTemperature';
-import { WeatherProviderError } from './WeatherProviderError';
+import { OPENWEATHER_ENDPOINTS, WEATHER_UNITS } from './constants';
+import { fetchOpenWeatherJson } from './fetchOpenWeatherJson';
 
-const CURRENT_WEATHER_ENDPOINT =
-  'https://api.openweathermap.org/data/2.5/weather';
-const WEATHER_REVALIDATE_SECONDS = 600;
-const WEATHER_UNITS = 'metric';
-
-export const getCurrentWeather: WeatherProvider['getCurrentWeather'] = async (
-  lat,
-  lon,
+export const getCurrentWeather = async (
+  lat: number,
+  lon: number,
+  fetchFn: typeof fetch = fetch,
 ): Promise<CurrentWeather> => {
   const params = new URLSearchParams({
     lat: String(lat),
@@ -24,17 +20,11 @@ export const getCurrentWeather: WeatherProvider['getCurrentWeather'] = async (
     units: WEATHER_UNITS,
     appid: process.env.OPENWEATHER_API_KEY ?? '',
   });
-  const response = await fetch(
-    `${CURRENT_WEATHER_ENDPOINT}?${params.toString()}`,
-    { next: { revalidate: WEATHER_REVALIDATE_SECONDS } },
-  );
-
-  if (!response.ok) {
-    throw new WeatherProviderError(response.status);
-  }
-
   const payload: CurrentWeatherResponse = currentWeatherResponseSchema.parse(
-    await response.json(),
+    await fetchOpenWeatherJson(
+      `${OPENWEATHER_ENDPOINTS.currentWeather}?${params.toString()}`,
+      fetchFn,
+    ),
   );
   const [primaryCondition] = payload.weather;
 

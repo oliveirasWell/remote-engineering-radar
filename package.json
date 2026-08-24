@@ -17,8 +17,9 @@
     "e2e": "cypress run",
     "deadcode": "knip",
     "circular": "madge --circular --extensions ts,tsx .",
+    "boundaries": "bash scripts/check-boundaries.sh",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "quality": "pnpm check && pnpm build && pnpm deadcode && pnpm circular",
+    "quality": "pnpm check && pnpm build && pnpm deadcode && pnpm circular && pnpm boundaries",
     "prepare": "husky"
   },
   "dependencies": {

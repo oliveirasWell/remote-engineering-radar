@@ -1,4 +1,4 @@
-export const SEARCH_PANEL_TEXT = {
+export const SEARCH_TEXT = {
   heading: 'Search',
   placeholder: 'Search by city',
 } as const;

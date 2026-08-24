@@ -7,24 +7,14 @@ import { useForecast } from '../useForecast/useForecast';
 
 const DEFAULT_TEMPERATURE_UNIT: TemperatureUnit = 'fahrenheit';
 
-export const useWeatherSearch = () => {
-  const [query, setQuery] = useState('');
-  const [selectedCity, selectCity] = useState<CityMatch | null>(null);
+export const useWeatherBody = (city: CityMatch | null) => {
   const [temperatureUnit, setTemperatureUnit] = useState<TemperatureUnit>(
     DEFAULT_TEMPERATURE_UNIT,
   );
-  const currentWeatherQuery = useCurrentWeather(selectedCity);
-  const forecastQuery = useForecast(selectedCity);
-  const selectCityAndClearQuery = (city: CityMatch) => {
-    setQuery('');
-    selectCity(city);
-  };
+  const currentWeatherQuery = useCurrentWeather(city);
+  const forecastQuery = useForecast(city);
 
   return {
-    query,
-    selectedCity,
-    setQuery,
-    selectCity: selectCityAndClearQuery,
     temperatureUnit,
     setTemperatureUnit,
     currentWeatherQuery,
