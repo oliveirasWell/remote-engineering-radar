@@ -5,7 +5,7 @@ export const Input = ({
   ...props
 }: InputHTMLAttributes<HTMLInputElement>) => (
   <input
-    className={`h-11 w-full rounded-sm border border-input-border bg-input px-6${className ? ` ${className}` : ''}`}
+    className={`h-11 w-full appearance-none rounded-sm border border-input-border bg-input px-6 ${className ?? ''}`}
     {...props}
   />
 );
