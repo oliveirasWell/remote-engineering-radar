@@ -12,7 +12,7 @@ City search with current conditions and a 5-day forecast.
 - **React + TypeScript** — strict mode, no `any`
 - **TanStack Query** — server state, caching, and deduplication
 - **Zod** — validates raw provider responses at the adapter boundary
-- **CSS Modules** — styling colocated with each component
+- **Tailwind CSS v4** — utilities on each component, semantic color tokens in `@theme`
 - **Vitest + React Testing Library** — unit and component tests
 - **Cypress** — end-to-end tests against intercepted routes
 - **ESLint + Knip + Madge** — lint zones, dead code, and dependency cycles

@@ -7,7 +7,6 @@ import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { CurrentWeather } from '../CurrentWeather/CurrentWeather';
 import { ForecastGrid } from '../ForecastGrid/ForecastGrid';
-import styles from './WeatherDisplay.module.css';
 import { WEATHER_DISPLAY_TEXT } from './constants';
 
 type WeatherDisplayProps = {
@@ -49,7 +48,9 @@ export const WeatherDisplay = ({
     <p>{WEATHER_API_ERRORS.weather}</p>
   ) : forecast ? (
     <>
-      <h2 className={styles.heading}>{WEATHER_DISPLAY_TEXT.forecastHeading}</h2>
+      <h2 className="mt-10 text-3xl font-bold text-shadow-sm">
+        {WEATHER_DISPLAY_TEXT.forecastHeading}
+      </h2>
       <ForecastGrid days={forecast} unit={unit} />
     </>
   ) : null;

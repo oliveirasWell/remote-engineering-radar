@@ -1,6 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["app/**/{page,layout,route,providers}.{ts,tsx}"],
-  "project": ["{app,components,lib}/**/*.{ts,tsx}"],
-  "ignoreDependencies": ["weather-icons"]
+  "entry": [
+    "app/**/{page,layout,route,providers}.{ts,tsx}",
+    "app/globals.css"
+  ],
+  "project": ["{app,components,lib}/**/*.{ts,tsx,css}"]
 }
