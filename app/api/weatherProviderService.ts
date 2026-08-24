@@ -1,4 +1,4 @@
-import { createOpenWeatherProvider } from '@/lib/weather/openweather';
+import { createOpenWeatherProviderService } from '@/lib/weather/openweather';
 import {
   GEOCODE_REVALIDATE_SECONDS,
   WEATHER_REVALIDATE_SECONDS,
@@ -9,7 +9,7 @@ const fetchWithRevalidate =
   (input, init) =>
     fetch(input, { ...init, next: { revalidate: revalidateSeconds } });
 
-export const weatherProvider = createOpenWeatherProvider({
+export const weatherProviderService = createOpenWeatherProviderService({
   fetchGeocode: fetchWithRevalidate(GEOCODE_REVALIDATE_SECONDS),
   fetchWeather: fetchWithRevalidate(WEATHER_REVALIDATE_SECONDS),
 });
