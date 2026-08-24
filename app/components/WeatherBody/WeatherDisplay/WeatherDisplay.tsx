@@ -4,6 +4,7 @@ import type {
   TemperatureUnit,
 } from '@/lib/weather/types';
 import { WEATHER_API_ERRORS } from '@/lib/weather/constants';
+import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { Spinner } from '@/components/ui/Spinner/Spinner';
 import { CurrentWeather } from '../CurrentWeather/CurrentWeather';
 import { ForecastGrid } from '../ForecastGrid/ForecastGrid';
@@ -34,13 +35,14 @@ export const WeatherDisplay = ({
     return null;
   }
 
-  const currentContent = isPending && !weather ? (
-    <Spinner />
-  ) : isError && !weather ? (
-    <p>{WEATHER_API_ERRORS.weather}</p>
-  ) : weather ? (
-    <CurrentWeather weather={weather} unit={unit} />
-  ) : null;
+  const currentContent =
+    isPending && !weather ? (
+      <Spinner />
+    ) : isError && !weather ? (
+      <p>{WEATHER_API_ERRORS.weather}</p>
+    ) : weather ? (
+      <CurrentWeather weather={weather} unit={unit} />
+    ) : null;
 
   const forecastContent = forecastPending ? (
     <Spinner />
@@ -48,9 +50,9 @@ export const WeatherDisplay = ({
     <p>{WEATHER_API_ERRORS.weather}</p>
   ) : forecast ? (
     <>
-      <h2 className="mt-10 text-3xl font-bold text-shadow-sm">
+      <PageTitle className="mt-10" shadow="panel">
         {WEATHER_DISPLAY_TEXT.forecastHeading}
-      </h2>
+      </PageTitle>
       <ForecastGrid days={forecast} unit={unit} />
     </>
   ) : null;

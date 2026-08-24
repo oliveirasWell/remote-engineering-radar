@@ -1,4 +1,5 @@
 import type { CityMatch } from '@/lib/weather/types';
+import { Button } from '@/components/ui/Button/Button';
 import { CITY_RESULTS_TEXT } from './constants';
 
 type CityResultsProps = {
@@ -27,13 +28,9 @@ export const CityResults = ({
 
         return (
           <li key={city.id}>
-            <button
-              className="w-full cursor-pointer rounded-xl border-0 bg-transparent px-3 py-2.5 text-left hover:bg-black/10"
-              type="button"
-              onClick={() => onSelect(city)}
-            >
+            <Button variant="list" onClick={() => onSelect(city)}>
               {location}
-            </button>
+            </Button>
           </li>
         );
       })}

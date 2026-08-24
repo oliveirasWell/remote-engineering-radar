@@ -1,35 +1,30 @@
 import type { TemperatureUnit } from '@/lib/weather/types';
+import { Button } from '@/components/ui/Button/Button';
 
 type TemperatureUnitToggleProps = {
   unit: TemperatureUnit;
   onChange: (unit: TemperatureUnit) => void;
 };
 
-const CELSIUS_LABEL = '°C';
-const FAHRENHEIT_LABEL = '°F';
-const BUTTON_CLASS_NAME =
-  'cursor-pointer rounded-xl border border-white/65 bg-transparent px-3 py-2.5 text-on-panel aria-[pressed=true]:bg-on-panel aria-[pressed=true]:text-foreground';
+const UNITS = [
+  { value: 'celsius', label: '°C' },
+  { value: 'fahrenheit', label: '°F' },
+] as const;
 
 export const TemperatureUnitToggle = ({
   unit,
   onChange,
 }: TemperatureUnitToggleProps) => (
   <div className="flex gap-2" role="group" aria-label="Temperature unit">
-    <button
-      className={BUTTON_CLASS_NAME}
-      type="button"
-      aria-pressed={unit === 'celsius'}
-      onClick={() => onChange('celsius')}
-    >
-      {CELSIUS_LABEL}
-    </button>
-    <button
-      className={BUTTON_CLASS_NAME}
-      type="button"
-      aria-pressed={unit === 'fahrenheit'}
-      onClick={() => onChange('fahrenheit')}
-    >
-      {FAHRENHEIT_LABEL}
-    </button>
+    {UNITS.map(({ label, value }) => (
+      <Button
+        key={value}
+        variant="toggle"
+        aria-pressed={unit === value}
+        onClick={() => onChange(value)}
+      >
+        {label}
+      </Button>
+    ))}
   </div>
 );

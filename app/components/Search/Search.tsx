@@ -2,6 +2,7 @@
 
 import type { CityMatch } from '@/lib/weather/types';
 import { Input } from '@/components/ui/Input/Input';
+import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { Disclaimer } from '@/components/Disclaimer/Disclaimer';
 import { DISCLAIMER_TEXT } from '@/components/Disclaimer/constants';
 import { SearchResults } from './SearchResults/SearchResults';
@@ -16,7 +17,7 @@ type SearchProps = {
 export const Search = ({ query, onQueryChange, onSelect }: SearchProps) => (
   <aside className="flex min-w-0 flex-col bg-sidebar px-3 pt-6 pb-3">
     <section>
-      <h2 className="mb-6 text-3xl font-bold">{SEARCH_TEXT.heading}</h2>
+      <PageTitle className="mb-6">{SEARCH_TEXT.heading}</PageTitle>
       <Input
         type="search"
         placeholder={SEARCH_TEXT.placeholder}

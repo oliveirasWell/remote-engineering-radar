@@ -1,6 +1,7 @@
 'use client';
 
 import type { CityMatch } from '@/lib/weather/types';
+import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { Disclaimer } from '@/components/Disclaimer/Disclaimer';
 import { DISCLAIMER_TEXT } from '@/components/Disclaimer/constants';
 import { TemperatureUnitToggle } from './TemperatureUnitToggle/TemperatureUnitToggle';
@@ -23,7 +24,7 @@ export const WeatherBody = ({ city }: WeatherBodyProps) => {
   return (
     <section className="flex min-w-0 flex-col overflow-hidden bg-linear-to-b from-panel-from to-panel-to p-6 text-on-panel lg:min-h-dvh">
       <div className="flex items-start justify-between gap-4">
-        <h1 className="text-3xl font-bold">{WEATHER_BODY_TEXT.heading}</h1>
+        <PageTitle as="h1">{WEATHER_BODY_TEXT.heading}</PageTitle>
         <TemperatureUnitToggle
           unit={temperatureUnit}
           onChange={setTemperatureUnit}
