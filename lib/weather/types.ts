@@ -25,3 +25,9 @@ export type ForecastDay = {
   iconCode: number;
   isPartial: boolean;
 };
+
+export interface WeatherProviderService {
+  searchCities(query: string): Promise<CityMatch[]>;
+  getCurrentWeather(lat: number, lon: number): Promise<CurrentWeather>;
+  getForecast(lat: number, lon: number): Promise<ForecastDay[]>;
+}

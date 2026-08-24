@@ -1,3 +1,3 @@
 import 'server-only';
 
-export { createOpenWeatherProvider } from './createOpenWeatherProvider';
+export { createOpenWeatherProviderService } from './createOpenWeatherProviderService';
