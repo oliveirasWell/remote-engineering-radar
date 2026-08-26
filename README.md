@@ -73,4 +73,4 @@ The public site primarily reads data. Crawling does not run on Vercel.
 ## Specs
 
 Implementation follows eval-driven specs under [`specs/`](specs/). Current focus:
-[SPEC-007](specs/007-job-scoring.md).
+[SPEC-008](specs/008-deduplication.md).

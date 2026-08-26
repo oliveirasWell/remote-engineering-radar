@@ -7,7 +7,8 @@
     "lib/db/repositories/*.ts",
     "lib/sources/**/*.ts",
     "lib/classification/**/*.ts",
-    "lib/scoring/**/*.ts"
+    "lib/scoring/**/*.ts",
+    "lib/deduplication/**/*.ts"
   ],
   "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }
