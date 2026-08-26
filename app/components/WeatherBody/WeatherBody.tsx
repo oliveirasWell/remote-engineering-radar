@@ -1,13 +1,13 @@
 'use client';
 
 import type { CityMatch } from '@/lib/weather/types';
+import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { Disclaimer } from '@/components/Disclaimer/Disclaimer';
 import { DISCLAIMER_TEXT } from '@/components/Disclaimer/constants';
 import { TemperatureUnitToggle } from './TemperatureUnitToggle/TemperatureUnitToggle';
 import { WeatherDisplay } from './WeatherDisplay/WeatherDisplay';
 import { useWeatherBody } from './useWeatherBody/useWeatherBody';
 import { WEATHER_BODY_TEXT } from './constants';
-import styles from './WeatherBody.module.css';
 
 type WeatherBodyProps = {
   city: CityMatch | null;
@@ -22,13 +22,15 @@ export const WeatherBody = ({ city }: WeatherBodyProps) => {
   } = useWeatherBody(city);
 
   return (
-    <section className={styles.panel}>
-      <h1 className={styles.heading}>{WEATHER_BODY_TEXT.heading}</h1>
-      <TemperatureUnitToggle
-        unit={temperatureUnit}
-        onChange={setTemperatureUnit}
-      />
-      <div className={styles.weatherDisplay}>
+    <section className="flex min-w-0 flex-col overflow-hidden bg-linear-to-b from-panel-from to-panel-to p-6 text-on-panel lg:min-h-dvh">
+      <div className="flex items-start justify-between gap-4">
+        <PageTitle as="h1">{WEATHER_BODY_TEXT.heading}</PageTitle>
+        <TemperatureUnitToggle
+          unit={temperatureUnit}
+          onChange={setTemperatureUnit}
+        />
+      </div>
+      <div className="min-w-0">
         <WeatherDisplay
           hasSelection={city !== null}
           isPending={currentWeatherQuery.isPending}
@@ -40,7 +42,7 @@ export const WeatherBody = ({ city }: WeatherBodyProps) => {
           unit={temperatureUnit}
         />
       </div>
-      <Disclaimer>
+      <Disclaimer className="mt-auto">
         <p>{DISCLAIMER_TEXT.panel.advice}</p>
         <p>{DISCLAIMER_TEXT.panel.responsibility}</p>
       </Disclaimer>

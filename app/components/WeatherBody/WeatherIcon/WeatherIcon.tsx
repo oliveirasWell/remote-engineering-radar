@@ -1,3 +1,4 @@
+import { cn } from '@/components/ui/cn';
 import { iconClass } from '../iconClass/iconClass';
 
 type WeatherIconProps = {
@@ -6,9 +7,13 @@ type WeatherIconProps = {
   className?: string;
 };
 
-export const WeatherIcon = ({ iconCode, isDay, className }: WeatherIconProps) => (
+export const WeatherIcon = ({
+  iconCode,
+  isDay,
+  className,
+}: WeatherIconProps) => (
   <i
-    className={`wi ${iconClass(iconCode, isDay)} ${className ?? ''}`}
+    className={cn('wi', iconClass(iconCode, isDay), className)}
     data-cy="weather-icon"
     aria-hidden="true"
   />

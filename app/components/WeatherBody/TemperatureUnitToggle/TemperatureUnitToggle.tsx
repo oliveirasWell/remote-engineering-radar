@@ -1,34 +1,30 @@
 import type { TemperatureUnit } from '@/lib/weather/types';
-import styles from './TemperatureUnitToggle.module.css';
+import { Button } from '@/components/ui/Button/Button';
 
 type TemperatureUnitToggleProps = {
   unit: TemperatureUnit;
   onChange: (unit: TemperatureUnit) => void;
 };
 
-const CELSIUS_LABEL = '°C';
-const FAHRENHEIT_LABEL = '°F';
+const UNITS = [
+  { value: 'celsius', label: '°C' },
+  { value: 'fahrenheit', label: '°F' },
+] as const;
 
 export const TemperatureUnitToggle = ({
   unit,
   onChange,
 }: TemperatureUnitToggleProps) => (
-  <div className={styles.group} role="group" aria-label="Temperature unit">
-    <button
-      className={styles.button}
-      type="button"
-      aria-pressed={unit === 'celsius'}
-      onClick={() => onChange('celsius')}
-    >
-      {CELSIUS_LABEL}
-    </button>
-    <button
-      className={styles.button}
-      type="button"
-      aria-pressed={unit === 'fahrenheit'}
-      onClick={() => onChange('fahrenheit')}
-    >
-      {FAHRENHEIT_LABEL}
-    </button>
+  <div className="flex gap-2" role="group" aria-label="Temperature unit">
+    {UNITS.map(({ label, value }) => (
+      <Button
+        key={value}
+        variant="toggle"
+        aria-pressed={unit === value}
+        onClick={() => onChange(value)}
+      >
+        {label}
+      </Button>
+    ))}
   </div>
 );

@@ -4,7 +4,6 @@ import type {
 } from '@/lib/weather/types';
 import { formatTemperature } from '@/lib/weather/temperature/formatTemperature';
 import { WeatherIcon } from '../WeatherIcon/WeatherIcon';
-import styles from './CurrentWeather.module.css';
 
 type CurrentWeatherProps = {
   weather: CurrentWeatherData;
@@ -12,14 +11,17 @@ type CurrentWeatherProps = {
 };
 
 export const CurrentWeather = ({ weather, unit }: CurrentWeatherProps) => (
-  <section className={styles.section} data-weather-section="current">
+  <section
+    className="grid min-h-72 content-center justify-items-center text-center"
+    data-weather-section="current"
+  >
     <WeatherIcon
-      className={styles.icon}
+      className="my-4 text-9xl"
       iconCode={weather.iconCode}
       isDay={weather.isDay}
     />
-    <h2 className={styles.city}>{weather.city}</h2>
-    <p className={styles.temperature}>
+    <h2 className="m-0 text-6xl font-light text-shadow-sm">{weather.city}</h2>
+    <p className="m-0 text-8xl font-extralight text-shadow-sm">
       {formatTemperature(weather.temp, unit)}
     </p>
   </section>
