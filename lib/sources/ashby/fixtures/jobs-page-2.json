@@ -1,0 +1,15 @@
+{
+  "jobs": [
+    {
+      "id": "cccccccc-1111-2222-3333-dddddddddddd",
+      "title": "Senior React Native Engineer",
+      "location": "Brazil",
+      "isRemote": true,
+      "workplaceType": "Remote",
+      "publishedAt": "2026-08-18T10:00:00.000+00:00",
+      "isListed": true,
+      "jobUrl": "https://jobs.ashbyhq.com/acme/cccccccc-1111-2222-3333-dddddddddddd",
+      "descriptionPlain": "Expo and React Native experience required."
+    }
+  ]
+}

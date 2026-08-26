@@ -1,0 +1,27 @@
+{
+  "jobs": [
+    {
+      "id": "valid-1",
+      "title": "Valid Engineer",
+      "jobUrl": "https://jobs.ashbyhq.com/acme/valid-1",
+      "isListed": true,
+      "location": "Remote"
+    },
+    {
+      "title": "Missing id"
+    },
+    null,
+    {
+      "id": "unlisted-1",
+      "title": "Hidden role",
+      "jobUrl": "https://jobs.ashbyhq.com/acme/unlisted-1",
+      "isListed": false
+    },
+    {
+      "id": "valid-2",
+      "title": "Partial fields ok",
+      "applyUrl": "https://jobs.ashbyhq.com/acme/valid-2/application",
+      "isListed": true
+    }
+  ]
+}

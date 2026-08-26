@@ -1,5 +1,8 @@
+import { stripHtml } from '../strip-html';
 import type { NormalizedJob } from '../types';
 import { GREENHOUSE_SOURCE_NAME } from './constants';
+
+export { stripHtml } from '../strip-html';
 
 export type GreenhouseJobRecord = {
   id?: unknown;
@@ -39,20 +42,6 @@ const asNumberId = (value: unknown): string | undefined => {
 
   return undefined;
 };
-
-const decodeBasicEntities = (value: string): string =>
-  value
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&amp;', '&')
-    .replaceAll('&#39;', "'")
-    .replaceAll('&quot;', '"');
-
-export const stripHtml = (value: string): string =>
-  decodeBasicEntities(value)
-    .replaceAll(/<[^>]+>/g, ' ')
-    .replaceAll(/\s+/g, ' ')
-    .trim();
 
 const readLocation = (value: unknown): string | undefined => {
   if (!value || typeof value !== 'object') {
