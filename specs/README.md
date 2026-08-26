@@ -15,6 +15,7 @@ Completed:
 - [SPEC-006](006-job-relevance-classifier.md) — job relevance classifier
 - [SPEC-007](007-job-scoring.md) — job scoring
 - [SPEC-008](008-deduplication.md) — deduplication
+- [SPEC-009](009-company-hiring-signals.md) — company hiring signals
 
 ---
 
