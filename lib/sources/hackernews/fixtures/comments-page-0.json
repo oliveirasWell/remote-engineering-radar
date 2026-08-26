@@ -1,0 +1,18 @@
+{
+  "hits": [
+    {
+      "objectID": "49336502",
+      "parent_id": 49156683,
+      "created_at": "2026-08-15T12:00:00Z",
+      "comment_text": "Acme Robotics | Senior Frontend Engineer | REMOTE (LATAM) | Full-time<p>We build products with React and TypeScript. Apply at <a href=\"https://acme.example/jobs/frontend\">https://acme.example/jobs/frontend</a></p>"
+    },
+    {
+      "objectID": "49336503",
+      "parent_id": 49156683,
+      "created_at": "2026-08-15T13:00:00Z",
+      "comment_text": "Orbit Labs | Senior React Native Engineer | Brazil | REMOTE<p>Expo experience preferred.</p>"
+    }
+  ],
+  "nbPages": 2,
+  "page": 0
+}
