@@ -12,6 +12,7 @@ Completed:
 - [SPEC-003](003-greenhouse-adapter.md) — Greenhouse adapter
 - [SPEC-004](004-ashby-adapter.md) — Ashby adapter
 - [SPEC-005](005-hacker-news-adapter.md) — Hacker News adapter
+- [SPEC-006](006-job-relevance-classifier.md) — job relevance classifier
 
 ---
 

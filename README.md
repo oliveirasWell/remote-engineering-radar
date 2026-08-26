@@ -73,4 +73,4 @@ The public site primarily reads data. Crawling does not run on Vercel.
 ## Specs
 
 Implementation follows eval-driven specs under [`specs/`](specs/). Current focus:
-[SPEC-005](specs/005-hacker-news-adapter.md).
+[SPEC-006](specs/006-job-relevance-classifier.md).
