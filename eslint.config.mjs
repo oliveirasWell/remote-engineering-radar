@@ -18,41 +18,20 @@ const eslintConfig = defineConfig([
         {
           zones: [
             {
-              target: "./components",
-              from: "./lib/weather",
-              except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
-              message:
-                "components/ may import lib/weather types, constants, client, and temperature helpers only. The openweather adapter and schemas are server-side detail.",
-            },
-            {
-              target: "./app/components",
-              from: "./lib/weather",
-              except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
-              message:
-                "app/components/ may import lib/weather types, constants, client, and temperature helpers only. The openweather adapter and schemas are server-side detail.",
-            },
-            {
-              target: "./app/useWeatherSearch",
-              from: "./lib/weather",
-              except: ["./types.ts", "./constants.ts", "./client", "./temperature"],
-              message:
-                "app/useWeatherSearch may import lib/weather types, constants, client, and temperature helpers only.",
-            },
-            {
-              target: "./lib/weather",
+              target: "./lib/db",
               from: "./components",
-              message: "lib/weather/ must not depend on the UI layer.",
+              message: "lib/db/ must not depend on the UI layer.",
             },
             {
-              target: "./lib/weather",
+              target: "./lib/db",
               from: "./app",
-              message: "lib/weather/ must not depend on the app layer.",
+              message: "lib/db/ must not depend on the app layer.",
             },
             {
-              target: "./components/ui",
-              from: "./app/components",
+              target: "./components",
+              from: "./lib/db",
               message:
-                "components/ui/ takes primitive props and knows nothing about the weather domain.",
+                "components/ must not import the database client. Read data in server components or dedicated data modules.",
             },
           ],
         },
@@ -60,23 +39,30 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ["lib/weather/**/*.ts"],
+    files: ["lib/db/**/*.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
         {
           patterns: [
-            { group: ["react", "react/*", "react-dom", "react-dom/*"], message: "lib/weather/ is framework-free." },
-            { group: ["next", "next/*"], message: "lib/weather/ is framework-free." },
-            { group: ["@/components/*", "@/app/*"], message: "lib/weather/ must not depend on UI or app layers." },
+            {
+              group: ["react", "react/*", "react-dom", "react-dom/*"],
+              message: "lib/db/ is framework-free.",
+            },
+            {
+              group: ["next", "next/*"],
+              message: "lib/db/ is framework-free aside from server-only.",
+            },
+            {
+              group: ["@/components/*", "@/app/*"],
+              message: "lib/db/ must not depend on UI or app layers.",
+            },
           ],
         },
       ],
     },
   },
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",

@@ -1,8 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
-    "app/**/{page,layout,route,providers}.{ts,tsx}",
-    "app/globals.css"
+    "app/**/{page,layout,route}.{ts,tsx}",
+    "app/globals.css",
+    "lib/db/client.ts"
   ],
-  "project": ["{app,components,lib}/**/*.{ts,tsx,css}"]
+  "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }

@@ -1,16 +1,13 @@
-'use client';
-
-import { Search } from './components/Search/Search';
-import { WeatherBody } from './components/WeatherBody/WeatherBody';
-import { useWeatherSearch } from './useWeatherSearch/useWeatherSearch';
+import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
+import { APP_NAME, UPDATED_PLACEHOLDER } from './constants';
 
 const Home = () => {
-  const { query, selectedCity, setQuery, selectCity } = useWeatherSearch();
-
   return (
-    <main className="grid min-h-dvh grid-cols-1 text-foreground lg:grid-cols-[20rem_minmax(0,1fr)]">
-      <Search query={query} onQueryChange={setQuery} onSelect={selectCity} />
-      <WeatherBody city={selectedCity} />
+    <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-3 px-6 py-16">
+      <PageTitle as="h1" className="text-4xl tracking-tight">
+        {APP_NAME}
+      </PageTitle>
+      <p className="text-muted">{UPDATED_PLACEHOLDER}</p>
     </main>
   );
 };

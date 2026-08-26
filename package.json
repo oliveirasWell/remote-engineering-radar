@@ -1,5 +1,5 @@
 {
-  "name": "dev-pro-weather",
+  "name": "remote-engineering-radar",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "cypress run",
+    "ingest": "tsx scripts/ingest.ts",
     "deadcode": "knip",
     "circular": "madge --circular --extensions ts,tsx .",
     "boundaries": "bash scripts/check-boundaries.sh",
@@ -24,16 +24,15 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@tanstack/react-query": "5.101.4",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
+    "drizzle-orm": "0.45.2",
     "next": "16.3.1",
+    "postgres": "3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "0.0.1",
-    "tailwind-merge": "3.6.0",
-    "weather-icons": "1.3.2",
-    "zod": "4.4.3"
+    "tailwind-merge": "3.6.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
@@ -45,7 +44,6 @@
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "4.7.0",
     "babel-plugin-react-compiler": "1.0.0",
-    "cypress": "15.21.0",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.1",
     "eslint-import-resolver-typescript": "4.4.5",
@@ -58,6 +56,7 @@
     "prettier": "3.9.6",
     "prettier-plugin-tailwindcss": "0.8.1",
     "tailwindcss": "4.3.3",
+    "tsx": "4.23.12",
     "typescript": "5.9.3",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.1.11"
