@@ -8,7 +8,7 @@ Execution order: `001` → `002` → `003` → … → `013` (see project brief)
 Completed:
 
 - [SPEC-001](001-repository-infrastructure.md) — repository and infrastructure
-- [SPEC-002](002-job-domain-model.md) — job domain model (in progress on this branch until merged)
+- [SPEC-002](002-job-domain-model.md) — job domain model
 
 ---
 
