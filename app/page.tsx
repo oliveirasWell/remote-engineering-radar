@@ -7,6 +7,7 @@ import {
 } from '@/lib/report/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import { getHomeReport } from '@/lib/report/get-home-report';
+import Link from 'next/link';
 import { APP_NAME } from './constants';
 import { HOME_SECTIONS } from './home-constants';
 
@@ -23,6 +24,20 @@ const Home = async () => {
           {APP_NAME}
         </PageTitle>
         <p className="text-muted">{formatUpdatedLabel(report.updatedAt)}</p>
+        <nav className="flex gap-4 text-sm">
+          <Link
+            href="/jobs"
+            className="text-accent underline-offset-2 hover:underline"
+          >
+            Jobs
+          </Link>
+          <Link
+            href="/companies"
+            className="text-accent underline-offset-2 hover:underline"
+          >
+            Companies
+          </Link>
+        </nav>
         {report.errorMessage ? (
           <p className="text-sm text-accent" role="alert">
             {report.errorMessage}

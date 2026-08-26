@@ -17,6 +17,7 @@ Completed:
 - [SPEC-008](008-deduplication.md) — deduplication
 - [SPEC-009](009-company-hiring-signals.md) — company hiring signals
 - [SPEC-010](010-public-report.md) — public report homepage
+- [SPEC-011](011-jobs-page.md) — jobs page
 
 ---
 
