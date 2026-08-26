@@ -11,7 +11,8 @@
     "lib/deduplication/**/*.ts",
     "lib/hiring-signals/**/*.ts",
     "lib/report/**/*.ts",
-    "components/report/**/*.{ts,tsx}"
+    "components/report/**/*.{ts,tsx}",
+    "lib/ingestion/**/*.ts"
   ],
   "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }

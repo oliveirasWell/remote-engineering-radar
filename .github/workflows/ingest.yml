@@ -16,6 +16,12 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm db:migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       - run: pnpm ingest
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GREENHOUSE_BOARD_TOKENS: ${{ secrets.GREENHOUSE_BOARD_TOKENS }}
+          ASHBY_BOARD_NAMES: ${{ secrets.ASHBY_BOARD_NAMES }}

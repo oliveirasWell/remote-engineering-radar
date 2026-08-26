@@ -19,6 +19,7 @@ Completed:
 - [SPEC-010](010-public-report.md) — public report homepage
 - [SPEC-011](011-jobs-page.md) — jobs page
 - [SPEC-012](012-company-page.md) — companies page
+- [SPEC-013](013-automated-ingestion.md) — automated ingestion
 
 ---
 

@@ -53,6 +53,14 @@ export const createHiringSignalsRepository = (db: Db) => ({
     return rows.map(toHiringSignal);
   },
 
+  deleteByCompanyId: async (companyId: string): Promise<number> => {
+    const deleted = await db
+      .delete(hiringSignals)
+      .where(eq(hiringSignals.companyId, companyId))
+      .returning();
+    return deleted.length;
+  },
+
   deleteById: async (id: string): Promise<boolean> => {
     const deleted = await db
       .delete(hiringSignals)
