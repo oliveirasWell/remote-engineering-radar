@@ -4,7 +4,8 @@
     "app/**/{page,layout,route}.{ts,tsx}",
     "app/globals.css",
     "lib/db/client.ts",
-    "lib/db/repositories/*.ts"
+    "lib/db/repositories/*.ts",
+    "lib/sources/**/*.ts"
   ],
   "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }

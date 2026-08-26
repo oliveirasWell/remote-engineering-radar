@@ -9,6 +9,7 @@ Completed:
 
 - [SPEC-001](001-repository-infrastructure.md) — repository and infrastructure
 - [SPEC-002](002-job-domain-model.md) — job domain model
+- [SPEC-003](003-greenhouse-adapter.md) — Greenhouse adapter
 
 ---
 

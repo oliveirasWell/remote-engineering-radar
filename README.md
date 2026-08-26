@@ -73,4 +73,4 @@ The public site primarily reads data. Crawling does not run on Vercel.
 ## Specs
 
 Implementation follows eval-driven specs under [`specs/`](specs/). Current focus:
-[SPEC-002](specs/002-job-domain-model.md).
+[SPEC-003](specs/003-greenhouse-adapter.md).

@@ -1,0 +1,14 @@
+{
+  "jobs": [
+    {
+      "id": 5001,
+      "title": "Staff Software Engineer",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/5001",
+      "company_name": "Acme Robotics",
+      "location": { "name": "Remote - Americas" },
+      "first_published": "2026-08-10T08:00:00-04:00",
+      "content": "&lt;p&gt;Lead TypeScript platform work.&lt;/p&gt;"
+    }
+  ],
+  "meta": { "total": 3 }
+}
