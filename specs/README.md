@@ -16,6 +16,7 @@ Completed:
 - [SPEC-007](007-job-scoring.md) — job scoring
 - [SPEC-008](008-deduplication.md) — deduplication
 - [SPEC-009](009-company-hiring-signals.md) — company hiring signals
+- [SPEC-010](010-public-report.md) — public report homepage
 
 ---
 

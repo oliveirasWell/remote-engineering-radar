@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type { Job, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
 import { jobs } from '../schema/jobs';
@@ -76,6 +76,47 @@ export const createJobsRepository = (db: Db) => ({
       .select()
       .from(jobs)
       .where(eq(jobs.companyId, companyId));
+    return rows.map(toJob);
+  },
+
+  listActiveByScore: async (options?: {
+    limit?: number;
+    minimumScore?: number;
+    technology?: string;
+    seniority?: string;
+    remotePolicy?: string;
+    location?: string;
+  }): Promise<Job[]> => {
+    const filters = [eq(jobs.isActive, true)];
+
+    if (options?.minimumScore !== undefined) {
+      filters.push(gte(jobs.score, options.minimumScore));
+    }
+    if (options?.seniority) {
+      filters.push(eq(jobs.seniority, options.seniority));
+    }
+    if (options?.remotePolicy) {
+      filters.push(eq(jobs.remotePolicy, options.remotePolicy));
+    }
+    if (options?.location) {
+      filters.push(sql`${jobs.location} ilike ${`%${options.location}%`}`);
+    }
+    if (options?.technology) {
+      filters.push(
+        sql`${jobs.technologies} @> ${JSON.stringify([options.technology])}::jsonb`,
+      );
+    }
+
+    const query = db
+      .select()
+      .from(jobs)
+      .where(and(...filters))
+      .orderBy(desc(jobs.score), desc(jobs.postedAt));
+
+    const rows =
+      options?.limit !== undefined
+        ? await query.limit(options.limit)
+        : await query;
     return rows.map(toJob);
   },
 

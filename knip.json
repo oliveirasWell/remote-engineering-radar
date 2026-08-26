@@ -9,7 +9,9 @@
     "lib/classification/**/*.ts",
     "lib/scoring/**/*.ts",
     "lib/deduplication/**/*.ts",
-    "lib/hiring-signals/**/*.ts"
+    "lib/hiring-signals/**/*.ts",
+    "lib/report/**/*.ts",
+    "components/report/**/*.{ts,tsx}"
   ],
   "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }

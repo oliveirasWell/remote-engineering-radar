@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq, gt } from 'drizzle-orm';
 import type { Company, NewCompany } from '@/lib/companies/types';
 import type { Db } from '../client';
 import { companies } from '../schema/companies';
@@ -47,6 +47,24 @@ export const createCompaniesRepository = (db: Db) => ({
       .from(companies)
       .where(eq(companies.slug, slug));
     return row ? toCompany(row) : null;
+  },
+
+  listByHiringScore: async (options?: {
+    limit?: number;
+    minimumHiringScore?: number;
+  }): Promise<Company[]> => {
+    const minimum = options?.minimumHiringScore ?? 0;
+    const query = db
+      .select()
+      .from(companies)
+      .where(gt(companies.hiringScore, minimum))
+      .orderBy(desc(companies.hiringScore), desc(companies.updatedAt));
+
+    const rows =
+      options?.limit !== undefined
+        ? await query.limit(options.limit)
+        : await query;
+    return rows.map(toCompany);
   },
 
   updateHiringScore: async (
