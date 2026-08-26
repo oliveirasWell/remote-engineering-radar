@@ -16,6 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest": "tsx scripts/ingest.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
     "deadcode": "knip",
     "circular": "madge --circular --extensions ts,tsx .",
     "boundaries": "bash scripts/check-boundaries.sh",
@@ -35,6 +37,7 @@
     "tailwind-merge": "3.6.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.7",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "6.10.0",
@@ -44,6 +47,7 @@
     "@types/react-dom": "19.2.4",
     "@vitejs/plugin-react": "4.7.0",
     "babel-plugin-react-compiler": "1.0.0",
+    "drizzle-kit": "0.31.10",
     "eslint": "9.39.5",
     "eslint-config-next": "16.3.1",
     "eslint-import-resolver-typescript": "4.4.5",

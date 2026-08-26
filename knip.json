@@ -3,7 +3,9 @@
   "entry": [
     "app/**/{page,layout,route}.{ts,tsx}",
     "app/globals.css",
-    "lib/db/client.ts"
+    "lib/db/client.ts",
+    "lib/db/repositories/*.ts",
+    "drizzle.config.ts"
   ],
   "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }

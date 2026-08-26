@@ -32,28 +32,31 @@ cp .env.example .env.local
 Set `DATABASE_URL` in `.env.local` to your Postgres connection string, then:
 
 ```bash
+pnpm db:migrate
 pnpm dev
 ```
 
 Open http://localhost:3000.
 
 `DATABASE_URL` must not use a `NEXT_PUBLIC_` prefix — secrets stay server-side.
-Unit tests for the connection layer do not require a live database.
+Repository tests use in-memory PGlite and do not require a live Supabase database.
 
 ## Commands
 
-| Command           | Purpose                                                               |
-| ----------------- | --------------------------------------------------------------------- |
-| `pnpm dev`        | Start the development server                                          |
-| `pnpm build`      | Create a production build                                             |
-| `pnpm start`      | Start the production server                                           |
-| `pnpm lint`       | Run ESLint                                                            |
-| `pnpm typecheck`  | Run TypeScript without emitting files                                 |
-| `pnpm test`       | Run the Vitest suite                                                  |
-| `pnpm test:watch` | Run Vitest in watch mode                                              |
-| `pnpm ingest`     | Run the ingestion entrypoint (stub until SPEC-013)                    |
-| `pnpm check`      | Run lint, typecheck, and unit tests                                   |
-| `pnpm quality`    | Run check, build, dead-code, circular-dependency, and boundary checks |
+| Command            | Purpose                                                               |
+| ------------------ | --------------------------------------------------------------------- |
+| `pnpm dev`         | Start the development server                                          |
+| `pnpm build`       | Create a production build                                             |
+| `pnpm start`       | Start the production server                                           |
+| `pnpm lint`        | Run ESLint                                                            |
+| `pnpm typecheck`   | Run TypeScript without emitting files                                 |
+| `pnpm test`        | Run the Vitest suite                                                  |
+| `pnpm test:watch`  | Run Vitest in watch mode                                              |
+| `pnpm ingest`      | Run the ingestion entrypoint (stub until SPEC-013)                    |
+| `pnpm db:generate` | Generate SQL migrations from the Drizzle schema                       |
+| `pnpm db:migrate`  | Apply migrations to `DATABASE_URL`                                    |
+| `pnpm check`       | Run lint, typecheck, and unit tests                                   |
+| `pnpm quality`     | Run check, build, dead-code, circular-dependency, and boundary checks |
 
 ## Architecture
 
@@ -70,4 +73,4 @@ The public site primarily reads data. Crawling does not run on Vercel.
 ## Specs
 
 Implementation follows eval-driven specs under [`specs/`](specs/). Current focus:
-[SPEC-001](specs/001-repository-infrastructure.md).
+[SPEC-002](specs/002-job-domain-model.md).

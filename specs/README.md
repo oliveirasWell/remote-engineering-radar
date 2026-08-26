@@ -3,7 +3,12 @@
 Eval-driven build, executed **one spec at a time**. All code, comments, test names,
 commit messages, and documentation are in **English**.
 
-Execution order: `001` → `002` → … → `013` (see project brief).
+Execution order: `001` → `002` → `003` → … → `013` (see project brief).
+
+Completed:
+
+- [SPEC-001](001-repository-infrastructure.md) — repository and infrastructure
+- [SPEC-002](002-job-domain-model.md) — job domain model (in progress on this branch until merged)
 
 ---
 

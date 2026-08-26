@@ -1,25 +1,29 @@
 import 'server-only';
 
 import { drizzle } from 'drizzle-orm/postgres-js';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
+import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import postgres from 'postgres';
 import { DATABASE_URL_ENV, MISSING_DATABASE_URL_MESSAGE } from './constants';
+import * as schema from './schema';
 
-export type Db = ReturnType<typeof drizzle>;
+export type Db =
+  PostgresJsDatabase<typeof schema> | PgliteDatabase<typeof schema>;
 
 export const createDb = (
   connectionString = process.env[DATABASE_URL_ENV],
-): Db => {
+): PostgresJsDatabase<typeof schema> => {
   if (!connectionString) {
     throw new Error(MISSING_DATABASE_URL_MESSAGE);
   }
 
   const client = postgres(connectionString, { prepare: false });
-  return drizzle(client);
+  return drizzle(client, { schema });
 };
 
-let dbSingleton: Db | undefined;
+let dbSingleton: PostgresJsDatabase<typeof schema> | undefined;
 
-export const getDb = (): Db => {
+export const getDb = (): PostgresJsDatabase<typeof schema> => {
   if (!dbSingleton) {
     dbSingleton = createDb();
   }
