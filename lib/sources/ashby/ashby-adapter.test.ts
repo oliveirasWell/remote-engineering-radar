@@ -45,6 +45,15 @@ describe('normalizeAshbyJob', () => {
       ),
     ).toBeNull();
   });
+
+  it('rejects non-HTTPS job URLs', () => {
+    expect(
+      normalizeAshbyJob(
+        { id: 'unsafe', title: 'Engineer', jobUrl: 'javascript:alert(1)' },
+        BOARD_NAME,
+      ),
+    ).toBeNull();
+  });
 });
 
 describe('createAshbyAdapter', () => {

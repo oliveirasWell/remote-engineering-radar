@@ -1,4 +1,5 @@
 import type { JobSource, NormalizedJob } from '../types';
+import { fetchWithRetry, readJsonResponse } from '../fetch-json';
 import { ASHBY_API_BASE_URL, ASHBY_SOURCE_NAME } from './constants';
 import {
   normalizeAshbyJob,
@@ -36,15 +37,16 @@ const fetchJobsPage = async (
   cursor: string | undefined,
   fetchImpl: typeof fetch,
 ): Promise<AshbyJobsPage> => {
-  const response = await fetchImpl(buildBoardUrl(boardName, cursor));
+  const response = await fetchWithRetry(
+    buildBoardUrl(boardName, cursor),
+    fetchImpl,
+  );
 
   if (!response.ok) {
-    throw new Error(
-      `Ashby request failed for board "${boardName}": ${response.status}`,
-    );
+    throw new Error(`Ashby request failed: ${response.status}`);
   }
 
-  return (await response.json()) as AshbyJobsPage;
+  return readJsonResponse<AshbyJobsPage>(response);
 };
 
 const fetchBoardJobs = async (
@@ -77,6 +79,10 @@ const fetchBoardJobs = async (
 
     cursor = nextCursor;
     pageCount += 1;
+  }
+
+  if (pageCount === 50) {
+    throw new Error('Ashby pagination limit reached');
   }
 
   return normalized;

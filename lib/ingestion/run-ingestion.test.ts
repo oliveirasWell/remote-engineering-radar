@@ -79,4 +79,45 @@ describe('runIngestion', () => {
     expect(jobs).toHaveLength(1);
     expect(jobs[0]?.sourceJobId).toBe('42');
   });
+
+  it('deactivates jobs missing from a successful source fetch', async () => {
+    const db = await createTestDb();
+    let includeOldJob = true;
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => [
+        makeJob({
+          source: 'greenhouse',
+          sourceJobId: 'current',
+          title: 'Senior React Engineer',
+          url: 'https://example.com/jobs/current',
+        }),
+        ...(includeOldJob
+          ? [
+              makeJob({
+                source: 'greenhouse',
+                sourceJobId: 'old',
+                title: 'Frontend Engineer',
+                url: 'https://example.com/jobs/old',
+              }),
+            ]
+          : []),
+      ],
+    };
+
+    await runIngestion({ db, sources: [source] });
+    includeOldJob = false;
+    await runIngestion({ db, sources: [source] });
+
+    const jobs = await createJobsRepository(db).listByCompanyId(
+      (await createJobsRepository(db).findBySourceJobId(
+        'greenhouse',
+        'current',
+      ))!.companyId,
+    );
+    expect(jobs.find((job) => job.sourceJobId === 'old')?.isActive).toBe(false);
+    expect(jobs.find((job) => job.sourceJobId === 'current')?.isActive).toBe(
+      true,
+    );
+  });
 });

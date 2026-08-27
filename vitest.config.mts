@@ -8,7 +8,9 @@ const vitestConfig = defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    passWithNoTests: true,
+    passWithNoTests: false,
+    testTimeout: 15000,
+    hookTimeout: 15000,
     setupFiles: ['./test/setup.ts'],
     include: ['{app,components,lib}/**/*.test.{ts,tsx}'],
     alias: {

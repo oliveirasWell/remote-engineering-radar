@@ -6,7 +6,7 @@ export default defineConfig({
   schema: './lib/db/schema/index.ts',
   out: './drizzle',
   dbCredentials: {
-    // generate does not connect; migrate requires a real DATABASE_URL
-    url: process.env[DATABASE_URL_ENV] ?? 'postgres://localhost:5432/radar',
+    // generate does not connect; migrate fails if the URL is not provided.
+    url: process.env[DATABASE_URL_ENV] ?? '',
   },
 });

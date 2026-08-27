@@ -1,5 +1,6 @@
 import { stripHtml } from '../strip-html';
 import type { NormalizedJob } from '../types';
+import { isSafeExternalUrl } from '../../urls/external-url';
 import { ASHBY_SOURCE_NAME } from './constants';
 
 export type AshbyJobRecord = {
@@ -87,7 +88,7 @@ export const normalizeAshbyJob = (
   const title = asString(record.title);
   const url = asString(record.jobUrl) ?? asString(record.applyUrl);
 
-  if (!sourceJobId || !title || !url) {
+  if (!sourceJobId || !title || !url || !isSafeExternalUrl(url)) {
     return null;
   }
 

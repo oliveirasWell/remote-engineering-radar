@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "format": "prettier --write .",
-    "lint": "eslint",
+    "lint": "eslint --max-warnings=0",
+    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -21,7 +22,7 @@
     "deadcode": "knip",
     "circular": "madge --circular --extensions ts,tsx .",
     "boundaries": "bash scripts/check-boundaries.sh",
-    "check": "pnpm lint && pnpm typecheck && pnpm test",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
     "quality": "pnpm check && pnpm build && pnpm deadcode && pnpm circular && pnpm boundaries",
     "prepare": "husky"
   },

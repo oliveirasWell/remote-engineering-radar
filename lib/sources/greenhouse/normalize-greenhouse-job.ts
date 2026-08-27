@@ -1,5 +1,6 @@
 import { stripHtml } from '../strip-html';
 import type { NormalizedJob } from '../types';
+import { isSafeExternalUrl } from '../../urls/external-url';
 import { GREENHOUSE_SOURCE_NAME } from './constants';
 
 export { stripHtml } from '../strip-html';
@@ -69,7 +70,7 @@ export const normalizeGreenhouseJob = (
   const title = asString(record.title);
   const url = asString(record.absolute_url);
 
-  if (!sourceJobId || !title || !url) {
+  if (!sourceJobId || !title || !url || !isSafeExternalUrl(url)) {
     return null;
   }
 

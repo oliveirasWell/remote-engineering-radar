@@ -2,6 +2,7 @@ import {
   boolean,
   integer,
   jsonb,
+  index,
   pgTable,
   text,
   timestamp,
@@ -46,6 +47,12 @@ export const jobs = pgTable(
     unique('jobs_source_source_job_id_unique').on(
       table.source,
       table.sourceJobId,
+    ),
+    index('jobs_company_id_idx').on(table.companyId),
+    index('jobs_active_score_posted_at_idx').on(
+      table.isActive,
+      table.score,
+      table.postedAt,
     ),
   ],
 );

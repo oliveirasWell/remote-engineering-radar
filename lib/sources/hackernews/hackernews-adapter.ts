@@ -1,4 +1,5 @@
 import type { JobSource, NormalizedJob } from '../types';
+import { fetchWithRetry, readJsonResponse } from '../fetch-json';
 import {
   HACKER_NEWS_SOURCE_NAME,
   HN_ALGOLIA_API_BASE_URL,
@@ -32,11 +33,11 @@ const fetchJson = async (
   url: string,
   fetchImpl: typeof fetch,
 ): Promise<AlgoliaSearchResponse> => {
-  const response = await fetchImpl(url);
+  const response = await fetchWithRetry(url, fetchImpl);
   if (!response.ok) {
     throw new Error(`Hacker News request failed: ${response.status}`);
   }
-  return (await response.json()) as AlgoliaSearchResponse;
+  return readJsonResponse<AlgoliaSearchResponse>(response);
 };
 
 const findLatestWhoIsHiringStoryId = async (
@@ -97,6 +98,10 @@ const fetchStoryComments = async (
     }
 
     page += 1;
+  }
+
+  if (page === 50 && page < nbPages) {
+    throw new Error('Hacker News pagination limit reached');
   }
 
   return normalized;

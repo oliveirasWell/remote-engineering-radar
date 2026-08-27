@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, notInArray, sql } from 'drizzle-orm';
 import type { Job, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
 import { jobs } from '../schema/jobs';
@@ -131,19 +131,13 @@ export const createJobsRepository = (db: Db) => {
     },
 
     upsertBySourceJobId: async (input: NewJob): Promise<Job> => {
-      const existing = await repository.findBySourceJobId(
-        input.source,
-        input.sourceJobId,
-      );
-
-      if (!existing) {
-        return repository.create(input);
-      }
-
       const now = new Date();
       const [row] = await db
-        .update(jobs)
-        .set({
+        .insert(jobs)
+        .values({
+          companyId: input.companyId,
+          source: input.source,
+          sourceJobId: input.sourceJobId,
           title: input.title,
           url: input.url,
           location: input.location ?? null,
@@ -151,13 +145,32 @@ export const createJobsRepository = (db: Db) => {
           description: input.description ?? null,
           technologies: input.technologies ?? [],
           seniority: input.seniority ?? null,
-          score: input.score ?? existing.score,
-          postedAt: input.postedAt ?? existing.postedAt,
-          lastSeenAt: now,
-          isActive: true,
-          updatedAt: now,
+          score: input.score ?? 0,
+          postedAt: input.postedAt ?? null,
+          firstSeenAt: input.firstSeenAt ?? now,
+          lastSeenAt: input.lastSeenAt ?? now,
+          isActive: input.isActive ?? true,
         })
-        .where(eq(jobs.id, existing.id))
+        .onConflictDoUpdate({
+          target: [jobs.source, jobs.sourceJobId],
+          set: {
+            companyId: input.companyId,
+            title: input.title,
+            url: input.url,
+            location: input.location ?? null,
+            remotePolicy: input.remotePolicy ?? null,
+            description: input.description ?? null,
+            technologies: input.technologies ?? [],
+            seniority: input.seniority ?? null,
+            ...(input.score === undefined ? {} : { score: input.score }),
+            ...(input.postedAt === undefined
+              ? {}
+              : { postedAt: input.postedAt }),
+            lastSeenAt: now,
+            isActive: input.isActive ?? true,
+            updatedAt: now,
+          },
+        })
         .returning();
 
       if (!row) {
@@ -165,6 +178,23 @@ export const createJobsRepository = (db: Db) => {
       }
 
       return toJob(row);
+    },
+
+    deactivateMissingBySource: async (
+      source: string,
+      sourceJobIds: string[],
+    ): Promise<Job[]> => {
+      const conditions = [eq(jobs.source, source), eq(jobs.isActive, true)];
+      if (sourceJobIds.length > 0) {
+        conditions.push(notInArray(jobs.sourceJobId, sourceJobIds));
+      }
+
+      const rows = await db
+        .update(jobs)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(and(...conditions))
+        .returning();
+      return rows.map(toJob);
     },
 
     deactivate: async (id: string): Promise<Job | null> => {

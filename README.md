@@ -39,6 +39,8 @@ pnpm dev
 Open http://localhost:3000.
 
 `DATABASE_URL` must not use a `NEXT_PUBLIC_` prefix — secrets stay server-side.
+Production migrations should use a separate, protected `DATABASE_MIGRATION_URL`
+secret with permissions limited to schema changes.
 Repository tests use in-memory PGlite and do not require a live Supabase database.
 
 ## Commands
@@ -52,7 +54,7 @@ Repository tests use in-memory PGlite and do not require a live Supabase databas
 | `pnpm typecheck`   | Run TypeScript without emitting files                                 |
 | `pnpm test`        | Run the Vitest suite                                                  |
 | `pnpm test:watch`  | Run Vitest in watch mode                                              |
-| `pnpm ingest`      | Run the ingestion entrypoint (stub until SPEC-013)                    |
+| `pnpm ingest`      | Fetch and persist jobs from configured sources                        |
 | `pnpm db:generate` | Generate SQL migrations from the Drizzle schema                       |
 | `pnpm db:migrate`  | Apply migrations to `DATABASE_URL`                                    |
 | `pnpm check`       | Run lint, typecheck, and unit tests                                   |

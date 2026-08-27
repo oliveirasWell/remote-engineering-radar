@@ -11,3 +11,6 @@ export const JOBS_PAGE_COPY = {
   notFound: 'This job is inactive or was not found.',
   backToJobs: 'Back to jobs',
 } as const;
+
+export const MAX_JOB_FILTER_LENGTH = 100;
+export const JOBS_PAGE_LIMIT = 100;

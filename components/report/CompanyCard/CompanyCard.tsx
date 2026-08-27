@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReportCompanyCard } from '@/lib/report/types';
+import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import { COMPANY_CARD_COPY } from '../constants';
 
 type CompanyCardProps = {
@@ -31,7 +32,7 @@ export const CompanyCard = ({ company }: CompanyCardProps) => {
         </div>
       ) : null}
       <p className="mt-3">
-        {company.websiteUrl ? (
+        {isSafeExternalUrl(company.websiteUrl) ? (
           <a
             href={company.websiteUrl}
             target="_blank"

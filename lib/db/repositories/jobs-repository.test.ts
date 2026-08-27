@@ -68,4 +68,64 @@ describe('createJobsRepository', () => {
       }),
     ).rejects.toThrow();
   });
+
+  it('atomically upserts a job and updates its company', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const firstCompany = await companiesRepository.create(TEST_COMPANY);
+    const secondCompany = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'other-company',
+      name: 'Other Company',
+    });
+
+    const first = await jobsRepository.upsertBySourceJobId({
+      ...TEST_JOB,
+      companyId: firstCompany.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const second = await jobsRepository.upsertBySourceJobId({
+      ...TEST_JOB,
+      companyId: secondCompany.id,
+      title: 'Updated Engineer',
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    expect(second.id).toBe(first.id);
+    expect(second.companyId).toBe(secondCompany.id);
+    expect(second.title).toBe('Updated Engineer');
+    await expect(jobsRepository.listActiveByScore()).resolves.toHaveLength(1);
+  });
+
+  it('deactivates only jobs missing from a successful source snapshot', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'missing-job',
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'present-job',
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const deactivated = await jobsRepository.deactivateMissingBySource(
+      TEST_JOB.source,
+      ['present-job'],
+    );
+
+    expect(deactivated).toHaveLength(1);
+    expect(deactivated[0]?.sourceJobId).toBe('missing-job');
+    await expect(
+      jobsRepository.findBySourceJobId(TEST_JOB.source, 'present-job'),
+    ).resolves.toMatchObject({ isActive: true });
+  });
 });

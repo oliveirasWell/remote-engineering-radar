@@ -1,9 +1,9 @@
-import { createDb } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
-import { REPORT_ERROR_MESSAGE } from './constants';
+import { COMPANIES_PAGE_LIMIT, REPORT_ERROR_MESSAGE } from './constants';
 import type { ReportCompanyCard, ReportJobCard } from './types';
 
 export type CompaniesPageItem = ReportCompanyCard & {
@@ -18,12 +18,13 @@ export type CompaniesPageData = {
 
 export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
   try {
-    const db = createDb();
+    const db = getDb();
     const companiesRepository = createCompaniesRepository(db);
     const hiringSignalsRepository = createHiringSignalsRepository(db);
     const jobsRepository = createJobsRepository(db);
 
     const companies = await companiesRepository.listByHiringScore({
+      limit: COMPANIES_PAGE_LIMIT,
       minimumHiringScore: 0,
     });
 

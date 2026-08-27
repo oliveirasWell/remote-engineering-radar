@@ -8,6 +8,7 @@ import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
 import { scoreClassifiedJob } from '@/lib/scoring/score-job';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
+import { isSafeExternalUrl } from '@/lib/urls/external-url';
 
 export type IngestionLogger = {
   info: (message: string) => void;
@@ -74,14 +75,16 @@ export const runIngestion = async (options: {
     }
   }
 
-  const enriched = fetchedJobs.map(enrichJob);
+  const enriched = fetchedJobs
+    .filter((job) => isSafeExternalUrl(job.url))
+    .map(enrichJob);
   const { jobs: uniqueJobs } = deduplicateJobs(enriched);
 
   const companiesRepository = createCompaniesRepository(options.db);
   const jobsRepository = createJobsRepository(options.db);
   const hiringSignalsRepository = createHiringSignalsRepository(options.db);
 
-  const companyIds = new Map<string, string>();
+  const companyIds = new Set<string>();
   let persistedJobs = 0;
 
   for (const job of uniqueJobs) {
@@ -89,10 +92,12 @@ export const runIngestion = async (options: {
     const company = await companiesRepository.upsertBySlug({
       name: job.company.name,
       slug,
-      websiteUrl: job.company.websiteUrl,
+      websiteUrl: isSafeExternalUrl(job.company.websiteUrl)
+        ? job.company.websiteUrl
+        : undefined,
       source: job.source,
     });
-    companyIds.set(slug, company.id);
+    companyIds.add(company.id);
 
     const scoredJob = job as NormalizedJob & { score: number };
     await jobsRepository.upsertBySourceJobId({
@@ -113,11 +118,28 @@ export const runIngestion = async (options: {
     persistedJobs += 1;
   }
 
+  for (const sourceResult of sourceResults) {
+    if (sourceResult.error) {
+      continue;
+    }
+
+    const sourceJobIds = fetchedJobs
+      .filter((job) => job.source === sourceResult.name)
+      .map((job) => job.sourceJobId);
+    const deactivatedJobs = await jobsRepository.deactivateMissingBySource(
+      sourceResult.name,
+      sourceJobIds,
+    );
+    for (const job of deactivatedJobs) {
+      companyIds.add(job.companyId);
+    }
+  }
+
   let companiesUpdated = 0;
-  for (const [slug, companyId] of companyIds) {
+  for (const companyId of companyIds) {
     const companyJobs = await jobsRepository.listByCompanyId(companyId);
     const detection = detectHiringSignals({
-      companyName: slug,
+      companyName: companyId,
       jobs: companyJobs.map((job) => ({
         title: job.title,
         technologies: job.technologies,
@@ -127,17 +149,14 @@ export const runIngestion = async (options: {
       })),
     });
 
-    await hiringSignalsRepository.deleteByCompanyId(companyId);
-    for (const signal of detection.signals) {
-      await hiringSignalsRepository.create({
+    await hiringSignalsRepository.replaceForCompany(
+      companyId,
+      detection.signals.map((signal) => ({
         companyId,
         type: signal.type,
         description: signal.description,
         score: signal.score,
-      });
-    }
-    await companiesRepository.updateHiringScore(
-      companyId,
+      })),
       detection.hiringScore,
     );
     companiesUpdated += 1;

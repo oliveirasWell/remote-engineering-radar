@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import type { HiringSignal, NewHiringSignal } from '@/lib/hiring-signals/types';
 import type { Db } from '../client';
+import { companies } from '../schema/companies';
 import { hiringSignals } from '../schema/hiring-signals';
 
 const toHiringSignal = (
@@ -59,6 +60,36 @@ export const createHiringSignalsRepository = (db: Db) => ({
       .where(eq(hiringSignals.companyId, companyId))
       .returning();
     return deleted.length;
+  },
+
+  replaceForCompany: async (
+    companyId: string,
+    signals: NewHiringSignal[],
+    hiringScore: number,
+  ): Promise<void> => {
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(hiringSignals)
+        .where(eq(hiringSignals.companyId, companyId));
+
+      if (signals.length > 0) {
+        await tx.insert(hiringSignals).values(
+          signals.map((input) => ({
+            companyId: input.companyId,
+            type: input.type,
+            description: input.description,
+            sourceUrl: input.sourceUrl ?? null,
+            score: input.score ?? 0,
+            detectedAt: input.detectedAt ?? new Date(),
+          })),
+        );
+      }
+
+      await tx
+        .update(companies)
+        .set({ hiringScore, updatedAt: new Date() })
+        .where(eq(companies.id, companyId));
+    });
   },
 
   deleteById: async (id: string): Promise<boolean> => {

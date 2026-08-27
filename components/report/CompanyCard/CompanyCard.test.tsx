@@ -37,4 +37,16 @@ describe('CompanyCard', () => {
       screen.getByRole('link', { name: COMPANY_CARD_COPY.viewCompany }),
     ).toHaveAttribute('href', company.websiteUrl);
   });
+
+  it('does not render an unsafe company URL', () => {
+    render(
+      <CompanyCard
+        company={{ ...company, websiteUrl: 'javascript:alert(1)' }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', { name: COMPANY_CARD_COPY.viewCompany }),
+    ).toHaveAttribute('href', '/companies');
+  });
 });

@@ -1,4 +1,4 @@
-import { createDb } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
@@ -42,7 +42,7 @@ const toJobCard = (
 
 export const getHomeReport = async (): Promise<HomeReport> => {
   try {
-    const db = createDb();
+    const db = getDb();
     const jobsRepository = createJobsRepository(db);
     const companiesRepository = createCompaniesRepository(db);
     const hiringSignalsRepository = createHiringSignalsRepository(db);

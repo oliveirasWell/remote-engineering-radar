@@ -84,22 +84,31 @@ export const createCompaniesRepository = (db: Db) => {
     },
 
     upsertBySlug: async (input: NewCompany): Promise<Company> => {
-      const existing = await repository.findBySlug(input.slug);
-      if (!existing) {
-        return repository.create(input);
-      }
-
       const [row] = await db
-        .update(companies)
-        .set({
+        .insert(companies)
+        .values({
           name: input.name,
-          websiteUrl: input.websiteUrl ?? existing.websiteUrl,
-          logoUrl: input.logoUrl ?? existing.logoUrl,
+          slug: input.slug,
+          websiteUrl: input.websiteUrl ?? null,
+          logoUrl: input.logoUrl ?? null,
           source: input.source,
-          hiringScore: input.hiringScore ?? existing.hiringScore,
-          updatedAt: new Date(),
+          hiringScore: input.hiringScore ?? 0,
         })
-        .where(eq(companies.id, existing.id))
+        .onConflictDoUpdate({
+          target: companies.slug,
+          set: {
+            name: input.name,
+            source: input.source,
+            ...(input.websiteUrl === undefined
+              ? {}
+              : { websiteUrl: input.websiteUrl }),
+            ...(input.logoUrl === undefined ? {} : { logoUrl: input.logoUrl }),
+            ...(input.hiringScore === undefined
+              ? {}
+              : { hiringScore: input.hiringScore }),
+            updatedAt: new Date(),
+          },
+        })
         .returning();
 
       if (!row) {

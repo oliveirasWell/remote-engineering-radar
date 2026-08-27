@@ -41,6 +41,15 @@ describe('normalizeGreenhouseJob', () => {
     ).toBeNull();
   });
 
+  it('rejects non-HTTPS job URLs', () => {
+    expect(
+      normalizeGreenhouseJob(
+        { id: 1, title: 'Engineer', absolute_url: 'javascript:alert(1)' },
+        BOARD_TOKEN,
+      ),
+    ).toBeNull();
+  });
+
   it('falls back to the board token for company name', () => {
     const job = normalizeGreenhouseJob(
       {

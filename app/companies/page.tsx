@@ -3,6 +3,7 @@ import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import { COMPANIES_PAGE_COPY } from './constants';
 
 export const dynamic = 'force-dynamic';
@@ -46,18 +47,20 @@ const CompaniesPage = async () => {
                   {COMPANIES_PAGE_COPY.evidence}
                 </p>
                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
-                  {company.signalSourceUrls.map((url) => (
-                    <li key={url}>
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-accent underline-offset-2 hover:underline"
-                      >
-                        {url}
-                      </a>
-                    </li>
-                  ))}
+                  {company.signalSourceUrls
+                    .filter(isSafeExternalUrl)
+                    .map((url) => (
+                      <li key={url}>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-accent underline-offset-2 hover:underline"
+                        >
+                          {url}
+                        </a>
+                      </li>
+                    ))}
                 </ul>
               </div>
             ) : null}

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import type { ReportJobCard } from '@/lib/report/types';
 import { formatRelativeTime } from '@/lib/report/format';
 import { JOB_CARD_COPY } from '../constants';
@@ -40,16 +41,18 @@ export const JobCard = ({ job }: JobCardProps) => {
           </ul>
         </div>
       ) : null}
-      <p className="mt-3">
-        <a
-          href={job.url}
-          target="_blank"
-          rel="noreferrer"
-          className="text-sm text-accent underline-offset-2 hover:underline"
-        >
-          {JOB_CARD_COPY.viewOriginal}
-        </a>
-      </p>
+      {isSafeExternalUrl(job.url) ? (
+        <p className="mt-3">
+          <a
+            href={job.url}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-accent underline-offset-2 hover:underline"
+          >
+            {JOB_CARD_COPY.viewOriginal}
+          </a>
+        </p>
+      ) : null}
     </article>
   );
 };

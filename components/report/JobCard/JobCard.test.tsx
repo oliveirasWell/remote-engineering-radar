@@ -35,4 +35,12 @@ describe('JobCard', () => {
       screen.getByRole('link', { name: JOB_CARD_COPY.viewOriginal }),
     ).toHaveAttribute('href', job.url);
   });
+
+  it('does not render an unsafe original job link', () => {
+    render(<JobCard job={{ ...job, url: 'javascript:alert(1)' }} />);
+
+    expect(
+      screen.queryByRole('link', { name: JOB_CARD_COPY.viewOriginal }),
+    ).not.toBeInTheDocument();
+  });
 });

@@ -1,4 +1,5 @@
 import type { JobSource, NormalizedJob } from '../types';
+import { fetchWithRetry, readJsonResponse } from '../fetch-json';
 import {
   GREENHOUSE_API_BASE_URL,
   GREENHOUSE_JOBS_PER_PAGE,
@@ -46,15 +47,18 @@ const fetchJobsPage = async (
   jobsPerPage: number,
   fetchImpl: typeof fetch,
 ): Promise<GreenhouseJobsPage> => {
-  const response = await fetchImpl(buildJobsUrl(boardToken, page, jobsPerPage));
+  const response = await fetchWithRetry(
+    buildJobsUrl(boardToken, page, jobsPerPage),
+    fetchImpl,
+  );
 
   if (!response.ok) {
     throw new Error(
-      `Greenhouse request failed for board "${boardToken}" (page ${page}): ${response.status}`,
+      `Greenhouse request failed (page ${page}): ${response.status}`,
     );
   }
 
-  return (await response.json()) as GreenhouseJobsPage;
+  return readJsonResponse<GreenhouseJobsPage>(response);
 };
 
 const fetchBoardJobs = async (
@@ -99,6 +103,10 @@ const fetchBoardJobs = async (
     }
 
     page += 1;
+  }
+
+  if (page > 50) {
+    throw new Error('Greenhouse pagination limit reached');
   }
 
   return normalized;

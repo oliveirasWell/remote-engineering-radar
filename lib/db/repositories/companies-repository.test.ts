@@ -34,4 +34,24 @@ describe('createCompaniesRepository', () => {
     );
     await expect(companiesRepository.findById(created.id)).resolves.toBeNull();
   });
+
+  it('upserts the same slug without creating a duplicate', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+
+    const first = await companiesRepository.upsertBySlug(TEST_COMPANY);
+    const second = await companiesRepository.upsertBySlug({
+      ...TEST_COMPANY,
+      name: 'Acme Robotics Updated',
+      websiteUrl: undefined,
+    });
+
+    expect(second.id).toBe(first.id);
+    await expect(
+      companiesRepository.findBySlug(TEST_COMPANY.slug),
+    ).resolves.toMatchObject({
+      name: 'Acme Robotics Updated',
+      websiteUrl: TEST_COMPANY.websiteUrl,
+    });
+  });
 });

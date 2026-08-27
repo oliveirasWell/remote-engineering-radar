@@ -1,4 +1,4 @@
-import { createDb } from '@/lib/db/client';
+import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
@@ -11,6 +11,7 @@ export type JobFilters = {
   remote?: string;
   location?: string;
   minimumScore?: number;
+  limit?: number;
 };
 
 export type JobsPageData = {
@@ -56,7 +57,7 @@ export const getJobsPageData = async (
   filters: JobFilters = {},
 ): Promise<JobsPageData> => {
   try {
-    const db = createDb();
+    const db = getDb();
     const jobsRepository = createJobsRepository(db);
     const companiesRepository = createCompaniesRepository(db);
 
@@ -66,6 +67,7 @@ export const getJobsPageData = async (
       remotePolicy: filters.remote,
       location: filters.location,
       minimumScore: filters.minimumScore ?? 0,
+      limit: filters.limit,
     });
 
     const companyNames = new Map<string, string>();
@@ -89,7 +91,15 @@ export const getJobsPageData = async (
 
 export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
   try {
-    const db = createDb();
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        id,
+      )
+    ) {
+      return { job: null };
+    }
+
+    const db = getDb();
     const jobsRepository = createJobsRepository(db);
     const companiesRepository = createCompaniesRepository(db);
     const job = await jobsRepository.findById(id);
