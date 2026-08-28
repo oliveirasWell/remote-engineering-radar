@@ -4,6 +4,7 @@ import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-sign
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { COMPANIES_PAGE_LIMIT, REPORT_ERROR_MESSAGE } from './constants';
+import { logReportError } from './log-report-error';
 import type { ReportCompanyCard, ReportJobCard } from './types';
 
 export type CompaniesPageItem = ReportCompanyCard & {
@@ -86,7 +87,8 @@ export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
     }
 
     return { companies: items };
-  } catch {
+  } catch (error) {
+    logReportError('companies', error);
     return { companies: [], errorMessage: REPORT_ERROR_MESSAGE };
   }
 };
