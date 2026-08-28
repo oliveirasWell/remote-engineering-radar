@@ -1,5 +1,10 @@
 allowBuilds:
+  '@prisma/engines': true
   cypress: true
   esbuild: true
+  prisma: true
   sharp: false
   unrs-resolver: false
+
+overrides:
+  deepmerge-ts: 8.0.0

@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Company {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String         @db.Text
+  slug          String         @unique(map: "companies_slug_unique") @db.Text
+  websiteUrl    String?        @map("website_url") @db.Text
+  logoUrl       String?        @map("logo_url") @db.Text
+  source        String         @db.Text
+  hiringScore   Int            @default(0) @map("hiring_score")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
+  jobs          Job[]
+  hiringSignals HiringSignal[]
+
+  @@index([hiringScore, updatedAt], map: "companies_hiring_score_updated_at_idx")
+  @@map("companies")
+}
+
+model Job {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId    String    @map("company_id") @db.Uuid
+  source       String    @db.Text
+  sourceJobId  String    @map("source_job_id") @db.Text
+  title        String    @db.Text
+  url          String    @db.Text
+  location     String?   @db.Text
+  remotePolicy String?   @map("remote_policy") @db.Text
+  description  String?   @db.Text
+  technologies Json      @default("[]") @db.JsonB
+  seniority    String?   @db.Text
+  score        Int       @default(0)
+  postedAt     DateTime? @map("posted_at") @db.Timestamptz(6)
+  firstSeenAt  DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  lastSeenAt   DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  company      Company   @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "jobs_company_id_companies_id_fk")
+
+  @@unique([source, sourceJobId], map: "jobs_source_source_job_id_unique")
+  @@index([companyId], map: "jobs_company_id_idx")
+  @@index([isActive, score, postedAt], map: "jobs_active_score_posted_at_idx")
+  @@map("jobs")
+}
+
+model HiringSignal {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId   String   @map("company_id") @db.Uuid
+  type        String   @db.Text
+  description String   @db.Text
+  sourceUrl   String?  @map("source_url") @db.Text
+  score       Int      @default(0)
+  detectedAt  DateTime @default(now()) @map("detected_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "hiring_signals_company_id_companies_id_fk")
+
+  @@index([companyId], map: "hiring_signals_company_id_idx")
+  @@map("hiring_signals")
+}

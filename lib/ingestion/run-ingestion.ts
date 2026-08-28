@@ -1,5 +1,5 @@
 import { classifyJob } from '@/lib/classification/classify-job';
-import type { Db } from '@/lib/db/client';
+import type { RootDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
@@ -50,7 +50,7 @@ const enrichJob = (job: NormalizedJob): NormalizedJob & { score: number } => {
 };
 
 export const runIngestion = async (options: {
-  db: Db;
+  db: RootDb;
   sources: JobSource[];
   logger?: IngestionLogger;
 }): Promise<IngestionResult> => {
@@ -80,13 +80,11 @@ export const runIngestion = async (options: {
     .map(enrichJob);
   const { jobs: uniqueJobs } = deduplicateJobs(enriched);
 
-  const { persistedJobs, companiesUpdated } = await options.db.transaction(
+  const { persistedJobs, companiesUpdated } = await options.db.$transaction(
     async (tx) => {
-      const transactionDb = tx as unknown as Db;
-      const companiesRepository = createCompaniesRepository(transactionDb);
-      const jobsRepository = createJobsRepository(transactionDb);
-      const hiringSignalsRepository =
-        createHiringSignalsRepository(transactionDb);
+      const companiesRepository = createCompaniesRepository(tx);
+      const jobsRepository = createJobsRepository(tx);
+      const hiringSignalsRepository = createHiringSignalsRepository(tx);
       const companyIds = new Set<string>();
       let persistedJobs = 0;
 

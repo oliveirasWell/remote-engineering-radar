@@ -1,4 +1,4 @@
-import { createDb } from '../lib/db/client';
+import { createDb, disconnectDb } from '../lib/db/client';
 import { runIngestion } from '../lib/ingestion/run-ingestion';
 import { createAshbyAdapter } from '../lib/sources/ashby/ashby-adapter';
 import { createFrontendBrAdapter } from '../lib/sources/frontendbr/frontendbr-adapter';
@@ -38,12 +38,16 @@ const main = async () => {
   ];
 
   const db = createDb();
-  const result = await runIngestion({ db, sources });
-  console.log(JSON.stringify(result, null, 2));
+  try {
+    const result = await runIngestion({ db, sources });
+    console.log(JSON.stringify(result, null, 2));
 
-  const failed = result.sources.filter((source) => source.error);
-  if (failed.length > 0) {
-    process.exitCode = 1;
+    const failed = result.sources.filter((source) => source.error);
+    if (failed.length > 0) {
+      process.exitCode = 1;
+    }
+  } finally {
+    await disconnectDb(db);
   }
 };
 

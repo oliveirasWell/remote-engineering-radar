@@ -1,4 +1,9 @@
-import { createDb, databaseSslMode } from './client';
+import { createDb, disconnectDb, getDb } from './client';
+import {
+  databasePoolConfig,
+  databaseSslMode,
+  securePrismaConnectionString,
+} from './connection-options';
 import { DATABASE_URL_ENV, MISSING_DATABASE_URL_MESSAGE } from './constants';
 
 describe('createDb', () => {
@@ -18,23 +23,59 @@ describe('createDb', () => {
     expect(() => createDb()).toThrow(MISSING_DATABASE_URL_MESSAGE);
   });
 
-  it('returns a Drizzle database instance when DATABASE_URL is provided', () => {
+  it('constructs lazily and disconnects without opening a connection', async () => {
     const db = createDb('postgres://user:pass@localhost:5432/radar');
 
     expect(db).toBeDefined();
-    expect(typeof db.select).toBe('function');
-    expect(typeof db.insert).toBe('function');
+    expect(typeof db.company.findMany).toBe('function');
+    await expect(disconnectDb(db)).resolves.toBeUndefined();
   });
 
   it('requires verified TLS for non-local database hosts', () => {
     expect(
       databaseSslMode('postgres://user:pass@db.example.com:5432/radar'),
-    ).toBe('verify-full');
+    ).toEqual({ rejectUnauthorized: true });
+    expect(databaseSslMode('postgres://user:pass@localhost:5432/radar')).toBe(
+      false,
+    );
+    expect(databaseSslMode('postgres://user:pass@127.0.0.1:5432/radar')).toBe(
+      false,
+    );
+  });
+
+  it('sets explicit production pool limits and timeouts', () => {
     expect(
-      databaseSslMode('postgres://user:pass@localhost:5432/radar'),
-    ).toBeUndefined();
+      databasePoolConfig(
+        'postgres://user:pass@db.example.com:5432/radar?sslmode=disable',
+      ),
+    ).toMatchObject({
+      max: 10,
+      connectionTimeoutMillis: 10_000,
+      idleTimeoutMillis: 20_000,
+      query_timeout: 30_000,
+      ssl: { rejectUnauthorized: true },
+    });
     expect(
-      databaseSslMode('postgres://user:pass@127.0.0.1:5432/radar'),
-    ).toBeUndefined();
+      databasePoolConfig(
+        'postgres://user:pass@db.example.com:5432/radar?sslmode=disable',
+      ).connectionString,
+    ).not.toContain('sslmode');
+    expect(
+      securePrismaConnectionString(
+        'postgres://user:pass@db.example.com:5432/radar?sslmode=disable',
+      ),
+    ).toContain('sslmode=require');
+  });
+
+  it('reuses and clears the hot-reload singleton', async () => {
+    process.env[DATABASE_URL_ENV] = 'postgres://user:pass@localhost:5432/radar';
+
+    const first = getDb();
+    expect(getDb()).toBe(first);
+    await disconnectDb();
+
+    const replacement = getDb();
+    expect(replacement).not.toBe(first);
+    await disconnectDb();
   });
 });

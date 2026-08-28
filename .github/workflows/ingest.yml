@@ -26,9 +26,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - run: pnpm db:migrate
+      - run: pnpm db:deploy
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
       - run: pnpm ingest
         env:

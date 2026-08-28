@@ -4,7 +4,7 @@ import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-sign
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
-import { sql } from 'drizzle-orm';
+import { Prisma } from '@prisma/client';
 import { runIngestion } from './run-ingestion';
 
 const makeJob = (
@@ -258,14 +258,14 @@ describe('runIngestion', () => {
       companyBefore!.id,
     );
 
-    await db.execute(sql`
+    await db.$executeRaw(Prisma.sql`
       create function reject_hiring_score() returns trigger as $$
       begin
         raise exception 'injected company score failure';
       end;
       $$ language plpgsql
     `);
-    await db.execute(sql`
+    await db.$executeRaw(Prisma.sql`
       create trigger reject_hiring_score_update
       before update of hiring_score on companies
       for each row
@@ -275,7 +275,7 @@ describe('runIngestion', () => {
     generation = 'new';
 
     await expect(runIngestion({ db, sources: [source] })).rejects.toThrow(
-      'Failed query: update "companies"',
+      'injected company score failure',
     );
 
     await expect(

@@ -1,9 +1,21 @@
-import { and, desc, eq, gte, notInArray, sql } from 'drizzle-orm';
+import { Prisma, type Job as PrismaJob } from '@prisma/client';
 import type { Job, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
-import { jobs } from '../schema/jobs';
 
-const toJob = (row: typeof jobs.$inferSelect): Job => ({
+const toTechnologies = (value: Prisma.JsonValue): string[] => {
+  if (
+    !Array.isArray(value) ||
+    !value.every((item) => typeof item === 'string')
+  ) {
+    throw new Error(
+      'Invalid jobs.technologies JSON: expected an array of strings',
+    );
+  }
+
+  return [...value];
+};
+
+const toJob = (row: PrismaJob): Job => ({
   id: row.id,
   companyId: row.companyId,
   source: row.source,
@@ -13,7 +25,7 @@ const toJob = (row: typeof jobs.$inferSelect): Job => ({
   location: row.location,
   remotePolicy: row.remotePolicy,
   description: row.description,
-  technologies: row.technologies,
+  technologies: toTechnologies(row.technologies),
   seniority: row.seniority,
   score: row.score,
   postedAt: row.postedAt,
@@ -24,193 +36,151 @@ const toJob = (row: typeof jobs.$inferSelect): Job => ({
   updatedAt: row.updatedAt,
 });
 
-export const createJobsRepository = (db: Db) => {
-  const repository = {
-    create: async (input: NewJob): Promise<Job> => {
-      const now = new Date();
-      const [row] = await db
-        .insert(jobs)
-        .values({
-          companyId: input.companyId,
-          source: input.source,
-          sourceJobId: input.sourceJobId,
-          title: input.title,
-          url: input.url,
-          location: input.location ?? null,
-          remotePolicy: input.remotePolicy ?? null,
-          description: input.description ?? null,
-          technologies: input.technologies ?? [],
-          seniority: input.seniority ?? null,
-          score: input.score ?? 0,
-          postedAt: input.postedAt ?? null,
-          firstSeenAt: input.firstSeenAt ?? now,
-          lastSeenAt: input.lastSeenAt ?? now,
-          isActive: input.isActive ?? true,
-        })
-        .returning();
+const escapeLikePattern = (value: string): string =>
+  value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
 
-      if (!row) {
-        throw new Error('Failed to create job');
-      }
+const createData = (
+  input: NewJob,
+  now: Date,
+): Prisma.JobUncheckedCreateInput => ({
+  companyId: input.companyId,
+  source: input.source,
+  sourceJobId: input.sourceJobId,
+  title: input.title,
+  url: input.url,
+  location: input.location ?? null,
+  remotePolicy: input.remotePolicy ?? null,
+  description: input.description ?? null,
+  technologies: input.technologies ?? [],
+  seniority: input.seniority ?? null,
+  score: input.score ?? 0,
+  postedAt: input.postedAt ?? null,
+  firstSeenAt: input.firstSeenAt ?? now,
+  lastSeenAt: input.lastSeenAt ?? now,
+  isActive: input.isActive ?? true,
+});
 
-      return toJob(row);
-    },
+export const createJobsRepository = (db: Db) => ({
+  create: async (input: NewJob): Promise<Job> =>
+    toJob(await db.job.create({ data: createData(input, new Date()) })),
 
-    findById: async (id: string): Promise<Job | null> => {
-      const [row] = await db.select().from(jobs).where(eq(jobs.id, id));
-      return row ? toJob(row) : null;
-    },
+  findById: async (id: string): Promise<Job | null> => {
+    const row = await db.job.findUnique({ where: { id } });
+    return row ? toJob(row) : null;
+  },
 
-    findBySourceJobId: async (
-      source: string,
-      sourceJobId: string,
-    ): Promise<Job | null> => {
-      const [row] = await db
-        .select()
-        .from(jobs)
-        .where(and(eq(jobs.source, source), eq(jobs.sourceJobId, sourceJobId)));
-      return row ? toJob(row) : null;
-    },
+  findBySourceJobId: async (
+    source: string,
+    sourceJobId: string,
+  ): Promise<Job | null> => {
+    const row = await db.job.findUnique({
+      where: { source_sourceJobId: { source, sourceJobId } },
+    });
+    return row ? toJob(row) : null;
+  },
 
-    listByCompanyId: async (companyId: string): Promise<Job[]> => {
-      const rows = await db
-        .select()
-        .from(jobs)
-        .where(eq(jobs.companyId, companyId));
-      return rows.map(toJob);
-    },
+  listByCompanyId: async (companyId: string): Promise<Job[]> =>
+    (await db.job.findMany({ where: { companyId } })).map(toJob),
 
-    listActiveByScore: async (options?: {
-      limit?: number;
-      minimumScore?: number;
-      technology?: string;
-      seniority?: string;
-      remotePolicy?: string;
-      location?: string;
-    }): Promise<Job[]> => {
-      const filters = [eq(jobs.isActive, true)];
+  listActiveByScore: async (options?: {
+    limit?: number;
+    minimumScore?: number;
+    technology?: string;
+    seniority?: string;
+    remotePolicy?: string;
+    location?: string;
+  }): Promise<Job[]> => {
+    const rows = await db.job.findMany({
+      where: {
+        isActive: true,
+        ...(options?.minimumScore === undefined
+          ? {}
+          : { score: { gte: options.minimumScore } }),
+        ...(options?.seniority ? { seniority: options.seniority } : {}),
+        ...(options?.remotePolicy
+          ? { remotePolicy: options.remotePolicy }
+          : {}),
+        ...(options?.location
+          ? {
+              location: {
+                contains: escapeLikePattern(options.location),
+                mode: 'insensitive' as const,
+              },
+            }
+          : {}),
+        ...(options?.technology
+          ? { technologies: { array_contains: [options.technology] } }
+          : {}),
+      },
+      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
+      ...(options?.limit === undefined ? {} : { take: options.limit }),
+    });
+    return rows.map(toJob);
+  },
 
-      if (options?.minimumScore !== undefined) {
-        filters.push(gte(jobs.score, options.minimumScore));
-      }
-      if (options?.seniority) {
-        filters.push(eq(jobs.seniority, options.seniority));
-      }
-      if (options?.remotePolicy) {
-        filters.push(eq(jobs.remotePolicy, options.remotePolicy));
-      }
-      if (options?.location) {
-        filters.push(sql`${jobs.location} ilike ${`%${options.location}%`}`);
-      }
-      if (options?.technology) {
-        filters.push(
-          sql`${jobs.technologies} @> ${JSON.stringify([options.technology])}::jsonb`,
-        );
-      }
+  updateScore: async (id: string, score: number): Promise<Job | null> => {
+    const [row] = await db.job.updateManyAndReturn({
+      where: { id },
+      data: { score, updatedAt: new Date() },
+    });
+    return row ? toJob(row) : null;
+  },
 
-      const query = db
-        .select()
-        .from(jobs)
-        .where(and(...filters))
-        .orderBy(desc(jobs.score), desc(jobs.postedAt));
-
-      const rows =
-        options?.limit !== undefined
-          ? await query.limit(options.limit)
-          : await query;
-      return rows.map(toJob);
-    },
-
-    updateScore: async (id: string, score: number): Promise<Job | null> => {
-      const [row] = await db
-        .update(jobs)
-        .set({ score, updatedAt: new Date() })
-        .where(eq(jobs.id, id))
-        .returning();
-      return row ? toJob(row) : null;
-    },
-
-    upsertBySourceJobId: async (input: NewJob): Promise<Job> => {
-      const now = new Date();
-      const [row] = await db
-        .insert(jobs)
-        .values({
-          companyId: input.companyId,
-          source: input.source,
-          sourceJobId: input.sourceJobId,
-          title: input.title,
-          url: input.url,
-          location: input.location ?? null,
-          remotePolicy: input.remotePolicy ?? null,
-          description: input.description ?? null,
-          technologies: input.technologies ?? [],
-          seniority: input.seniority ?? null,
-          score: input.score ?? 0,
-          postedAt: input.postedAt ?? null,
-          firstSeenAt: input.firstSeenAt ?? now,
-          lastSeenAt: input.lastSeenAt ?? now,
-          isActive: input.isActive ?? true,
-        })
-        .onConflictDoUpdate({
-          target: [jobs.source, jobs.sourceJobId],
-          set: {
-            companyId: input.companyId,
-            title: input.title,
-            url: input.url,
-            location: input.location ?? null,
-            remotePolicy: input.remotePolicy ?? null,
-            description: input.description ?? null,
-            technologies: input.technologies ?? [],
-            seniority: input.seniority ?? null,
-            ...(input.score === undefined ? {} : { score: input.score }),
-            ...(input.postedAt === undefined
-              ? {}
-              : { postedAt: input.postedAt }),
-            lastSeenAt: now,
-            isActive: input.isActive ?? true,
-            updatedAt: now,
+  upsertBySourceJobId: async (input: NewJob): Promise<Job> => {
+    const now = new Date();
+    return toJob(
+      await db.job.upsert({
+        where: {
+          source_sourceJobId: {
+            source: input.source,
+            sourceJobId: input.sourceJobId,
           },
-        })
-        .returning();
+        },
+        create: createData(input, now),
+        update: {
+          companyId: input.companyId,
+          title: input.title,
+          url: input.url,
+          location: input.location ?? null,
+          remotePolicy: input.remotePolicy ?? null,
+          description: input.description ?? null,
+          technologies: input.technologies ?? [],
+          seniority: input.seniority ?? null,
+          ...(input.score === undefined ? {} : { score: input.score }),
+          ...(input.postedAt === undefined ? {} : { postedAt: input.postedAt }),
+          lastSeenAt: now,
+          isActive: input.isActive ?? true,
+          updatedAt: now,
+        },
+      }),
+    );
+  },
 
-      if (!row) {
-        throw new Error('Failed to upsert job');
-      }
+  deactivateMissingBySource: async (
+    source: string,
+    sourceJobIds: string[],
+  ): Promise<Job[]> =>
+    (
+      await db.job.updateManyAndReturn({
+        where: {
+          source,
+          isActive: true,
+          ...(sourceJobIds.length === 0
+            ? {}
+            : { sourceJobId: { notIn: sourceJobIds } }),
+        },
+        data: { isActive: false, updatedAt: new Date() },
+      })
+    ).map(toJob),
 
-      return toJob(row);
-    },
+  deactivate: async (id: string): Promise<Job | null> => {
+    const [row] = await db.job.updateManyAndReturn({
+      where: { id },
+      data: { isActive: false, updatedAt: new Date() },
+    });
+    return row ? toJob(row) : null;
+  },
 
-    deactivateMissingBySource: async (
-      source: string,
-      sourceJobIds: string[],
-    ): Promise<Job[]> => {
-      const conditions = [eq(jobs.source, source), eq(jobs.isActive, true)];
-      if (sourceJobIds.length > 0) {
-        conditions.push(notInArray(jobs.sourceJobId, sourceJobIds));
-      }
-
-      const rows = await db
-        .update(jobs)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(and(...conditions))
-        .returning();
-      return rows.map(toJob);
-    },
-
-    deactivate: async (id: string): Promise<Job | null> => {
-      const [row] = await db
-        .update(jobs)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(jobs.id, id))
-        .returning();
-      return row ? toJob(row) : null;
-    },
-
-    deleteById: async (id: string): Promise<boolean> => {
-      const deleted = await db.delete(jobs).where(eq(jobs.id, id)).returning();
-      return deleted.length > 0;
-    },
-  };
-
-  return repository;
-};
+  deleteById: async (id: string): Promise<boolean> =>
+    (await db.job.deleteMany({ where: { id } })).count > 0,
+});
