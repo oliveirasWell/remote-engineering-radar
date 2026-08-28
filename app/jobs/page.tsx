@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
@@ -10,6 +11,11 @@ import {
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: JOBS_PAGE_COPY.metaTitle,
+  description: JOBS_PAGE_COPY.subtitle,
+};
 
 type JobsPageProps = {
   searchParams: Promise<{
@@ -58,6 +64,7 @@ const JobsPage = async ({ searchParams }: JobsPageProps) => {
           </Link>
         </p>
         <PageTitle as="h1">{JOBS_PAGE_COPY.title}</PageTitle>
+        <p className="text-lg text-muted">{JOBS_PAGE_COPY.subtitle}</p>
         {data.errorMessage ? (
           <p className="text-sm text-accent" role="alert">
             {data.errorMessage}

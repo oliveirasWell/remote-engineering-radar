@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
 import { JobCard } from '@/components/report/JobCard/JobCard';
@@ -8,6 +9,10 @@ import { COMPANIES_PAGE_COPY } from './constants';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: COMPANIES_PAGE_COPY.title,
+};
 
 const CompaniesPage = async () => {
   const data = await getCompaniesPageData();
