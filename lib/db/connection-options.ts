@@ -1,3 +1,6 @@
+import { rootCertificates } from 'node:tls';
+import { SUPABASE_ROOT_CA } from './supabase-root-ca';
+
 const DB_CONNECT_TIMEOUT_MILLISECONDS = 10_000;
 const DB_IDLE_TIMEOUT_MILLISECONDS = 20_000;
 const DB_MAX_CONNECTIONS = 10;
@@ -33,13 +36,16 @@ export const securePrismaConnectionString = (
 
 export const databaseSslMode = (
   connectionString: string,
-): false | { rejectUnauthorized: true } => {
+): false | { ca: string[]; rejectUnauthorized: true } => {
   const hostname = new URL(connectionString).hostname;
   return hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname === '[::1]'
     ? false
-    : { rejectUnauthorized: true };
+    : {
+        ca: [...rootCertificates, SUPABASE_ROOT_CA],
+        rejectUnauthorized: true,
+      };
 };
 
 export const databasePoolConfig = (connectionString: string) => ({

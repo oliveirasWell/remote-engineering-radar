@@ -5,6 +5,7 @@ import {
   securePrismaConnectionString,
 } from './connection-options';
 import { DATABASE_URL_ENV, MISSING_DATABASE_URL_MESSAGE } from './constants';
+import { SUPABASE_ROOT_CA } from './supabase-root-ca';
 
 describe('createDb', () => {
   const originalUrl = process.env[DATABASE_URL_ENV];
@@ -32,9 +33,14 @@ describe('createDb', () => {
   });
 
   it('requires verified TLS for non-local database hosts', () => {
-    expect(
-      databaseSslMode('postgres://user:pass@db.example.com:5432/radar'),
-    ).toEqual({ rejectUnauthorized: true });
+    const ssl = databaseSslMode(
+      'postgres://user:pass@db.example.com:5432/radar',
+    );
+    expect(ssl).toMatchObject({ rejectUnauthorized: true });
+    if (ssl === false) {
+      throw new Error('Expected TLS for a non-local database');
+    }
+    expect(ssl.ca).toEqual(expect.arrayContaining([SUPABASE_ROOT_CA]));
     expect(databaseSslMode('postgres://user:pass@localhost:5432/radar')).toBe(
       false,
     );
