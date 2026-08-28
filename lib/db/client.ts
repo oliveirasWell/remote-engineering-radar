@@ -3,9 +3,11 @@ import 'server-only';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import type { PgliteDatabase } from 'drizzle-orm/pglite';
+import { rootCertificates } from 'node:tls';
 import postgres from 'postgres';
 import { DATABASE_URL_ENV, MISSING_DATABASE_URL_MESSAGE } from './constants';
 import * as schema from './schema';
+import { SUPABASE_ROOT_CA } from './supabase-root-ca';
 
 const DB_CONNECT_TIMEOUT_SECONDS = 10;
 const DB_IDLE_TIMEOUT_SECONDS = 20;
@@ -16,13 +18,16 @@ export type Db =
 
 export const databaseSslMode = (
   connectionString: string,
-): 'verify-full' | undefined => {
+): { ca: string[]; rejectUnauthorized: true } | undefined => {
   const hostname = new URL(connectionString).hostname;
   return hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
     hostname === '[::1]'
     ? undefined
-    : 'verify-full';
+    : {
+        ca: [...rootCertificates, SUPABASE_ROOT_CA],
+        rejectUnauthorized: true,
+      };
 };
 
 export const createDb = (

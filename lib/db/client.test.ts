@@ -1,5 +1,6 @@
 import { createDb, databaseSslMode } from './client';
 import { DATABASE_URL_ENV, MISSING_DATABASE_URL_MESSAGE } from './constants';
+import { SUPABASE_ROOT_CA } from './supabase-root-ca';
 
 describe('createDb', () => {
   const originalUrl = process.env[DATABASE_URL_ENV];
@@ -29,7 +30,10 @@ describe('createDb', () => {
   it('requires verified TLS for non-local database hosts', () => {
     expect(
       databaseSslMode('postgres://user:pass@db.example.com:5432/radar'),
-    ).toBe('verify-full');
+    ).toMatchObject({ rejectUnauthorized: true });
+    expect(
+      databaseSslMode('postgres://user:pass@db.example.com:5432/radar')?.ca,
+    ).toEqual(expect.arrayContaining([SUPABASE_ROOT_CA]));
     expect(
       databaseSslMode('postgres://user:pass@localhost:5432/radar'),
     ).toBeUndefined();
