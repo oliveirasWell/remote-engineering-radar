@@ -8,11 +8,15 @@ describe('logReportError', () => {
 
     logReportError(
       'home',
-      new Error('failed postgres://user:password@db.example.com/database'),
+      new Error('query failed', {
+        cause: new Error(
+          'failed postgres://user:password@db.example.com/database',
+        ),
+      }),
     );
 
     expect(consoleError).toHaveBeenCalledWith(
-      '[report] home: Error: failed [redacted database URL]',
+      '[report] home: Error: query failed <- Error: failed [redacted database URL]',
     );
     consoleError.mockRestore();
   });
