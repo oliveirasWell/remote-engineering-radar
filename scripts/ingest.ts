@@ -1,6 +1,7 @@
 import { createDb } from '../lib/db/client';
 import { runIngestion } from '../lib/ingestion/run-ingestion';
 import { createAshbyAdapter } from '../lib/sources/ashby/ashby-adapter';
+import { createFrontendBrAdapter } from '../lib/sources/frontendbr/frontendbr-adapter';
 import { createGreenhouseAdapter } from '../lib/sources/greenhouse/greenhouse-adapter';
 import { createHackerNewsAdapter } from '../lib/sources/hackernews/hackernews-adapter';
 
@@ -33,6 +34,7 @@ const main = async () => {
       ? [createAshbyAdapter({ boardNames: ashbyBoards })]
       : []),
     createHackerNewsAdapter(),
+    createFrontendBrAdapter({ token: process.env.GITHUB_TOKEN }),
   ];
 
   const db = createDb();

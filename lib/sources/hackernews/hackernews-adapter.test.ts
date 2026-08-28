@@ -1,3 +1,5 @@
+import { asFetch, jsonResponse } from '@/test/http';
+
 import story from './fixtures/who-is-hiring-story.json';
 import commentsPage0 from './fixtures/comments-page-0.json';
 import commentsPage1 from './fixtures/comments-page-1.json';
@@ -5,12 +7,6 @@ import malformed from './fixtures/comments-malformed.json';
 import { HACKER_NEWS_SOURCE_NAME } from './constants';
 import { createHackerNewsAdapter } from './hackernews-adapter';
 import { normalizeHackerNewsComment } from './normalize-hackernews-comment';
-
-const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
 
 describe('normalizeHackerNewsComment', () => {
   it('extracts company, role, location, remote, url, and description', () => {
@@ -64,7 +60,7 @@ describe('createHackerNewsAdapter', () => {
 
     const adapter = createHackerNewsAdapter({
       hitsPerPage: 2,
-      fetch: fetchMock as unknown as typeof fetch,
+      fetch: asFetch(fetchMock),
     });
 
     const jobs = await adapter.fetchJobs();
@@ -89,7 +85,7 @@ describe('createHackerNewsAdapter', () => {
     });
 
     const adapter = createHackerNewsAdapter({
-      fetch: fetchMock as unknown as typeof fetch,
+      fetch: asFetch(fetchMock),
     });
 
     const jobs = await adapter.fetchJobs();
@@ -99,8 +95,7 @@ describe('createHackerNewsAdapter', () => {
 
   it('surfaces HTTP failures', async () => {
     const adapter = createHackerNewsAdapter({
-      fetch: (async () =>
-        jsonResponse({ message: 'error' }, 500)) as unknown as typeof fetch,
+      fetch: asFetch(async () => jsonResponse({ message: 'error' }, 500)),
     });
 
     await expect(adapter.fetchJobs()).rejects.toThrow(

@@ -1,3 +1,5 @@
+import { asFetch, jsonResponse } from '@/test/http';
+
 import page1 from './fixtures/jobs-page-1.json';
 import page2 from './fixtures/jobs-page-2.json';
 import malformed from './fixtures/jobs-malformed.json';
@@ -6,12 +8,6 @@ import { createAshbyAdapter } from './ashby-adapter';
 import { normalizeAshbyJob } from './normalize-ashby-job';
 
 const BOARD_NAME = 'acme';
-
-const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
 
 describe('normalizeAshbyJob', () => {
   it('normalizes a realistic Ashby job record', () => {
@@ -72,7 +68,7 @@ describe('createAshbyAdapter', () => {
 
     const adapter = createAshbyAdapter({
       boardNames: [BOARD_NAME],
-      fetch: fetchMock as unknown as typeof fetch,
+      fetch: asFetch(fetchMock),
     });
 
     const jobs = await adapter.fetchJobs();
@@ -91,7 +87,7 @@ describe('createAshbyAdapter', () => {
   it('skips malformed and unlisted records', async () => {
     const adapter = createAshbyAdapter({
       boardNames: [BOARD_NAME],
-      fetch: (async () => jsonResponse(malformed)) as unknown as typeof fetch,
+      fetch: asFetch(async () => jsonResponse(malformed)),
     });
 
     const jobs = await adapter.fetchJobs();
@@ -105,8 +101,7 @@ describe('createAshbyAdapter', () => {
   it('surfaces HTTP failures for a board', async () => {
     const adapter = createAshbyAdapter({
       boardNames: [BOARD_NAME],
-      fetch: (async () =>
-        jsonResponse({ error: 'nope' }, 503)) as unknown as typeof fetch,
+      fetch: asFetch(async () => jsonResponse({ error: 'nope' }, 503)),
     });
 
     await expect(adapter.fetchJobs()).rejects.toThrow(/Ashby request failed/);

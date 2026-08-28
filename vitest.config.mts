@@ -12,7 +12,7 @@ const vitestConfig = defineConfig({
     testTimeout: 15000,
     hookTimeout: 15000,
     setupFiles: ['./test/setup.ts'],
-    include: ['{app,components,lib}/**/*.test.{ts,tsx}'],
+    include: ['{app,components,lib,scripts}/**/*.test.{ts,tsx}'],
     alias: {
       'server-only': fileURLToPath(
         new URL('./test/server-only-stub.ts', import.meta.url),

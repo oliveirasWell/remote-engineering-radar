@@ -1,14 +1,10 @@
+import { jsonResponse } from '@/test/http';
+
 import {
   fetchWithRetry,
   readJsonResponse,
   SOURCE_MAX_RESPONSE_BYTES,
 } from './fetch-json';
-
-const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
 
 describe('fetchWithRetry', () => {
   it('retries transient failures', async () => {

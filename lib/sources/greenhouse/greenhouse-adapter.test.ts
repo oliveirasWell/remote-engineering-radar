@@ -1,3 +1,5 @@
+import { asFetch, jsonResponse } from '@/test/http';
+
 import page1 from './fixtures/jobs-page-1.json';
 import page2 from './fixtures/jobs-page-2.json';
 import malformed from './fixtures/jobs-malformed.json';
@@ -6,12 +8,6 @@ import { createGreenhouseAdapter } from './greenhouse-adapter';
 import { normalizeGreenhouseJob, stripHtml } from './normalize-greenhouse-job';
 
 const BOARD_TOKEN = 'acme';
-
-const jsonResponse = (body: unknown, status = 200): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
 
 const readPage = (input: RequestInfo | URL): string | null =>
   new URL(String(input)).searchParams.get('page');
@@ -88,7 +84,7 @@ describe('createGreenhouseAdapter', () => {
     const adapter = createGreenhouseAdapter({
       boardTokens: [BOARD_TOKEN],
       jobsPerPage: 2,
-      fetch: fetchMock as unknown as typeof fetch,
+      fetch: asFetch(fetchMock),
     });
 
     const jobs = await adapter.fetchJobs();
@@ -107,7 +103,7 @@ describe('createGreenhouseAdapter', () => {
   it('skips malformed records and keeps valid ones', async () => {
     const adapter = createGreenhouseAdapter({
       boardTokens: [BOARD_TOKEN],
-      fetch: (async () => jsonResponse(malformed)) as unknown as typeof fetch,
+      fetch: asFetch(async () => jsonResponse(malformed)),
     });
 
     const jobs = await adapter.fetchJobs();
@@ -118,8 +114,7 @@ describe('createGreenhouseAdapter', () => {
   it('surfaces HTTP failures for a board', async () => {
     const adapter = createGreenhouseAdapter({
       boardTokens: [BOARD_TOKEN],
-      fetch: (async () =>
-        jsonResponse({ error: 'nope' }, 500)) as unknown as typeof fetch,
+      fetch: asFetch(async () => jsonResponse({ error: 'nope' }, 500)),
     });
 
     await expect(adapter.fetchJobs()).rejects.toThrow(

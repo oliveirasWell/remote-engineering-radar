@@ -1,0 +1,36 @@
+[
+  {
+    "number": 8600,
+    "title": "[Remoto] Front-End Developer na GoodCo",
+    "html_url": "https://github.com/frontendbr/vagas/issues/8600",
+    "created_at": "2026-08-27T10:00:00Z",
+    "labels": [{ "name": "Remoto" }, { "name": "Sênior" }],
+    "body": "Vaga válida."
+  },
+  {
+    "number": 8601,
+    "title": "[Remoto] Full-stack Engineer (UX (focused) Strider",
+    "html_url": "https://github.com/frontendbr/vagas/issues/8601",
+    "created_at": "2026-08-27T11:00:00Z",
+    "labels": [{ "name": "Remoto" }],
+    "body": "Título sem separador de empresa."
+  },
+  {
+    "number": 8602,
+    "title": "chore: atualiza README na organização",
+    "html_url": "https://github.com/frontendbr/vagas/pull/8602",
+    "created_at": "2026-08-27T12:00:00Z",
+    "labels": [],
+    "pull_request": {
+      "url": "https://api.github.com/repos/frontendbr/vagas/pulls/8602"
+    },
+    "body": "Pull request, não é vaga."
+  },
+  {
+    "number": 8603,
+    "html_url": "https://github.com/frontendbr/vagas/issues/8603",
+    "created_at": "2026-08-27T13:00:00Z",
+    "labels": [],
+    "body": "Issue sem título."
+  }
+]

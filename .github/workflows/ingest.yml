@@ -32,5 +32,6 @@ jobs:
       - run: pnpm ingest
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          GITHUB_TOKEN: ${{ github.token }}
           GREENHOUSE_BOARD_TOKENS: ${{ secrets.GREENHOUSE_BOARD_TOKENS }}
           ASHBY_BOARD_NAMES: ${{ secrets.ASHBY_BOARD_NAMES }}
