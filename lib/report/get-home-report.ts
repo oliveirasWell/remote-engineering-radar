@@ -3,6 +3,7 @@ import { createCompaniesRepository } from '@/lib/db/repositories/companies-repos
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
+import { logReportError } from './log-report-error';
 import {
   HOME_COMPANIES_LIMIT,
   HOME_JOBS_LIMIT,
@@ -119,7 +120,8 @@ export const getHomeReport = async (): Promise<HomeReport> => {
       jobs: jobCards,
       companies: companyCards,
     };
-  } catch {
+  } catch (error) {
+    logReportError('home', error);
     return {
       updatedAt: null,
       jobs: [],

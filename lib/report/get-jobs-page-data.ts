@@ -3,6 +3,7 @@ import { createCompaniesRepository } from '@/lib/db/repositories/companies-repos
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { REPORT_ERROR_MESSAGE } from './constants';
+import { logReportError } from './log-report-error';
 import type { ReportJobCard } from './types';
 
 export type JobFilters = {
@@ -85,7 +86,8 @@ export const getJobsPageData = async (
     }
 
     return { jobs: cards };
-  } catch {
+  } catch (error) {
+    logReportError('jobs', error);
     return { jobs: [], errorMessage: REPORT_ERROR_MESSAGE };
   }
 };
@@ -113,7 +115,8 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
     return {
       job: toJobCard(job, company?.name ?? 'Unknown company'),
     };
-  } catch {
+  } catch (error) {
+    logReportError('job detail', error);
     return { job: null, errorMessage: REPORT_ERROR_MESSAGE };
   }
 };
