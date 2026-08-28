@@ -44,6 +44,7 @@ export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
           location: job.location ?? undefined,
           remotePolicy: job.remotePolicy ?? undefined,
           technologies: job.technologies,
+          seniority: job.seniority ?? undefined,
         });
 
         return {
@@ -74,9 +75,13 @@ export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
         websiteUrl: company.websiteUrl,
         openEngineeringJobs: activeJobs.length,
         jobs: jobCards,
-        signalSourceUrls: signals
-          .map((signal) => signal.sourceUrl)
-          .filter((url): url is string => Boolean(url)),
+        signalSourceUrls: [
+          ...new Set(
+            signals
+              .map((signal) => signal.sourceUrl)
+              .filter((url): url is string => Boolean(url)),
+          ),
+        ],
       });
     }
 

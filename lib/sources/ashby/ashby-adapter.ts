@@ -1,5 +1,9 @@
 import type { JobSource, NormalizedJob } from '../types';
-import { fetchWithRetry, readJsonResponse } from '../fetch-json';
+import {
+  discardResponse,
+  fetchWithRetry,
+  readJsonResponse,
+} from '../fetch-json';
 import { ASHBY_API_BASE_URL, ASHBY_SOURCE_NAME } from './constants';
 import {
   normalizeAshbyJob,
@@ -12,8 +16,20 @@ export type AshbyAdapterOptions = {
   fetch?: typeof fetch;
 };
 
-const isJobRecord = (value: unknown): value is AshbyJobRecord =>
-  Boolean(value) && typeof value === 'object';
+const isJobRecord = (value: unknown): value is AshbyJobRecord => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as AshbyJobRecord;
+  return (
+    record.isListed === false ||
+    (typeof record.id === 'string' &&
+      typeof record.title === 'string' &&
+      (typeof record.jobUrl === 'string' ||
+        typeof record.applyUrl === 'string'))
+  );
+};
 
 const asCursor = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -36,17 +52,27 @@ const fetchJobsPage = async (
   boardName: string,
   cursor: string | undefined,
   fetchImpl: typeof fetch,
-): Promise<AshbyJobsPage> => {
+): Promise<AshbyJobsPage & { jobs: unknown[] }> => {
   const response = await fetchWithRetry(
     buildBoardUrl(boardName, cursor),
     fetchImpl,
   );
 
   if (!response.ok) {
+    await discardResponse(response);
     throw new Error(`Ashby request failed: ${response.status}`);
   }
 
-  return readJsonResponse<AshbyJobsPage>(response);
+  const payload = await readJsonResponse<unknown>(response);
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !Array.isArray((payload as AshbyJobsPage).jobs)
+  ) {
+    throw new Error('Ashby response has an unexpected shape');
+  }
+
+  return payload as AshbyJobsPage & { jobs: unknown[] };
 };
 
 const fetchBoardJobs = async (
@@ -59,13 +85,13 @@ const fetchBoardJobs = async (
 
   while (pageCount < 50) {
     const payload = await fetchJobsPage(boardName, cursor, fetchImpl);
-    const records = Array.isArray(payload.jobs) ? payload.jobs : [];
+    const records = payload.jobs;
+    const validRecords = records.filter(isJobRecord);
+    if (records.length > 0 && validRecords.length === 0) {
+      throw new Error('Ashby response has no valid job records');
+    }
 
-    for (const record of records) {
-      if (!isJobRecord(record)) {
-        continue;
-      }
-
+    for (const record of validRecords) {
       const job = normalizeAshbyJob(record, boardName);
       if (job) {
         normalized.push(job);

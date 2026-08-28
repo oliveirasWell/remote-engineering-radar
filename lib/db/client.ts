@@ -14,6 +14,17 @@ const DB_MAX_CONNECTIONS = 10;
 export type Db =
   PostgresJsDatabase<typeof schema> | PgliteDatabase<typeof schema>;
 
+export const databaseSslMode = (
+  connectionString: string,
+): 'verify-full' | undefined => {
+  const hostname = new URL(connectionString).hostname;
+  return hostname === 'localhost' ||
+    hostname === '127.0.0.1' ||
+    hostname === '[::1]'
+    ? undefined
+    : 'verify-full';
+};
+
 export const createDb = (
   connectionString = process.env[DATABASE_URL_ENV],
 ): PostgresJsDatabase<typeof schema> => {
@@ -26,7 +37,7 @@ export const createDb = (
     connect_timeout: DB_CONNECT_TIMEOUT_SECONDS,
     idle_timeout: DB_IDLE_TIMEOUT_SECONDS,
     max: DB_MAX_CONNECTIONS,
-    ssl: process.env.NODE_ENV === 'production' ? 'require' : undefined,
+    ssl: databaseSslMode(connectionString),
   });
   return drizzle(client, { schema });
 };

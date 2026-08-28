@@ -1,4 +1,5 @@
 import type { NormalizedJob } from '../types';
+import { RELEVANT_TECHNOLOGY_NAMES } from '../../classification/constants';
 import { FRONTENDBR_SOURCE_NAME } from './constants';
 
 export type FrontendBrIssue = {
@@ -57,6 +58,26 @@ const REMOTE_POLICY_LOCATION_RULES = [...REMOTE_POLICY_RULES].sort(
 );
 
 const COMPANY_SEPARATORS = [' na ', ' at ', ' - '];
+const TECHNOLOGY_NAMES = new Set(
+  [...RELEVANT_TECHNOLOGY_NAMES].map((name) => name.toLowerCase()),
+);
+
+const hasBalancedParentheses = (value: string): boolean => {
+  let depth = 0;
+
+  for (const character of value) {
+    if (character === '(') {
+      depth += 1;
+    } else if (character === ')') {
+      depth -= 1;
+      if (depth < 0) {
+        return false;
+      }
+    }
+  }
+
+  return depth === 0;
+};
 
 const asString = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -140,10 +161,24 @@ const splitTitle = (
     }
   }
 
+  const parentheticalThenCompany = remainder.match(
+    /^(.+\([^()]+\))\s+([^()]+)$/,
+  );
+  const parentheticalTitle = asString(parentheticalThenCompany?.[1]);
+  const suffixCompany = asString(parentheticalThenCompany?.[2]);
+  if (
+    parentheticalTitle &&
+    suffixCompany &&
+    hasBalancedParentheses(parentheticalTitle) &&
+    !TECHNOLOGY_NAMES.has(suffixCompany.toLowerCase())
+  ) {
+    return { location, title: parentheticalTitle, company: suffixCompany };
+  }
+
   const trailingParenthesis = remainder.match(/^(.+?)\s*\(([^()]+)\)\s*$/);
   const title = asString(trailingParenthesis?.[1]);
   const company = asString(trailingParenthesis?.[2]);
-  if (title && company) {
+  if (title && company && !TECHNOLOGY_NAMES.has(company.toLowerCase())) {
     return { location, title, company };
   }
 

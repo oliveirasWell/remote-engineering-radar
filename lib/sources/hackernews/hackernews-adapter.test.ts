@@ -93,6 +93,48 @@ describe('createHackerNewsAdapter', () => {
     expect(jobs[0]?.company.name).toBe('GoodCo');
   });
 
+  it('accepts an empty comments array', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const tags = new URL(String(input)).searchParams.get('tags') ?? '';
+      return jsonResponse(
+        tags.includes('author_whoishiring') ? story : { hits: [] },
+      );
+    });
+    const adapter = createHackerNewsAdapter({ fetch: asFetch(fetchMock) });
+
+    await expect(adapter.fetchJobs()).resolves.toEqual([]);
+  });
+
+  it('rejects a successful response with an unexpected shape', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const tags = new URL(String(input)).searchParams.get('tags') ?? '';
+      return jsonResponse(
+        tags.includes('author_whoishiring')
+          ? story
+          : { message: 'not a search response' },
+      );
+    });
+    const adapter = createHackerNewsAdapter({ fetch: asFetch(fetchMock) });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(
+      /Hacker News response has an unexpected shape/,
+    );
+  });
+
+  it('rejects a non-empty comments page containing no valid records', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const tags = new URL(String(input)).searchParams.get('tags') ?? '';
+      return jsonResponse(
+        tags.includes('author_whoishiring') ? story : { hits: [{}] },
+      );
+    });
+    const adapter = createHackerNewsAdapter({ fetch: asFetch(fetchMock) });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(
+      /Hacker News response has no valid comment records/,
+    );
+  });
+
   it('surfaces HTTP failures', async () => {
     const adapter = createHackerNewsAdapter({
       fetch: asFetch(async () => jsonResponse({ message: 'error' }, 500)),

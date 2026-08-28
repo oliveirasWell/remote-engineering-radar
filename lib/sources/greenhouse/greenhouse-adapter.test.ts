@@ -111,6 +111,37 @@ describe('createGreenhouseAdapter', () => {
     expect(jobs.map((job) => job.sourceJobId)).toEqual(['6001', '6003']);
   });
 
+  it('accepts an empty jobs array', async () => {
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN],
+      fetch: asFetch(async () => jsonResponse({ jobs: [] })),
+    });
+
+    await expect(adapter.fetchJobs()).resolves.toEqual([]);
+  });
+
+  it('rejects a successful response with an unexpected shape', async () => {
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN],
+      fetch: asFetch(async () => jsonResponse({ message: 'not a jobs page' })),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(
+      /Greenhouse response has an unexpected shape/,
+    );
+  });
+
+  it('rejects a non-empty page containing no valid jobs', async () => {
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN],
+      fetch: asFetch(async () => jsonResponse({ jobs: [{}] })),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(
+      /Greenhouse response has no valid job records/,
+    );
+  });
+
   it('surfaces HTTP failures for a board', async () => {
     const adapter = createGreenhouseAdapter({
       boardTokens: [BOARD_TOKEN],

@@ -29,9 +29,11 @@ jobs:
       - run: pnpm db:migrate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
       - run: pnpm ingest
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}
           GREENHOUSE_BOARD_TOKENS: ${{ secrets.GREENHOUSE_BOARD_TOKENS }}
           ASHBY_BOARD_NAMES: ${{ secrets.ASHBY_BOARD_NAMES }}
+          NODE_ENV: production

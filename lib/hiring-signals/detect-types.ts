@@ -1,12 +1,14 @@
 export type HiringSignalDetection = {
   type: string;
   description: string;
+  sourceUrl?: string;
   score: number;
 };
 
 export type HiringSignalJobInput = {
   title: string;
   technologies: string[];
+  sourceUrl?: string;
   postedAt?: Date | null;
   firstSeenAt?: Date | null;
   isActive?: boolean;

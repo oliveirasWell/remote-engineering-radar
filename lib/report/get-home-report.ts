@@ -23,6 +23,7 @@ const toJobCard = (
     location: job.location ?? undefined,
     remotePolicy: job.remotePolicy ?? undefined,
     technologies: job.technologies,
+    seniority: job.seniority ?? undefined,
   });
 
   return {

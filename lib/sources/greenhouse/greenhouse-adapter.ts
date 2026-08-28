@@ -1,5 +1,9 @@
 import type { JobSource, NormalizedJob } from '../types';
-import { fetchWithRetry, readJsonResponse } from '../fetch-json';
+import {
+  discardResponse,
+  fetchWithRetry,
+  readJsonResponse,
+} from '../fetch-json';
 import {
   GREENHOUSE_API_BASE_URL,
   GREENHOUSE_JOBS_PER_PAGE,
@@ -17,8 +21,18 @@ export type GreenhouseAdapterOptions = {
   jobsPerPage?: number;
 };
 
-const isJobRecord = (value: unknown): value is GreenhouseJobRecord =>
-  Boolean(value) && typeof value === 'object';
+const isJobRecord = (value: unknown): value is GreenhouseJobRecord => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const record = value as GreenhouseJobRecord;
+  return (
+    (typeof record.id === 'string' || typeof record.id === 'number') &&
+    typeof record.title === 'string' &&
+    typeof record.absolute_url === 'string'
+  );
+};
 
 const readTotal = (page: GreenhouseJobsPage): number | undefined => {
   const total = page.meta?.total;
@@ -46,19 +60,31 @@ const fetchJobsPage = async (
   page: number,
   jobsPerPage: number,
   fetchImpl: typeof fetch,
-): Promise<GreenhouseJobsPage> => {
+): Promise<GreenhouseJobsPage & { jobs: unknown[] }> => {
   const response = await fetchWithRetry(
     buildJobsUrl(boardToken, page, jobsPerPage),
     fetchImpl,
   );
 
   if (!response.ok) {
+    await discardResponse(response);
     throw new Error(
       `Greenhouse request failed (page ${page}): ${response.status}`,
     );
   }
 
-  return readJsonResponse<GreenhouseJobsPage>(response);
+  const payload = await readJsonResponse<unknown>(response);
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !Array.isArray((payload as GreenhouseJobsPage).jobs)
+  ) {
+    throw new Error(
+      `Greenhouse response has an unexpected shape (page ${page})`,
+    );
+  }
+
+  return payload as GreenhouseJobsPage & { jobs: unknown[] };
 };
 
 const fetchBoardJobs = async (
@@ -76,17 +102,20 @@ const fetchBoardJobs = async (
       jobsPerPage,
       fetchImpl,
     );
-    const records = Array.isArray(payload.jobs) ? payload.jobs : [];
+    const records = payload.jobs;
 
     if (records.length === 0) {
       break;
     }
 
-    for (const record of records) {
-      if (!isJobRecord(record)) {
-        continue;
-      }
+    const validRecords = records.filter(isJobRecord);
+    if (validRecords.length === 0) {
+      throw new Error(
+        `Greenhouse response has no valid job records (page ${page})`,
+      );
+    }
 
+    for (const record of validRecords) {
       const job = normalizeGreenhouseJob(record, boardToken);
       if (job) {
         normalized.push(job);

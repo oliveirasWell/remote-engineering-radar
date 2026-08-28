@@ -38,7 +38,7 @@ const enrichJob = (job: NormalizedJob): NormalizedJob & { score: number } => {
     remotePolicy: job.remotePolicy,
     technologies: job.technologies,
   });
-  const scored = scoreClassifiedJob(classification);
+  const scored = scoreClassifiedJob(classification, job.seniority);
 
   return {
     ...job,
@@ -80,87 +80,96 @@ export const runIngestion = async (options: {
     .map(enrichJob);
   const { jobs: uniqueJobs } = deduplicateJobs(enriched);
 
-  const companiesRepository = createCompaniesRepository(options.db);
-  const jobsRepository = createJobsRepository(options.db);
-  const hiringSignalsRepository = createHiringSignalsRepository(options.db);
+  const { persistedJobs, companiesUpdated } = await options.db.transaction(
+    async (tx) => {
+      const transactionDb = tx as unknown as Db;
+      const companiesRepository = createCompaniesRepository(transactionDb);
+      const jobsRepository = createJobsRepository(transactionDb);
+      const hiringSignalsRepository =
+        createHiringSignalsRepository(transactionDb);
+      const companyIds = new Set<string>();
+      let persistedJobs = 0;
 
-  const companyIds = new Set<string>();
-  let persistedJobs = 0;
+      for (const job of uniqueJobs) {
+        const slug = toSlug(job.company.name);
+        const company = await companiesRepository.upsertBySlug({
+          name: job.company.name,
+          slug,
+          websiteUrl: isSafeExternalUrl(job.company.websiteUrl)
+            ? job.company.websiteUrl
+            : undefined,
+          source: job.source,
+        });
+        companyIds.add(company.id);
 
-  for (const job of uniqueJobs) {
-    const slug = toSlug(job.company.name);
-    const company = await companiesRepository.upsertBySlug({
-      name: job.company.name,
-      slug,
-      websiteUrl: isSafeExternalUrl(job.company.websiteUrl)
-        ? job.company.websiteUrl
-        : undefined,
-      source: job.source,
-    });
-    companyIds.add(company.id);
+        const scoredJob = job as NormalizedJob & { score: number };
+        await jobsRepository.upsertBySourceJobId({
+          companyId: company.id,
+          source: job.source,
+          sourceJobId: job.sourceJobId,
+          title: job.title,
+          url: job.url,
+          location: job.location,
+          remotePolicy: job.remotePolicy,
+          description: job.description,
+          technologies: job.technologies,
+          seniority: job.seniority,
+          score: scoredJob.score,
+          postedAt: job.postedAt,
+          isActive: true,
+        });
+        persistedJobs += 1;
+      }
 
-    const scoredJob = job as NormalizedJob & { score: number };
-    await jobsRepository.upsertBySourceJobId({
-      companyId: company.id,
-      source: job.source,
-      sourceJobId: job.sourceJobId,
-      title: job.title,
-      url: job.url,
-      location: job.location,
-      remotePolicy: job.remotePolicy,
-      description: job.description,
-      technologies: job.technologies,
-      seniority: job.seniority,
-      score: scoredJob.score,
-      postedAt: job.postedAt,
-      isActive: true,
-    });
-    persistedJobs += 1;
-  }
+      for (const sourceResult of sourceResults) {
+        if (sourceResult.error) {
+          continue;
+        }
 
-  for (const sourceResult of sourceResults) {
-    if (sourceResult.error) {
-      continue;
-    }
+        const sourceJobIds = uniqueJobs
+          .filter((job) => job.source === sourceResult.name)
+          .map((job) => job.sourceJobId);
+        const deactivatedJobs = await jobsRepository.deactivateMissingBySource(
+          sourceResult.name,
+          sourceJobIds,
+        );
+        for (const job of deactivatedJobs) {
+          companyIds.add(job.companyId);
+        }
+      }
 
-    const sourceJobIds = fetchedJobs
-      .filter((job) => job.source === sourceResult.name)
-      .map((job) => job.sourceJobId);
-    const deactivatedJobs = await jobsRepository.deactivateMissingBySource(
-      sourceResult.name,
-      sourceJobIds,
-    );
-    for (const job of deactivatedJobs) {
-      companyIds.add(job.companyId);
-    }
-  }
+      let companiesUpdated = 0;
+      for (const companyId of companyIds) {
+        const companyJobs = await jobsRepository.listByCompanyId(companyId);
+        const detection = detectHiringSignals({
+          companyName: companyId,
+          jobs: companyJobs.map((job) => ({
+            title: job.title,
+            technologies: job.technologies,
+            postedAt: job.postedAt,
+            firstSeenAt: job.firstSeenAt,
+            isActive: job.isActive,
+            sourceUrl: isSafeExternalUrl(job.url) ? job.url : undefined,
+          })),
+        });
 
-  let companiesUpdated = 0;
-  for (const companyId of companyIds) {
-    const companyJobs = await jobsRepository.listByCompanyId(companyId);
-    const detection = detectHiringSignals({
-      companyName: companyId,
-      jobs: companyJobs.map((job) => ({
-        title: job.title,
-        technologies: job.technologies,
-        postedAt: job.postedAt,
-        firstSeenAt: job.firstSeenAt,
-        isActive: job.isActive,
-      })),
-    });
+        await hiringSignalsRepository.replaceForCompany(
+          companyId,
+          detection.signals.map((signal) => ({
+            companyId,
+            type: signal.type,
+            description: signal.description,
+            sourceUrl: signal.sourceUrl,
+            score: signal.score,
+          })),
+          detection.hiringScore,
+        );
+        companiesUpdated += 1;
+      }
 
-    await hiringSignalsRepository.replaceForCompany(
-      companyId,
-      detection.signals.map((signal) => ({
-        companyId,
-        type: signal.type,
-        description: signal.description,
-        score: signal.score,
-      })),
-      detection.hiringScore,
-    );
-    companiesUpdated += 1;
-  }
+      return { persistedJobs, companiesUpdated };
+    },
+  );
 
   logger.info(
     `Ingestion complete: ${persistedJobs} jobs across ${companiesUpdated} companies`,

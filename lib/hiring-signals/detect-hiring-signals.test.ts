@@ -41,6 +41,7 @@ describe('detectHiringSignals', () => {
           title: 'Senior Frontend Engineer',
           technologies: ['React', 'TypeScript'],
           postedAt: daysAgo(3, now),
+          sourceUrl: 'https://example.com/jobs/frontend',
         },
         {
           title: 'Senior Backend Engineer',
@@ -64,6 +65,12 @@ describe('detectHiringSignals', () => {
       ]),
     );
     expect(result.hiringScore).toBeGreaterThan(0);
+    expect(
+      result.signals.find(
+        (signal) =>
+          signal.type === HIRING_SIGNAL_TYPES.RECENT_ENGINEERING_HIRING,
+      )?.sourceUrl,
+    ).toBe('https://example.com/jobs/frontend');
   });
 
   it('detects engineering leadership hiring', () => {

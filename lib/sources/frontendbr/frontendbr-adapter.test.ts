@@ -105,6 +105,55 @@ describe('normalizeFrontendBrIssue', () => {
     });
   });
 
+  it('splits a company suffix after parenthetical compensation', () => {
+    const job = normalizeFrontendBrIssue({
+      number: 8551,
+      title:
+        '[Híbrido/Curitiba] Senior Front-end Developer React (USD) Jcal Consultoria',
+      html_url: 'https://github.com/frontendbr/vagas/issues/8551',
+      labels: [{ name: 'Híbrido' }, { name: 'Remoto' }],
+    });
+
+    expect(job).toMatchObject({
+      company: { name: 'Jcal Consultoria' },
+      title: 'Senior Front-end Developer React (USD)',
+      remotePolicy: 'hybrid',
+    });
+  });
+
+  it('does not mistake a parenthesized technology for a company', () => {
+    expect(
+      normalizeFrontendBrIssue({
+        number: 8702,
+        title: '[Remoto] Front-end Developer (React)',
+        html_url: 'https://github.com/frontendbr/vagas/issues/8702',
+        labels: [{ name: 'Remoto' }],
+      }),
+    ).toBeNull();
+  });
+
+  it('accepts a one-word company in trailing parentheses', () => {
+    expect(
+      normalizeFrontendBrIssue({
+        number: 8703,
+        title: '[Remoto] Front-end Developer (Nubank)',
+        html_url: 'https://github.com/frontendbr/vagas/issues/8703',
+        labels: [{ name: 'Remoto' }],
+      }),
+    ).toMatchObject({ company: { name: 'Nubank' } });
+  });
+
+  it('does not infer a technology suffix as a company', () => {
+    expect(
+      normalizeFrontendBrIssue({
+        number: 8704,
+        title: '[Remoto] Front-end Developer (React) TypeScript',
+        html_url: 'https://github.com/frontendbr/vagas/issues/8704',
+        labels: [{ name: 'Remoto' }],
+      }),
+    ).toBeNull();
+  });
+
   it('maps "Pleno" to mid seniority', () => {
     expect(normalizeFrontendBrIssue(issue8545)?.seniority).toBe('mid');
   });

@@ -47,6 +47,9 @@ const roleBuckets = (job: HiringSignalJobInput) => {
 const jobTimestamp = (job: HiringSignalJobInput): Date | undefined =>
   job.postedAt ?? job.firstSeenAt ?? undefined;
 
+const evidenceUrl = (jobs: HiringSignalJobInput[]): string | undefined =>
+  jobs.find((job) => job.sourceUrl)?.sourceUrl;
+
 export const detectHiringSignals = (input: {
   companyName: string;
   jobs: HiringSignalJobInput[];
@@ -61,6 +64,7 @@ export const detectHiringSignals = (input: {
     signals.push({
       type: HIRING_SIGNAL_TYPES.MULTIPLE_ENGINEERING_OPENINGS,
       description: `Company currently has ${engineeringJobs.length} engineering positions open.`,
+      sourceUrl: evidenceUrl(engineeringJobs),
       score: engineeringJobs.length >= 7 ? 25 : 15,
     });
   }
@@ -77,6 +81,7 @@ export const detectHiringSignals = (input: {
     signals.push({
       type: HIRING_SIGNAL_TYPES.RECENT_ENGINEERING_HIRING,
       description: `${recentJobs.length} engineering positions opened in the last 30 days.`,
+      sourceUrl: evidenceUrl(recentJobs),
       score: 20,
     });
   }
@@ -88,6 +93,7 @@ export const detectHiringSignals = (input: {
     signals.push({
       type: HIRING_SIGNAL_TYPES.RELEVANT_TECHNOLOGY_CLUSTER,
       description: `${relevantTechJobs.length} open roles involve React/TypeScript/Node hiring.`,
+      sourceUrl: evidenceUrl(relevantTechJobs),
       score: 15,
     });
   }
@@ -113,6 +119,7 @@ export const detectHiringSignals = (input: {
     signals.push({
       type: HIRING_SIGNAL_TYPES.ENGINEERING_LEADERSHIP_HIRING,
       description: `${leadershipJobs.length} engineering leadership role(s) currently open.`,
+      sourceUrl: evidenceUrl(leadershipJobs),
       score: 10,
     });
   }

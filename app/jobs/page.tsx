@@ -13,23 +13,25 @@ export const revalidate = 3600;
 
 type JobsPageProps = {
   searchParams: Promise<{
-    technology?: string;
-    seniority?: string;
-    remote?: string;
-    location?: string;
-    minimumScore?: string;
+    technology?: string | string[];
+    seniority?: string | string[];
+    remote?: string | string[];
+    location?: string | string[];
+    minimumScore?: string | string[];
   }>;
 };
 
 const JobsPage = async ({ searchParams }: JobsPageProps) => {
   const params = await searchParams;
-  const readFilter = (value: string | undefined): string | undefined => {
-    const trimmed = value?.trim();
+  const readFilter = (
+    value: string | string[] | undefined,
+  ): string | undefined => {
+    const trimmed = typeof value === 'string' ? value.trim() : undefined;
     return trimmed && trimmed.length <= MAX_JOB_FILTER_LENGTH
       ? trimmed
       : undefined;
   };
-  const minimumScoreValue = params.minimumScore?.trim();
+  const minimumScoreValue = readFilter(params.minimumScore);
   const minimumScore =
     minimumScoreValue && /^\d{1,3}$/.test(minimumScoreValue)
       ? Number(minimumScoreValue)

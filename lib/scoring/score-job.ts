@@ -10,6 +10,23 @@ import {
 } from './constants';
 import type { JobScore } from './types';
 
+type ScoreJobInput = ClassifyJobInput & { seniority?: string };
+
+const scoringSeniority = (
+  seniority: string | undefined,
+): JobClassification['seniority'] => {
+  if (
+    seniority === 'junior' ||
+    seniority === 'mid' ||
+    seniority === 'senior' ||
+    seniority === 'staff' ||
+    seniority === 'principal'
+  ) {
+    return seniority;
+  }
+  return undefined;
+};
+
 const normalizeScore = (rawScore: number): number =>
   Math.max(MIN_NORMALIZED_SCORE, Math.min(MAX_NORMALIZED_SCORE, rawScore));
 
@@ -85,9 +102,19 @@ const scoreClassification = (classification: JobClassification): JobScore => {
   };
 };
 
-export const scoreJob = (input: ClassifyJobInput): JobScore =>
-  scoreClassification(classifyJob(input));
+export const scoreJob = (input: ScoreJobInput): JobScore => {
+  const classification = classifyJob(input);
+  return scoreClassification({
+    ...classification,
+    seniority: classification.seniority ?? scoringSeniority(input.seniority),
+  });
+};
 
 export const scoreClassifiedJob = (
   classification: JobClassification,
-): JobScore => scoreClassification(classification);
+  seniorityFallback?: string,
+): JobScore =>
+  scoreClassification({
+    ...classification,
+    seniority: classification.seniority ?? scoringSeniority(seniorityFallback),
+  });

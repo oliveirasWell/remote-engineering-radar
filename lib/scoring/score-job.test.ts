@@ -50,6 +50,16 @@ describe('scoreJob', () => {
     expect(result.reasons).toContain('Junior');
   });
 
+  it('uses stored seniority when free text does not expose the label', () => {
+    const result = scoreJob({
+      title: 'Desenvolvedor Frontend',
+      description: 'React e TypeScript',
+      seniority: 'senior',
+    });
+
+    expect(result.reasons).toContain('Senior');
+  });
+
   it('strongly penalizes on-site-only roles', () => {
     const remote = scoreJob({
       title: 'Senior React Engineer',

@@ -1,5 +1,9 @@
 import type { JobSource, NormalizedJob } from '../types';
-import { fetchWithRetry, readJsonResponse } from '../fetch-json';
+import {
+  discardResponse,
+  fetchWithRetry,
+  readJsonResponse,
+} from '../fetch-json';
 import {
   FRONTENDBR_ISSUES_PER_PAGE,
   FRONTENDBR_ISSUES_URL,
@@ -50,6 +54,7 @@ const fetchIssuesPage = async (
   );
 
   if (!response.ok) {
+    await discardResponse(response);
     throw new Error(
       `${FRONTENDBR_SOURCE_NAME} request failed (page ${page}): ${response.status}`,
     );

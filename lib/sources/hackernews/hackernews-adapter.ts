@@ -1,5 +1,9 @@
 import type { JobSource, NormalizedJob } from '../types';
-import { fetchWithRetry, readJsonResponse } from '../fetch-json';
+import {
+  discardResponse,
+  fetchWithRetry,
+  readJsonResponse,
+} from '../fetch-json';
 import {
   HACKER_NEWS_SOURCE_NAME,
   HN_ALGOLIA_API_BASE_URL,
@@ -17,14 +21,23 @@ export type HackerNewsAdapterOptions = {
 };
 
 type AlgoliaSearchResponse = {
-  hits?: unknown;
+  hits: unknown[];
   nbPages?: unknown;
   hitsPerPage?: unknown;
   page?: unknown;
 };
 
-const isComment = (value: unknown): value is HackerNewsComment =>
-  Boolean(value) && typeof value === 'object';
+const isComment = (value: unknown): value is HackerNewsComment => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const comment = value as HackerNewsComment;
+  return (
+    typeof comment.objectID === 'string' &&
+    typeof comment.comment_text === 'string'
+  );
+};
 
 const asNumber = (value: unknown): number | undefined =>
   typeof value === 'number' && Number.isFinite(value) ? value : undefined;
@@ -35,9 +48,19 @@ const fetchJson = async (
 ): Promise<AlgoliaSearchResponse> => {
   const response = await fetchWithRetry(url, fetchImpl);
   if (!response.ok) {
+    await discardResponse(response);
     throw new Error(`Hacker News request failed: ${response.status}`);
   }
-  return readJsonResponse<AlgoliaSearchResponse>(response);
+  const payload = await readJsonResponse<unknown>(response);
+  if (
+    !payload ||
+    typeof payload !== 'object' ||
+    !Array.isArray((payload as { hits?: unknown }).hits)
+  ) {
+    throw new Error('Hacker News response has an unexpected shape');
+  }
+
+  return payload as AlgoliaSearchResponse;
 };
 
 const findLatestWhoIsHiringStoryId = async (
@@ -49,7 +72,7 @@ const findLatestWhoIsHiringStoryId = async (
   url.searchParams.set('hitsPerPage', '1');
 
   const payload = await fetchJson(url.toString(), fetchImpl);
-  const hits = Array.isArray(payload.hits) ? payload.hits : [];
+  const hits = payload.hits;
   const first = hits[0];
   if (!first || typeof first !== 'object') {
     throw new Error('No Who Is Hiring thread found');
@@ -81,16 +104,18 @@ const fetchStoryComments = async (
 
     const payload = await fetchJson(url.toString(), fetchImpl);
     nbPages = asNumber(payload.nbPages) ?? 1;
-    const hits = Array.isArray(payload.hits) ? payload.hits : [];
+    const hits = payload.hits;
 
     if (hits.length === 0) {
       break;
     }
 
-    for (const hit of hits) {
-      if (!isComment(hit)) {
-        continue;
-      }
+    const validComments = hits.filter(isComment);
+    if (validComments.length === 0) {
+      throw new Error('Hacker News response has no valid comment records');
+    }
+
+    for (const hit of validComments) {
       const job = normalizeHackerNewsComment(hit);
       if (job) {
         normalized.push(job);
