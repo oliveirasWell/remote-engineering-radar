@@ -1,0 +1,18 @@
+{
+  "hits": [
+    {
+      "objectID": "1",
+      "comment_text": "Just a reply without pipes"
+    },
+    null,
+    {
+      "objectID": "2",
+      "comment_text": "GoodCo | Senior TypeScript Engineer | Remote Americas<p>https://goodco.example/careers</p>"
+    },
+    {
+      "comment_text": "Missing object id | Role | Remote"
+    }
+  ],
+  "nbPages": 1,
+  "page": 0
+}

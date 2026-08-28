@@ -1,0 +1,16 @@
+{
+  "jobs": [
+    {
+      "id": "aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb",
+      "title": "Senior Frontend Engineer",
+      "location": "Remote - LATAM",
+      "isRemote": true,
+      "workplaceType": "Remote",
+      "publishedAt": "2026-08-20T12:00:00.000+00:00",
+      "isListed": true,
+      "jobUrl": "https://jobs.ashbyhq.com/acme/aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb",
+      "descriptionHtml": "<p>Build with React and TypeScript.</p>"
+    }
+  ],
+  "nextCursor": "page-2"
+}

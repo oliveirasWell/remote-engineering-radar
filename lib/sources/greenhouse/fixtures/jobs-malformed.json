@@ -1,0 +1,26 @@
+{
+  "jobs": [
+    {
+      "id": 6001,
+      "title": "Valid Engineer",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/6001",
+      "company_name": "Acme Robotics",
+      "location": { "name": "Remote" }
+    },
+    {
+      "title": "Missing id and url"
+    },
+    null,
+    {
+      "id": "6002",
+      "title": "  ",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/6002"
+    },
+    {
+      "id": 6003,
+      "title": "Partial fields ok",
+      "absolute_url": "https://boards.greenhouse.io/acme/jobs/6003"
+    }
+  ],
+  "meta": { "total": 5 }
+}

@@ -1,10 +1,9 @@
 @theme {
-  --font-sans: var(--font-inter), Arial, Helvetica, sans-serif;
-  --color-sidebar: #f7f7f7;
-  --color-panel-from: #0168c3;
-  --color-panel-to: #52d9ff;
-  --color-foreground: #1a1a1a;
-  --color-on-panel: #ffffff;
-  --color-input-border: #aeaeae;
-  --color-input: #ffffff;
+  --font-sans: var(--font-geist-sans), ui-sans-serif, sans-serif;
+  --color-background: #0f1419;
+  --color-surface: #1a222c;
+  --color-foreground: #e8eef4;
+  --color-muted: #8b9aab;
+  --color-accent: #3d9cf0;
+  --color-border: #2a3542;
 }

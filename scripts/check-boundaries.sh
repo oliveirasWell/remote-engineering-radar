@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# UI must not mention raw OpenWeather fields — the adapter owns that shape.
-if grep -rE 'temp_min|dt_txt|weather\[0\]' components/ app/components/; then
+# DATABASE_URL must stay server-side. Split the token so this file is not a hit.
+name=DATABASE_URL
+if git grep -n "NEXT_PUBLIC_${name}" -- ':!specs' ':!.github' ':!scripts' ':!README.md'; then
   exit 1
 fi
 
-# The key must stay server-side. Split the token so this file is not a hit.
-name=OPENWEATHER
-if git grep -n "NEXT_PUBLIC_${name}" -- ':!specs' ':!.github' ':!scripts'; then
+# Secret connection strings must not be hard-coded in application source.
+if git grep -nE 'postgres(ql)?://[^[:space:]]+' -- ':(glob)app/**' ':(glob)components/**' ':(glob)lib/**' ':!*.test.ts' ':!*.test.tsx'; then
   exit 1
 fi

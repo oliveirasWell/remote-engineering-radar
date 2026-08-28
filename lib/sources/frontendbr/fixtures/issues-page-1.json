@@ -1,0 +1,63 @@
+[
+  {
+    "number": 8542,
+    "title": "[Remoto] React Front-End Developer Sênior na Sylision",
+    "html_url": "https://github.com/frontendbr/vagas/issues/8542",
+    "created_at": "2026-08-27T18:11:02Z",
+    "labels": [
+      { "name": "CLT" },
+      { "name": "PJ" },
+      { "name": "Remoto" },
+      { "name": "Sênior" }
+    ],
+    "body": "## Nossa empresa\n\n**Sylision**\n\nBuscamos uma pessoa desenvolvedora React com TypeScript para atuar em produtos de larga escala.\n\n## Requisitos\n\n- React.js\n- TypeScript\n- Node.js\n\n## Como se candidatar\n\nEnvie seu currículo para vagas@sylision.example"
+  },
+  {
+    "number": 8554,
+    "title": "[Remoto ]  Full-stack Engineer (HealthTech, EHR/EMR, Terraform, React) USD - Strider",
+    "html_url": "https://github.com/frontendbr/vagas/issues/8554",
+    "created_at": "2026-08-28T01:56:23Z",
+    "labels": [{ "name": "Remoto" }, { "name": "Sênior" }],
+    "body": "# [VAGA REMOTA] Full-stack Engineer\n\n> **Salário:** $4,550 – $5,600 USD/mês\n> **Modalidade:** 100% Remoto\n\n### Tech Stack\n- React.js, TypeScript, Git\n- PostgreSQL, Terraform"
+  },
+  {
+    "number": 8548,
+    "title": "[Híbrido] Senior Front-end Developer Engineer (Jcal Consultoria)",
+    "html_url": "https://github.com/frontendbr/vagas/issues/8548",
+    "created_at": "2026-08-27T20:02:41Z",
+    "labels": [
+      { "name": "Especialista" },
+      { "name": "Híbrido" },
+      { "name": "Remoto" },
+      { "name": "Sênior" }
+    ],
+    "body": "Engenheiro(a) de Software com forte experiência em React para uma empresa global de Healthcare."
+  },
+  {
+    "number": 8550,
+    "title": "[Híbrido] Developer Full Stack Python AI/LLM - Convolut",
+    "html_url": "https://github.com/frontendbr/vagas/issues/8550",
+    "created_at": "2026-08-27T21:53:59Z",
+    "labels": [
+      { "name": "Estágio" },
+      { "name": "Híbrido" },
+      { "name": "PJ" },
+      { "name": "São Paulo" },
+      { "name": "Sênior" }
+    ],
+    "body": "## Nossa empresa\n\n**Convolut**\n\nSomos uma startup em estágio inicial."
+  },
+  {
+    "number": 8545,
+    "title": "[Híbrido] Angular Front-End Developer Pleno na Sylision",
+    "html_url": "https://github.com/frontendbr/vagas/issues/8545",
+    "created_at": "2026-08-27T19:40:15Z",
+    "labels": [
+      { "name": "CLT" },
+      { "name": "Híbrido" },
+      { "name": "Pleno" },
+      { "name": "Remoto" }
+    ],
+    "body": "Vaga para pessoa desenvolvedora Angular pleno."
+  }
+]

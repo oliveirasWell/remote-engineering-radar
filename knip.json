@@ -1,8 +1,18 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
-    "app/**/{page,layout,route,providers}.{ts,tsx}",
-    "app/globals.css"
+    "app/**/{page,layout,route}.{ts,tsx}",
+    "app/globals.css",
+    "lib/db/client.ts",
+    "lib/db/repositories/*.ts",
+    "lib/sources/**/*.ts",
+    "lib/classification/**/*.ts",
+    "lib/scoring/**/*.ts",
+    "lib/deduplication/**/*.ts",
+    "lib/hiring-signals/**/*.ts",
+    "lib/report/**/*.ts",
+    "components/report/**/*.{ts,tsx}",
+    "lib/ingestion/**/*.ts"
   ],
-  "project": ["{app,components,lib}/**/*.{ts,tsx,css}"]
+  "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }

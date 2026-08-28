@@ -5,7 +5,6 @@ build/
 coverage/
 .env
 .env.*
-!.env.example
 cypress/videos/
 cypress/screenshots/
 cypress/downloads/
@@ -14,3 +13,6 @@ next-env.d.ts
 .DS_Store
 .claude/settings.local.json
 .serena/
+.vercel
+.env*
+!.env.example
