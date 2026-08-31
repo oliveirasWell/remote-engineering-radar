@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
+import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { logReportError } from './log-report-error';
@@ -103,17 +104,7 @@ export const getHomeReport = async (): Promise<HomeReport> => {
     }
 
     const updatedAt =
-      jobCards.reduce<Date | null>((latest, job) => {
-        if (!job.postedAt) {
-          return latest;
-        }
-        if (!latest || job.postedAt > latest) {
-          return job.postedAt;
-        }
-        return latest;
-      }, null) ??
-      companies[0]?.updatedAt ??
-      null;
+      await createIngestionRunsRepository(db).getLatestCompletedAt();
 
     return {
       updatedAt,
