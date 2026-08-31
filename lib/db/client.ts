@@ -1,58 +1,52 @@
 import 'server-only';
 
-import { drizzle } from 'drizzle-orm/postgres-js';
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type { PgliteDatabase } from 'drizzle-orm/pglite';
-import { rootCertificates } from 'node:tls';
-import postgres from 'postgres';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { DATABASE_URL_ENV, MISSING_DATABASE_URL_MESSAGE } from './constants';
-import * as schema from './schema';
-import { SUPABASE_ROOT_CA } from './supabase-root-ca';
+import { databasePoolConfig } from './connection-options';
 
-const DB_CONNECT_TIMEOUT_SECONDS = 10;
-const DB_IDLE_TIMEOUT_SECONDS = 20;
-const DB_MAX_CONNECTIONS = 10;
+const DB_CONNECT_TIMEOUT_MILLISECONDS = 10_000;
+const DB_TRANSACTION_TIMEOUT_MILLISECONDS = 120_000;
 
-export type Db =
-  PostgresJsDatabase<typeof schema> | PgliteDatabase<typeof schema>;
-
-export const databaseSslMode = (
-  connectionString: string,
-): { ca: string[]; rejectUnauthorized: true } | undefined => {
-  const hostname = new URL(connectionString).hostname;
-  return hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === '[::1]'
-    ? undefined
-    : {
-        ca: [...rootCertificates, SUPABASE_ROOT_CA],
-        rejectUnauthorized: true,
-      };
-};
+export type Db = Prisma.TransactionClient;
+export type RootDb = PrismaClient;
 
 export const createDb = (
   connectionString = process.env[DATABASE_URL_ENV],
-): PostgresJsDatabase<typeof schema> => {
+): PrismaClient => {
   if (!connectionString) {
     throw new Error(MISSING_DATABASE_URL_MESSAGE);
   }
 
-  const client = postgres(connectionString, {
-    prepare: false,
-    connect_timeout: DB_CONNECT_TIMEOUT_SECONDS,
-    idle_timeout: DB_IDLE_TIMEOUT_SECONDS,
-    max: DB_MAX_CONNECTIONS,
-    ssl: databaseSslMode(connectionString),
+  const adapter = new PrismaPg(databasePoolConfig(connectionString));
+  return new PrismaClient({
+    adapter,
+    transactionOptions: {
+      maxWait: DB_CONNECT_TIMEOUT_MILLISECONDS,
+      timeout: DB_TRANSACTION_TIMEOUT_MILLISECONDS,
+    },
   });
-  return drizzle(client, { schema });
 };
 
-let dbSingleton: PostgresJsDatabase<typeof schema> | undefined;
+const globalForDb = globalThis as typeof globalThis & {
+  radarDb?: PrismaClient;
+};
 
-export const getDb = (): PostgresJsDatabase<typeof schema> => {
-  if (!dbSingleton) {
-    dbSingleton = createDb();
+export const getDb = (): PrismaClient => {
+  if (!globalForDb.radarDb) {
+    globalForDb.radarDb = createDb();
   }
 
-  return dbSingleton;
+  return globalForDb.radarDb;
+};
+
+export const disconnectDb = async (db = globalForDb.radarDb): Promise<void> => {
+  if (!db) {
+    return;
+  }
+
+  await db.$disconnect();
+  if (db === globalForDb.radarDb) {
+    delete globalForDb.radarDb;
+  }
 };

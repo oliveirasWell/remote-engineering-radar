@@ -1,11 +1,11 @@
-import { sql } from 'drizzle-orm';
-import { createTestDb } from './create-test-db';
+import { Prisma } from '@prisma/client';
+import { createTestDb, disconnectTestDb } from './create-test-db';
 
 describe('createTestDb', () => {
   it('applies migrations and creates the canonical tables', async () => {
     const db = await createTestDb();
 
-    const result = await db.execute<{ table_name: string }>(sql`
+    const rows = await db.$queryRaw<{ table_name: string }[]>(Prisma.sql`
       select table_name
       from information_schema.tables
       where table_schema = 'public'
@@ -13,8 +13,14 @@ describe('createTestDb', () => {
       order by table_name
     `);
 
-    const rows = Array.isArray(result) ? result : result.rows;
     const tableNames = rows.map((row) => row.table_name);
     expect(tableNames).toEqual(['companies', 'hiring_signals', 'jobs']);
+  });
+
+  it('supports explicit idempotent test-client disconnect', async () => {
+    const db = await createTestDb();
+
+    await expect(disconnectTestDb(db)).resolves.toBeUndefined();
+    await expect(disconnectTestDb(db)).resolves.toBeUndefined();
   });
 });

@@ -1,9 +1,8 @@
-import { desc, eq, gt } from 'drizzle-orm';
+import type { Company as PrismaCompany } from '@prisma/client';
 import type { Company, NewCompany } from '@/lib/companies/types';
 import type { Db } from '../client';
-import { companies } from '../schema/companies';
 
-const toCompany = (row: typeof companies.$inferSelect): Company => ({
+const toCompany = (row: PrismaCompany): Company => ({
   id: row.id,
   name: row.name,
   slug: row.slug,
@@ -15,117 +14,81 @@ const toCompany = (row: typeof companies.$inferSelect): Company => ({
   updatedAt: row.updatedAt,
 });
 
-export const createCompaniesRepository = (db: Db) => {
-  const repository = {
-    create: async (input: NewCompany): Promise<Company> => {
-      const [row] = await db
-        .insert(companies)
-        .values({
+export const createCompaniesRepository = (db: Db) => ({
+  create: async (input: NewCompany): Promise<Company> =>
+    toCompany(
+      await db.company.create({
+        data: {
           name: input.name,
           slug: input.slug,
           websiteUrl: input.websiteUrl ?? null,
           logoUrl: input.logoUrl ?? null,
           source: input.source,
           hiringScore: input.hiringScore ?? 0,
-        })
-        .returning();
+        },
+      }),
+    ),
 
-      if (!row) {
-        throw new Error('Failed to create company');
-      }
+  findById: async (id: string): Promise<Company | null> => {
+    const row = await db.company.findUnique({ where: { id } });
+    return row ? toCompany(row) : null;
+  },
 
-      return toCompany(row);
-    },
+  findBySlug: async (slug: string): Promise<Company | null> => {
+    const row = await db.company.findUnique({ where: { slug } });
+    return row ? toCompany(row) : null;
+  },
 
-    findById: async (id: string): Promise<Company | null> => {
-      const [row] = await db
-        .select()
-        .from(companies)
-        .where(eq(companies.id, id));
-      return row ? toCompany(row) : null;
-    },
+  listByHiringScore: async (options?: {
+    limit?: number;
+    minimumHiringScore?: number;
+  }): Promise<Company[]> => {
+    const rows = await db.company.findMany({
+      where: { hiringScore: { gt: options?.minimumHiringScore ?? 0 } },
+      orderBy: [{ hiringScore: 'desc' }, { updatedAt: 'desc' }],
+      ...(options?.limit === undefined ? {} : { take: options.limit }),
+    });
+    return rows.map(toCompany);
+  },
 
-    findBySlug: async (slug: string): Promise<Company | null> => {
-      const [row] = await db
-        .select()
-        .from(companies)
-        .where(eq(companies.slug, slug));
-      return row ? toCompany(row) : null;
-    },
+  updateHiringScore: async (
+    id: string,
+    hiringScore: number,
+  ): Promise<Company | null> => {
+    const [row] = await db.company.updateManyAndReturn({
+      where: { id },
+      data: { hiringScore, updatedAt: new Date() },
+    });
+    return row ? toCompany(row) : null;
+  },
 
-    listByHiringScore: async (options?: {
-      limit?: number;
-      minimumHiringScore?: number;
-    }): Promise<Company[]> => {
-      const minimum = options?.minimumHiringScore ?? 0;
-      const query = db
-        .select()
-        .from(companies)
-        .where(gt(companies.hiringScore, minimum))
-        .orderBy(desc(companies.hiringScore), desc(companies.updatedAt));
-
-      const rows =
-        options?.limit !== undefined
-          ? await query.limit(options.limit)
-          : await query;
-      return rows.map(toCompany);
-    },
-
-    updateHiringScore: async (
-      id: string,
-      hiringScore: number,
-    ): Promise<Company | null> => {
-      const [row] = await db
-        .update(companies)
-        .set({ hiringScore, updatedAt: new Date() })
-        .where(eq(companies.id, id))
-        .returning();
-      return row ? toCompany(row) : null;
-    },
-
-    upsertBySlug: async (input: NewCompany): Promise<Company> => {
-      const [row] = await db
-        .insert(companies)
-        .values({
+  upsertBySlug: async (input: NewCompany): Promise<Company> =>
+    toCompany(
+      await db.company.upsert({
+        where: { slug: input.slug },
+        create: {
           name: input.name,
           slug: input.slug,
           websiteUrl: input.websiteUrl ?? null,
           logoUrl: input.logoUrl ?? null,
           source: input.source,
           hiringScore: input.hiringScore ?? 0,
-        })
-        .onConflictDoUpdate({
-          target: companies.slug,
-          set: {
-            name: input.name,
-            source: input.source,
-            ...(input.websiteUrl === undefined
-              ? {}
-              : { websiteUrl: input.websiteUrl }),
-            ...(input.logoUrl === undefined ? {} : { logoUrl: input.logoUrl }),
-            ...(input.hiringScore === undefined
-              ? {}
-              : { hiringScore: input.hiringScore }),
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
+        },
+        update: {
+          name: input.name,
+          source: input.source,
+          ...(input.websiteUrl === undefined
+            ? {}
+            : { websiteUrl: input.websiteUrl }),
+          ...(input.logoUrl === undefined ? {} : { logoUrl: input.logoUrl }),
+          ...(input.hiringScore === undefined
+            ? {}
+            : { hiringScore: input.hiringScore }),
+          updatedAt: new Date(),
+        },
+      }),
+    ),
 
-      if (!row) {
-        throw new Error('Failed to upsert company');
-      }
-
-      return toCompany(row);
-    },
-
-    deleteById: async (id: string): Promise<boolean> => {
-      const deleted = await db
-        .delete(companies)
-        .where(eq(companies.id, id))
-        .returning();
-      return deleted.length > 0;
-    },
-  };
-
-  return repository;
-};
+  deleteById: async (id: string): Promise<boolean> =>
+    (await db.company.deleteMany({ where: { id } })).count > 0,
+});

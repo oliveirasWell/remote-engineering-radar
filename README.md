@@ -9,7 +9,7 @@ preference for remote Brazil, LATAM, and Americas.
 - **Next.js** — App Router, server components, cache-friendly pages
 - **React + TypeScript** — strict mode
 - **PostgreSQL (Supabase Free)** — canonical job and company data
-- **Drizzle ORM + postgres.js** — database access
+- **Prisma 7 + node-postgres** — type-safe database access and migrations
 - **GitHub Actions** — scheduled ingestion (no always-on worker)
 - **Vercel Hobby** — public website
 - **Vitest + React Testing Library** — unit and component tests
@@ -18,7 +18,7 @@ preference for remote Brazil, LATAM, and Americas.
 
 ## Requirements
 
-- Node.js 22
+- Node.js 22 (22.12 or newer)
 - pnpm 11.22.0
 - Docker (local Postgres runs in a container — no local install needed)
 
@@ -54,30 +54,63 @@ include those sources too.
 Database data lives in the Docker named volume `radar-pgdata`, outside the repository. It
 survives `pnpm db:down`; `pnpm db:reset` deletes it and starts clean.
 
-`DATABASE_URL` must not use a `NEXT_PUBLIC_` prefix — secrets stay server-side.
-Production migrations should use a separate, protected `DATABASE_MIGRATION_URL`
-secret with permissions limited to schema changes.
-Repository tests use in-memory PGlite and require neither Docker nor a live database.
+`DATABASE_URL` must not use a `NEXT_PUBLIC_` prefix; it is the runtime application URL and
+may use a pooler. `DATABASE_MIGRATION_URL` is the protected direct URL used by Prisma CLI
+operations. `DIRECT_URL` is accepted as a migration fallback. Non-local runtime
+connections enforce certificate verification; Prisma CLI migration connections require
+TLS using its documented `sslmode=require` mode.
+
+Repository tests use pinned `prisma-pglite-bridge` with the production Prisma `pg` adapter,
+so they remain in-process and require neither Docker nor a live database. `pnpm db:smoke`
+uses the Docker service to verify the baseline and a second idempotent deploy against real
+PostgreSQL.
+
+### Required production baseline gate
+
+Production already has the application tables. Before this branch can be merged or
+deployed, run this once with the protected direct Supabase migration URL:
+
+```bash
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:baseline-check
+DATABASE_MIGRATION_URL='postgresql://...' pnpm prisma migrate resolve --applied 20260828000000_prisma_baseline
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:deploy
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:status
+```
+
+Do not run `prisma migrate deploy` against the existing production database before the
+resolve command succeeds. `pnpm db:deploy` performs an additional preflight and refuses to
+apply the baseline when canonical tables exist without the completed baseline record.
+
+Keep `drizzle.__drizzle_migrations` unchanged through the rollback window. Prisma does not
+read or modify that historical table. See [SPEC-014](specs/014-prisma-data-layer.md) for the
+rollout and rollback decision.
 
 ## Commands
 
-| Command            | Purpose                                                               |
-| ------------------ | --------------------------------------------------------------------- |
-| `pnpm dev`         | Start the development server                                          |
-| `pnpm build`       | Create a production build                                             |
-| `pnpm start`       | Start the production server                                           |
-| `pnpm lint`        | Run ESLint                                                            |
-| `pnpm typecheck`   | Run TypeScript without emitting files                                 |
-| `pnpm test`        | Run the Vitest suite                                                  |
-| `pnpm test:watch`  | Run Vitest in watch mode                                              |
-| `pnpm ingest`      | Fetch and persist jobs from configured sources                        |
-| `pnpm db:generate` | Generate SQL migrations from the Drizzle schema                       |
-| `pnpm db:migrate`  | Apply migrations to `DATABASE_URL`                                    |
-| `pnpm db:up`       | Start the Docker Postgres container and apply migrations              |
-| `pnpm db:down`     | Stop the container, keeping the data volume                           |
-| `pnpm db:reset`    | Destroy the data volume and start a fresh, migrated database          |
-| `pnpm check`       | Run lint, typecheck, and unit tests                                   |
-| `pnpm quality`     | Run check, build, dead-code, circular-dependency, and boundary checks |
+| Command            | Purpose                                                 |
+| ------------------ | ------------------------------------------------------- |
+| `pnpm dev`         | Start the development server                            |
+| `pnpm build`       | Create a production build                               |
+| `pnpm start`       | Start the production server                             |
+| `pnpm lint`        | Run ESLint                                              |
+| `pnpm typecheck`   | Run TypeScript without emitting files                   |
+| `pnpm test`        | Run the Vitest suite                                    |
+| `pnpm test:watch`  | Run Vitest in watch mode                                |
+| `pnpm ingest`      | Fetch and persist jobs from configured sources          |
+| `pnpm db:generate` | Generate Prisma Client without connecting to a database |
+| `pnpm db:deploy`   | Safely deploy migrations using the migration/direct URL |
+| `pnpm db:dev`      | Create and apply development migrations                 |
+| `pnpm db:status`   | Show Prisma migration status                            |
+| `pnpm db:validate` | Validate the Prisma schema without a live database      |
+| `pnpm db:smoke`    | Deploy twice to a fresh real PostgreSQL smoke database  |
+
+`pnpm db:baseline-check` verifies schema parity and public-role ACLs before the one-time
+production baseline resolution.
+| `pnpm db:up` | Start Docker PostgreSQL and safely deploy migrations |
+| `pnpm db:down` | Stop the container, keeping the data volume |
+| `pnpm db:reset` | Destroy the data volume and start a fresh, migrated database |
+| `pnpm check` | Run lint, typecheck, and unit tests |
+| `pnpm quality` | Run check, build, dead-code, circular-dependency, and boundary checks |
 
 ## Architecture
 
@@ -93,5 +126,5 @@ The public site primarily reads data. Crawling does not run on Vercel.
 
 ## Specs
 
-Implementation follows eval-driven specs under [`specs/`](specs/). Current focus:
-[SPEC-013](specs/013-automated-ingestion.md).
+Implementation follows eval-driven specs under [`specs/`](specs/). The current data-layer
+rollout is [SPEC-014](specs/014-prisma-data-layer.md).
