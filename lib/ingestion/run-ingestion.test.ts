@@ -1,5 +1,6 @@
 import { createTestDb } from '@/lib/db/test/create-test-db';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
+import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { scoreJob } from '@/lib/scoring/score-job';
@@ -60,6 +61,32 @@ describe('runIngestion', () => {
     );
     expect(result.persistedJobs).toBe(1);
     expect(logs.some((line) => line.includes('ashby failed'))).toBe(true);
+  });
+
+  it('records the ingestion completion time', async () => {
+    const db = await createTestDb();
+    const completedAt = new Date('2026-08-31T15:15:09.000Z');
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => [
+        makeJob({
+          source: 'greenhouse',
+          sourceJobId: '1',
+          title: 'Senior Frontend Engineer',
+          url: 'https://example.com/jobs/1',
+        }),
+      ],
+    };
+
+    await runIngestion({
+      db,
+      sources: [source],
+      completedAt: () => completedAt,
+    });
+
+    expect(
+      await createIngestionRunsRepository(db).getLatestCompletedAt(),
+    ).toEqual(completedAt);
   });
 
   it('is idempotent across duplicate executions', async () => {

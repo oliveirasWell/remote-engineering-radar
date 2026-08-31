@@ -2,6 +2,7 @@ import { classifyJob } from '@/lib/classification/classify-job';
 import type { Db } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
+import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { normalizeCompanyName } from '@/lib/deduplication/normalize';
 import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
@@ -53,6 +54,7 @@ export const runIngestion = async (options: {
   db: Db;
   sources: JobSource[];
   logger?: IngestionLogger;
+  completedAt?: () => Date;
 }): Promise<IngestionResult> => {
   const logger = options.logger ?? {
     info: (message: string) => console.log(message),
@@ -87,6 +89,8 @@ export const runIngestion = async (options: {
       const jobsRepository = createJobsRepository(transactionDb);
       const hiringSignalsRepository =
         createHiringSignalsRepository(transactionDb);
+      const ingestionRunsRepository =
+        createIngestionRunsRepository(transactionDb);
       const companyIds = new Set<string>();
       let persistedJobs = 0;
 
@@ -166,6 +170,12 @@ export const runIngestion = async (options: {
         );
         companiesUpdated += 1;
       }
+
+      await ingestionRunsRepository.record({
+        completedAt: options.completedAt?.(),
+        persistedJobs,
+        companiesUpdated,
+      });
 
       return { persistedJobs, companiesUpdated };
     },
