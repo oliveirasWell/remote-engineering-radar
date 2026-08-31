@@ -32,16 +32,11 @@ export const JobCard = ({ job }: JobCardProps) => {
 
   return (
     <article className="border-b border-border py-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-lg font-semibold tracking-tight">
-          <Link href={`/jobs/${job.id}`} className="hover:text-accent">
-            {job.title}
-          </Link>
-        </h3>
-        <p className="text-sm text-muted">
-          {JOB_CARD_COPY.scoreLabel}: {job.score}
-        </p>
-      </div>
+      <h3 className="text-lg font-semibold tracking-tight">
+        <Link href={`/jobs/${job.id}`} className="hover:text-accent">
+          {job.title}
+        </Link>
+      </h3>
       <p className="mt-1 text-sm text-muted">{job.companyName}</p>
       {job.technologies.length > 0 ? (
         <p className="mt-2 text-sm">{job.technologies.join(' · ')}</p>

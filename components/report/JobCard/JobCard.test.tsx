@@ -24,7 +24,7 @@ describe('JobCard', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders score, reasons, and original job link', () => {
+  it('renders reasons and original job link without exposing the score', () => {
     render(<JobCard job={job} />);
 
     expect(
@@ -32,8 +32,8 @@ describe('JobCard', () => {
     ).toBeInTheDocument();
     expect(screen.getByText(job.companyName)).toBeInTheDocument();
     expect(
-      screen.getByText(`${JOB_CARD_COPY.scoreLabel}: ${job.score}`),
-    ).toBeInTheDocument();
+      screen.queryByText((content) => content.includes(String(job.score))),
+    ).not.toBeInTheDocument();
     expect(screen.getByText(JOB_CARD_COPY.whyRelevant)).toBeInTheDocument();
     expect(screen.getByText('React')).toBeInTheDocument();
     expect(

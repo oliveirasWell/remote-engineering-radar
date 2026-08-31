@@ -3,7 +3,6 @@ export const JOB_CARD_COPY = {
   hideConfirmation: 'Hide this job? You will not see it again in this browser.',
   whyRelevant: 'Why this is relevant:',
   viewOriginal: 'View original job',
-  scoreLabel: 'Score',
   postedLabel: 'Posted',
 } as const;
 
