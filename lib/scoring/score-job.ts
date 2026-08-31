@@ -95,6 +95,11 @@ const scoreClassification = (classification: JobClassification): JobScore => {
     reasons.push('Unrelated stack');
   }
 
+  if (classification.isUnrelatedRole) {
+    rawScore += SCORE_WEIGHTS.unrelatedRole;
+    reasons.push('Unrelated role');
+  }
+
   return {
     rawScore,
     score: normalizeScore(rawScore),

@@ -1,7 +1,17 @@
 import { and, desc, eq, gte, notInArray, sql } from 'drizzle-orm';
+import type { JobGeography } from '@/lib/classification/types';
 import type { Job, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
 import { jobs } from '../schema/jobs';
+
+const toGeographies = (value: string[]): JobGeography[] =>
+  value.filter(
+    (entry): entry is JobGeography =>
+      entry === 'brazil' ||
+      entry === 'latam' ||
+      entry === 'americas' ||
+      entry === 'worldwide',
+  );
 
 const toJob = (row: typeof jobs.$inferSelect): Job => ({
   id: row.id,
@@ -14,6 +24,7 @@ const toJob = (row: typeof jobs.$inferSelect): Job => ({
   remotePolicy: row.remotePolicy,
   description: row.description,
   technologies: row.technologies,
+  geographies: toGeographies(row.geographies),
   seniority: row.seniority,
   score: row.score,
   postedAt: row.postedAt,
@@ -40,6 +51,7 @@ export const createJobsRepository = (db: Db) => {
           remotePolicy: input.remotePolicy ?? null,
           description: input.description ?? null,
           technologies: input.technologies ?? [],
+          geographies: input.geographies ?? [],
           seniority: input.seniority ?? null,
           score: input.score ?? 0,
           postedAt: input.postedAt ?? null,
@@ -87,6 +99,8 @@ export const createJobsRepository = (db: Db) => {
       seniority?: string;
       remotePolicy?: string;
       location?: string;
+      maxAgeMs?: number;
+      now?: Date;
     }): Promise<Job[]> => {
       const filters = [eq(jobs.isActive, true)];
 
@@ -105,6 +119,13 @@ export const createJobsRepository = (db: Db) => {
       if (options?.technology) {
         filters.push(
           sql`${jobs.technologies} @> ${JSON.stringify([options.technology])}::jsonb`,
+        );
+      }
+      if (options?.maxAgeMs !== undefined) {
+        const now = options.now ?? new Date();
+        const cutoff = new Date(now.getTime() - options.maxAgeMs);
+        filters.push(
+          sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
         );
       }
 
@@ -144,6 +165,7 @@ export const createJobsRepository = (db: Db) => {
           remotePolicy: input.remotePolicy ?? null,
           description: input.description ?? null,
           technologies: input.technologies ?? [],
+          geographies: input.geographies ?? [],
           seniority: input.seniority ?? null,
           score: input.score ?? 0,
           postedAt: input.postedAt ?? null,
@@ -161,6 +183,7 @@ export const createJobsRepository = (db: Db) => {
             remotePolicy: input.remotePolicy ?? null,
             description: input.description ?? null,
             technologies: input.technologies ?? [],
+            geographies: input.geographies ?? [],
             seniority: input.seniority ?? null,
             ...(input.score === undefined ? {} : { score: input.score }),
             ...(input.postedAt === undefined
@@ -193,6 +216,24 @@ export const createJobsRepository = (db: Db) => {
         .update(jobs)
         .set({ isActive: false, updatedAt: new Date() })
         .where(and(...conditions))
+        .returning();
+      return rows.map(toJob);
+    },
+
+    deactivateOlderThan: async (
+      maxAgeMs: number,
+      now: Date = new Date(),
+    ): Promise<Job[]> => {
+      const cutoff = new Date(now.getTime() - maxAgeMs);
+      const rows = await db
+        .update(jobs)
+        .set({ isActive: false, updatedAt: now })
+        .where(
+          and(
+            eq(jobs.isActive, true),
+            sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) < ${cutoff}`,
+          ),
+        )
         .returning();
       return rows.map(toJob);
     },

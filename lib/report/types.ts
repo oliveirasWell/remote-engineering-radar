@@ -1,3 +1,5 @@
+import type { CompanyKind } from '@/lib/companies/constants';
+
 export type ReportJobCard = {
   id: string;
   title: string;
@@ -17,6 +19,7 @@ export type ReportCompanyCard = {
   name: string;
   slug: string;
   hiringScore: number;
+  kind: CompanyKind;
   summary: string;
   signalDescriptions: string[];
   websiteUrl: string | null;
@@ -25,7 +28,6 @@ export type ReportCompanyCard = {
 
 export type HomeReport = {
   updatedAt: Date | null;
-  jobs: ReportJobCard[];
   companies: ReportCompanyCard[];
   errorMessage?: string;
 };
