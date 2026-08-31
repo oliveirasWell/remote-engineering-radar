@@ -26,6 +26,7 @@ export const SCORE_WEIGHTS = {
   onsiteOnly: -50,
   relocationRequired: -40,
   unrelatedStack: -50,
+  unrelatedRole: -50,
 } as const;
 
 export const MIN_NORMALIZED_SCORE = 0;

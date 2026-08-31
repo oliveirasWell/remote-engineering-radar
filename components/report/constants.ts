@@ -14,4 +14,9 @@ export const COMPANY_CARD_COPY = {
   signalsLabel: 'Signals:',
   viewCompany: 'View company',
   openRolesSuffix: 'engineering positions currently open',
+  kindLabels: {
+    product: 'Product',
+    consultancy: 'Consultancy',
+    staffing: 'Staffing',
+  },
 } as const;

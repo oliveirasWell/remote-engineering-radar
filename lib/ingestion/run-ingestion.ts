@@ -1,4 +1,7 @@
-import { classifyJob } from '@/lib/classification/classify-job';
+import {
+  classifyJob,
+  shouldPersistClassifiedJob,
+} from '@/lib/classification/classify-job';
 import type { Db } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
@@ -7,6 +10,7 @@ import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { normalizeCompanyName } from '@/lib/deduplication/normalize';
 import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
+import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
 import { scoreClassifiedJob } from '@/lib/scoring/score-job';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
@@ -28,10 +32,27 @@ export type IngestionResult = {
   companiesUpdated: number;
 };
 
+type EnrichedJob = NormalizedJob & {
+  score: number;
+  geographies: ReturnType<typeof classifyJob>['geography'];
+  shouldPersist: boolean;
+};
+
 const toSlug = (name: string): string =>
   normalizeCompanyName(name).replaceAll(' ', '-') || 'unknown-company';
 
-const enrichJob = (job: NormalizedJob): NormalizedJob & { score: number } => {
+const isPostedBeyondMaxAge = (
+  job: NormalizedJob,
+  now: Date,
+  maxAgeMs: number,
+): boolean => {
+  if (!job.postedAt) {
+    return false;
+  }
+  return now.getTime() - job.postedAt.getTime() > maxAgeMs;
+};
+
+const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
   const classification = classifyJob({
     title: job.title,
     description: job.description,
@@ -47,6 +68,10 @@ const enrichJob = (job: NormalizedJob): NormalizedJob & { score: number } => {
     seniority: classification.seniority ?? job.seniority,
     remotePolicy: classification.remotePolicy ?? job.remotePolicy,
     score: scored.score,
+    geographies: classification.geography,
+    shouldPersist:
+      shouldPersistClassifiedJob(classification) &&
+      !isPostedBeyondMaxAge(job, now, JOB_MAX_AGE_MS),
   };
 };
 
@@ -55,11 +80,13 @@ export const runIngestion = async (options: {
   sources: JobSource[];
   logger?: IngestionLogger;
   completedAt?: () => Date;
+  now?: () => Date;
 }): Promise<IngestionResult> => {
   const logger = options.logger ?? {
     info: (message: string) => console.log(message),
     error: (message: string) => console.error(message),
   };
+  const now = options.now?.() ?? new Date();
 
   const sourceResults: IngestionSourceResult[] = [];
   const fetchedJobs: NormalizedJob[] = [];
@@ -79,8 +106,9 @@ export const runIngestion = async (options: {
 
   const enriched = fetchedJobs
     .filter((job) => isSafeExternalUrl(job.url))
-    .map(enrichJob);
-  const { jobs: uniqueJobs } = deduplicateJobs(enriched);
+    .map((job) => enrichJob(job, now));
+  const persistable = enriched.filter((job) => job.shouldPersist);
+  const { jobs: uniqueJobs } = deduplicateJobs(persistable);
 
   const { persistedJobs, companiesUpdated } = await options.db.transaction(
     async (tx) => {
@@ -106,7 +134,7 @@ export const runIngestion = async (options: {
         });
         companyIds.add(company.id);
 
-        const scoredJob = job as NormalizedJob & { score: number };
+        const scoredJob = job as EnrichedJob;
         await jobsRepository.upsertBySourceJobId({
           companyId: company.id,
           source: job.source,
@@ -117,6 +145,7 @@ export const runIngestion = async (options: {
           remotePolicy: job.remotePolicy,
           description: job.description,
           technologies: job.technologies,
+          geographies: scoredJob.geographies,
           seniority: job.seniority,
           score: scoredJob.score,
           postedAt: job.postedAt,
@@ -142,6 +171,14 @@ export const runIngestion = async (options: {
         }
       }
 
+      const agedOut = await jobsRepository.deactivateOlderThan(
+        JOB_MAX_AGE_MS,
+        now,
+      );
+      for (const job of agedOut) {
+        companyIds.add(job.companyId);
+      }
+
       let companiesUpdated = 0;
       for (const companyId of companyIds) {
         const companyJobs = await jobsRepository.listByCompanyId(companyId);
@@ -155,6 +192,7 @@ export const runIngestion = async (options: {
             isActive: job.isActive,
             sourceUrl: isSafeExternalUrl(job.url) ? job.url : undefined,
           })),
+          now,
         });
 
         await hiringSignalsRepository.replaceForCompany(

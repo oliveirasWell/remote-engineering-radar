@@ -98,6 +98,37 @@ describe('createJobsRepository', () => {
     await expect(jobsRepository.listActiveByScore()).resolves.toHaveLength(1);
   });
 
+  it('filters active jobs older than maxAgeMs', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const now = new Date('2026-08-31T12:00:00.000Z');
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'recent',
+      technologies: [...TEST_JOB.technologies],
+      postedAt: new Date('2026-08-20T12:00:00.000Z'),
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'old',
+      technologies: [...TEST_JOB.technologies],
+      postedAt: new Date('2026-03-01T12:00:00.000Z'),
+    });
+
+    const recent = await jobsRepository.listActiveByScore({
+      maxAgeMs: 1000 * 60 * 60 * 24 * 30,
+      now,
+    });
+
+    expect(recent).toHaveLength(1);
+    expect(recent[0]?.sourceJobId).toBe('recent');
+  });
+
   it('deactivates only jobs missing from a successful source snapshot', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);

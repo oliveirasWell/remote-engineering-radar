@@ -27,3 +27,16 @@ export const UNRELATED_STACK_PATTERNS = [
   /\bswift\b|\bkotlin\b|\bjava\b(?!script)/i,
   /\bruby on rails\b|\b\.net\b|\bc#\b|\bgolang\b|\bgo engineer\b/i,
 ] as const;
+
+export const UNRELATED_ROLE_PATTERNS = [
+  /\bsales\s+representative\b/i,
+  /\baccount\s+executive\b/i,
+  /\b(?:sdr|bdr)\b/i,
+  /\b(?:sales\s+development|business\s+development)\s+representative\b/i,
+  /\bsales\s+(?:manager|director|engineer|associate|executive)\b/i,
+  /\brecruiter\b|\btalent\s+acquisition\b|\bpeople\s+partner\b/i,
+  /\bcustomer\s+success\b/i,
+  /\baccount\s+manager\b/i,
+  /\b(?:marketing\s+manager|growth\s+marketing|product\s+marketing|content\s+marketing)\b/i,
+  /\brepresentante\s+comercial\b|\bvendedor\b/i,
+] as const;

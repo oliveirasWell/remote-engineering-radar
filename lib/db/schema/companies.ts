@@ -16,6 +16,7 @@ export const companies = pgTable(
     websiteUrl: text('website_url'),
     logoUrl: text('logo_url'),
     source: text('source').notNull(),
+    kind: text('kind').notNull().default('product'),
     hiringScore: integer('hiring_score').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
