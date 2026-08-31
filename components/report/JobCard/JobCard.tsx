@@ -1,15 +1,34 @@
+'use client';
+
 import Link from 'next/link';
+import { useSyncExternalStore } from 'react';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import type { ReportJobCard } from '@/lib/report/types';
 import { formatRelativeTime } from '@/lib/report/format';
 import { JOB_CARD_COPY } from '../constants';
+import { hiddenJobsStore } from './hidden-jobs-store';
 
 type JobCardProps = {
   job: ReportJobCard;
 };
 
 export const JobCard = ({ job }: JobCardProps) => {
+  const isHidden = useSyncExternalStore(
+    hiddenJobsStore.subscribe,
+    () => hiddenJobsStore.has(job.id),
+    () => false,
+  );
   const meta = [job.remotePolicy, job.location].filter(Boolean).join(' · ');
+
+  const handleHide = () => {
+    if (window.confirm(JOB_CARD_COPY.hideConfirmation)) {
+      hiddenJobsStore.hide(job.id);
+    }
+  };
+
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <article className="border-b border-border py-5">
@@ -41,8 +60,8 @@ export const JobCard = ({ job }: JobCardProps) => {
           </ul>
         </div>
       ) : null}
-      {isSafeExternalUrl(job.url) ? (
-        <p className="mt-3">
+      <div className="mt-3 flex items-center gap-4">
+        {isSafeExternalUrl(job.url) ? (
           <a
             href={job.url}
             target="_blank"
@@ -51,8 +70,15 @@ export const JobCard = ({ job }: JobCardProps) => {
           >
             {JOB_CARD_COPY.viewOriginal}
           </a>
-        </p>
-      ) : null}
+        ) : null}
+        <button
+          type="button"
+          className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
+          onClick={handleHide}
+        >
+          {JOB_CARD_COPY.hideAction}
+        </button>
+      </div>
     </article>
   );
 };
