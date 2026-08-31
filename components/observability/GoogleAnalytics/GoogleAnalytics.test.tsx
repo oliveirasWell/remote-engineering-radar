@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 
 import { render } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { GA_MEASUREMENT_ID, GA_SCRIPT_ID } from './constants';
+import { GoogleAnalytics } from './GoogleAnalytics';
 
 vi.mock('next/script', () => ({
   default: ({
@@ -20,32 +22,16 @@ vi.mock('next/script', () => ({
 }));
 
 describe('GoogleAnalytics', () => {
-  afterEach(() => {
-    vi.resetModules();
-    vi.unstubAllEnvs();
-  });
-
-  it('renders nothing when the measurement id is unset', async () => {
-    vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', '');
-    const { GoogleAnalytics } = await import('./GoogleAnalytics');
-    const { container } = render(<GoogleAnalytics />);
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it('loads gtag scripts when the measurement id is set', async () => {
-    const measurementId = 'G-TESTMEASURE';
-    vi.stubEnv('NEXT_PUBLIC_GA_MEASUREMENT_ID', measurementId);
-    const { GoogleAnalytics } = await import('./GoogleAnalytics');
-    const { GA_SCRIPT_ID } = await import('./constants');
+  it('loads gtag scripts with the measurement id constant', () => {
     const { container } = render(<GoogleAnalytics />);
 
     expect(
       container.querySelector(
-        `[data-src="https://www.googletagmanager.com/gtag/js?id=${measurementId}"]`,
+        `[data-src="https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}"]`,
       ),
     ).not.toBeNull();
     expect(container.querySelector(`#${GA_SCRIPT_ID}`)?.textContent).toContain(
-      measurementId,
+      GA_MEASUREMENT_ID,
     );
   });
 });

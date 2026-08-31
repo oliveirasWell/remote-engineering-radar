@@ -10,27 +10,21 @@ Stack for this app:
 
 | Concern                 | Tool                     | Where it lives                             |
 | ----------------------- | ------------------------ | ------------------------------------------ |
-| Access / traffic report | Google Analytics 4       | Client (`NEXT_PUBLIC_GA_MEASUREMENT_ID`)   |
+| Access / traffic report | Google Analytics 4       | Client (`GA_MEASUREMENT_ID` constant)      |
 | Runtime errors + alerts | Sentry                   | Client + server (`NEXT_PUBLIC_SENTRY_DSN`) |
 | Uptime / “is it down?”  | UptimeRobot HTTP monitor | External (not in app code)                 |
 
-No secrets or DSNs are committed. Values are set in Vercel / local `.env.local` only.
+Sentry DSN is not committed; it is set in Vercel / local `.env.local` only. The GA4
+measurement id is a public client identifier and lives as a named constant.
 
 ## Acceptance
 
-- App builds and tests pass with observability env vars unset (local/CI default)
-- When `NEXT_PUBLIC_GA_MEASUREMENT_ID` is set, the GA4 gtag scripts load once in the root layout
-- When `NEXT_PUBLIC_GA_MEASUREMENT_ID` is unset, no GA scripts are rendered
+- App builds and tests pass with Sentry env vars unset (local/CI default)
+- Root layout loads GA4 gtag scripts using `GA_MEASUREMENT_ID`
 - Sentry initializes only when `NEXT_PUBLIC_SENTRY_DSN` is set
 - `app/global-error.tsx` reports render errors to Sentry
-- `.env.example` documents `NEXT_PUBLIC_SENTRY_DSN` and `NEXT_PUBLIC_GA_MEASUREMENT_ID` as empty placeholders
+- `.env.example` documents `NEXT_PUBLIC_SENTRY_DSN` as an empty placeholder
 - UptimeRobot HTTP monitor exists for `https://remote-engineering-radar.vercel.app` (5 min, email on down)
-
-## Manual follow-up (GA)
-
-1. Create a GA4 property + web data stream for this site
-2. Copy the Measurement ID (`G-…`) into Vercel as `NEXT_PUBLIC_GA_MEASUREMENT_ID` (Production + Preview)
-3. Redeploy
 
 Sentry project: `wellington-oliveira/remote-engineering-radar` (DSN already in Vercel).
 
