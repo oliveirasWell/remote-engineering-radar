@@ -1,10 +1,17 @@
 import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
+import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
+import {
+  DEFAULT_COMPANY_MARKET_FILTER,
+  JOB_MAX_AGE_MS,
+  type CompanyMarketFilter,
+} from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { COMPANIES_PAGE_LIMIT, REPORT_ERROR_MESSAGE } from './constants';
 import { logReportError } from './log-report-error';
+import { parseCompanyMarketFilter } from './parse-company-market-filter';
 import type { ReportCompanyCard, ReportJobCard } from './types';
 
 export type CompaniesPageItem = ReportCompanyCard & {
@@ -14,19 +21,49 @@ export type CompaniesPageItem = ReportCompanyCard & {
 
 export type CompaniesPageData = {
   companies: CompaniesPageItem[];
+  market: CompanyMarketFilter;
+  updatedAt: Date | null;
   errorMessage?: string;
 };
 
-export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
+export type CompaniesPageOptions = {
+  market?: string | string[];
+};
+
+const isRecentJob = (
+  job: {
+    postedAt: Date | null;
+    firstSeenAt: Date;
+    isActive: boolean;
+  },
+  now: Date,
+): boolean => {
+  if (!job.isActive) {
+    return false;
+  }
+  const timestamp = job.postedAt ?? job.firstSeenAt;
+  return now.getTime() - timestamp.getTime() <= JOB_MAX_AGE_MS;
+};
+
+export const getCompaniesPageData = async (
+  options: CompaniesPageOptions = {},
+): Promise<CompaniesPageData> => {
+  const market =
+    parseCompanyMarketFilter(options.market) ?? DEFAULT_COMPANY_MARKET_FILTER;
+
   try {
     const db = getDb();
     const companiesRepository = createCompaniesRepository(db);
     const hiringSignalsRepository = createHiringSignalsRepository(db);
     const jobsRepository = createJobsRepository(db);
+    const now = new Date();
 
     const companies = await companiesRepository.listByHiringScore({
       limit: COMPANIES_PAGE_LIMIT,
       minimumHiringScore: 0,
+      market,
+      maxJobAgeMs: JOB_MAX_AGE_MS,
+      now,
     });
 
     const items: CompaniesPageItem[] = [];
@@ -37,8 +74,8 @@ export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
         jobsRepository.listByCompanyId(company.id),
       ]);
 
-      const activeJobs = jobs.filter((job) => job.isActive);
-      const jobCards = activeJobs.map((job) => {
+      const recentJobs = jobs.filter((job) => isRecentJob(job, now));
+      const jobCards = recentJobs.map((job) => {
         const scored = scoreJob({
           title: job.title,
           description: job.description ?? undefined,
@@ -68,13 +105,14 @@ export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
         name: company.name,
         slug: company.slug,
         hiringScore: company.hiringScore,
+        kind: company.kind,
         summary:
           company.hiringScore >= 40
             ? 'Strong hiring signal'
             : 'Company is actively expanding engineering hiring.',
         signalDescriptions: signals.map((signal) => signal.description),
         websiteUrl: company.websiteUrl,
-        openEngineeringJobs: activeJobs.length,
+        openEngineeringJobs: recentJobs.length,
         jobs: jobCards,
         signalSourceUrls: [
           ...new Set(
@@ -86,9 +124,17 @@ export const getCompaniesPageData = async (): Promise<CompaniesPageData> => {
       });
     }
 
-    return { companies: items };
+    const updatedAt =
+      await createIngestionRunsRepository(db).getLatestCompletedAt();
+
+    return { companies: items, market, updatedAt };
   } catch (error) {
     logReportError('companies', error);
-    return { companies: [], errorMessage: REPORT_ERROR_MESSAGE };
+    return {
+      companies: [],
+      market,
+      updatedAt: null,
+      errorMessage: REPORT_ERROR_MESSAGE,
+    };
   }
 };

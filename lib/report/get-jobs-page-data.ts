@@ -1,6 +1,7 @@
 import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
+import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { REPORT_ERROR_MESSAGE } from './constants';
 import { logReportError } from './log-report-error';
@@ -70,6 +71,7 @@ export const getJobsPageData = async (
       location: filters.location,
       minimumScore: filters.minimumScore ?? 0,
       limit: filters.limit,
+      maxAgeMs: JOB_MAX_AGE_MS,
     });
 
     const companyNames = new Map<string, string>();
@@ -106,8 +108,14 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
     const jobsRepository = createJobsRepository(db);
     const companiesRepository = createCompaniesRepository(db);
     const job = await jobsRepository.findById(id);
+    const now = new Date();
+    const isRecent =
+      job &&
+      job.isActive &&
+      now.getTime() - (job.postedAt ?? job.firstSeenAt).getTime() <=
+        JOB_MAX_AGE_MS;
 
-    if (!job || !job.isActive) {
+    if (!job || !isRecent) {
       return { job: null };
     }
 

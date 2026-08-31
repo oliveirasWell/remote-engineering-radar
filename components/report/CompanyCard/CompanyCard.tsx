@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { COMPANY_KINDS } from '@/lib/companies/constants';
 import type { ReportCompanyCard } from '@/lib/report/types';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import { COMPANY_CARD_COPY } from '../constants';
@@ -8,10 +9,24 @@ type CompanyCardProps = {
 };
 
 export const CompanyCard = ({ company }: CompanyCardProps) => {
+  const kindLabel =
+    company.kind !== COMPANY_KINDS.product
+      ? COMPANY_CARD_COPY.kindLabels[company.kind]
+      : null;
+
   return (
     <article className="border-b border-border py-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-lg font-semibold tracking-tight">{company.name}</h3>
+        <div className="flex flex-wrap items-baseline gap-2">
+          <h3 className="text-lg font-semibold tracking-tight">
+            {company.name}
+          </h3>
+          {kindLabel ? (
+            <span className="text-sm text-accent" role="status">
+              {kindLabel}
+            </span>
+          ) : null}
+        </div>
         <p className="text-sm text-muted">
           {COMPANY_CARD_COPY.hiringSignalLabel}: {company.summary}
         </p>
@@ -43,7 +58,7 @@ export const CompanyCard = ({ company }: CompanyCardProps) => {
           </a>
         ) : (
           <Link
-            href="/companies"
+            href="/"
             className="text-sm text-accent underline-offset-2 hover:underline"
           >
             {COMPANY_CARD_COPY.viewCompany}

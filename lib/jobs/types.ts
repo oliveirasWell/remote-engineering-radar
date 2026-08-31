@@ -1,3 +1,5 @@
+import type { JobGeography } from '@/lib/classification/types';
+
 export type Job = {
   id: string;
   companyId: string;
@@ -9,6 +11,7 @@ export type Job = {
   remotePolicy: string | null;
   description: string | null;
   technologies: string[];
+  geographies: JobGeography[];
   seniority: string | null;
   score: number;
   postedAt: Date | null;
@@ -29,6 +32,7 @@ export type NewJob = {
   remotePolicy?: string | null;
   description?: string | null;
   technologies?: string[];
+  geographies?: JobGeography[];
   seniority?: string | null;
   score?: number;
   postedAt?: Date | null;
