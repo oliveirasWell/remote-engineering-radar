@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Geist } from 'next/font/google';
+import { GoogleAnalytics } from '@/components/observability/GoogleAnalytics/GoogleAnalytics';
 import { APP_DESCRIPTION, APP_NAME } from './constants';
 import './globals.css';
 
@@ -21,6 +22,7 @@ const RootLayout = ({ children }: { children: ReactNode }) => {
   return (
     <html lang="en" className={geistSans.variable}>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+        <GoogleAnalytics />
         {children}
       </body>
     </html>
