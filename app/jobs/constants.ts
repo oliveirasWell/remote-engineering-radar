@@ -1,5 +1,9 @@
+import { FOCUS_STACK_LABEL } from '../constants';
+
 export const JOBS_PAGE_COPY = {
   title: 'Jobs',
+  subtitle: `Search remote senior frontend and fullstack openings in ${FOCUS_STACK_LABEL}.`,
+  metaTitle: `Jobs in ${FOCUS_STACK_LABEL}`,
   filtersHeading: 'Filters',
   technology: 'Technology',
   seniority: 'Seniority',

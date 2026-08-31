@@ -23,6 +23,7 @@ const Home = async () => {
         <PageTitle as="h1" className="text-4xl tracking-tight">
           {APP_NAME}
         </PageTitle>
+        <p className="text-lg text-muted">{HOME_SECTIONS.subtitle}</p>
         <p className="text-muted">{formatUpdatedLabel(report.updatedAt)}</p>
         <nav className="flex gap-4 text-sm">
           <Link
