@@ -11,7 +11,13 @@ import type { CompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import Link from 'next/link';
 
-export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
+export const CompaniesReport = ({
+  data,
+  hasError,
+}: {
+  data: CompaniesPageData;
+  hasError?: boolean;
+}) => {
   const { locale, messages } = useI18n();
 
   return (
@@ -47,7 +53,7 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
           </Link>
         ))}
       </nav>
-      {data.errorMessage ? (
+      {hasError ? (
         <p className="text-sm text-destructive" role="alert">
           {messages.report.error}
         </p>

@@ -5,7 +5,7 @@ import { MIGRATIONS_FOLDER } from '../constants';
 import * as schema from '../schema';
 
 export const createTestDb = async (): Promise<
-  PgliteDatabase<typeof schema>
+  PgliteDatabase<typeof schema> & { $client: PGlite }
 > => {
   const client = new PGlite();
   const db = drizzle(client, { schema });

@@ -6,10 +6,16 @@ import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import type { JobDetailData } from '@/lib/report/get-jobs-page-data';
 
-export const JobDetailReport = ({ data }: { data: JobDetailData }) => {
+export const JobDetailReport = ({
+  data,
+  hasError,
+}: {
+  data: JobDetailData;
+  hasError?: boolean;
+}) => {
   const { messages } = useI18n();
 
-  if (data.errorMessage) {
+  if (hasError) {
     return (
       <p className="text-sm text-destructive" role="alert">
         {messages.report.error}

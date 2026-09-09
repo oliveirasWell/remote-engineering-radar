@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
-import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
+import {
+  getJobsPageData,
+  type JobsPageData,
+} from '@/lib/report/get-jobs-page-data';
 import { JOBS_PAGE_COPY } from './constants';
 import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
 import { JobsHeading, JobsReport } from './jobs-presentation';
@@ -19,7 +22,14 @@ type JobsPageProps = {
 const JobsResults = async ({ searchParams }: JobsPageProps) => {
   const params = await searchParams;
   const filters = parseJobFilters(params);
-  const data = await getJobsPageData(filters);
+  let data: JobsPageData;
+
+  try {
+    data = await getJobsPageData(filters);
+  } catch {
+    return <JobsReport data={{ jobs: [] }} filters={filters} hasError />;
+  }
+
   return <JobsReport data={data} filters={filters} />;
 };
 

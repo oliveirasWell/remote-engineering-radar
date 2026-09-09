@@ -1,5 +1,9 @@
 import { Suspense } from 'react';
-import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import {
+  getCompaniesPageData,
+  type CompaniesPageData,
+} from '@/lib/report/get-companies-page-data';
+import { parseCountryFilter } from '@/lib/report/parse-country-filter';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { CompaniesReport, HomeHeading } from './home-presentation';
 
@@ -10,7 +14,20 @@ type HomeProps = {
 /** Streams request-dependent data while the header prerenders. */
 const CompaniesSection = async ({ searchParams }: HomeProps) => {
   const params = await searchParams;
-  const data = await getCompaniesPageData({ country: params.country });
+  const country = parseCountryFilter(params.country);
+  let data: CompaniesPageData;
+
+  try {
+    data = await getCompaniesPageData({ country });
+  } catch {
+    return (
+      <CompaniesReport
+        data={{ companies: [], country, updatedAt: null }}
+        hasError
+      />
+    );
+  }
+
   return <CompaniesReport data={data} />;
 };
 

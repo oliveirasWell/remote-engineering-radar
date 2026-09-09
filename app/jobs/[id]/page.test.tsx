@@ -1,13 +1,21 @@
 // @vitest-environment jsdom
 
 import { render, screen, within } from '@testing-library/react';
-import type { ReactElement, ReactNode } from 'react';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { TEST_REPORT_JOB } from '@/components/report/test-fixtures';
 import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { REPORT_ERROR_MESSAGE } from '@/lib/report/constants';
 import { getJobDetailData } from '@/lib/report/get-jobs-page-data';
+import { TEST_COMPANY, TEST_JOB } from '@/lib/db/repositories/test-fixtures';
+import {
+  TEST_JOB_ID,
+  TEST_REPORT_ERROR_MESSAGE,
+} from '@/lib/report/test-fixtures';
+import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
+import { JOBS_PAGE_COPY } from '../constants';
 import JobDetailPage from './page';
+
+const detailJob = { ...TEST_REPORT_JOB, id: TEST_JOB_ID };
 
 const GENERATED_REASONS = [
   { source: 'Senior', translated: 'Sênior' },
@@ -40,25 +48,18 @@ afterEach(() => {
 describe('JobDetailPage translation', () => {
   it('translates known generated reasons while preserving technology names and unknown text', async () => {
     document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
-    const unchangedReasons = [
-      ...TEST_REPORT_JOB.technologies,
-      ...TEST_REPORT_JOB.reasons,
-    ];
+    const unchangedReasons = [...detailJob.technologies, ...detailJob.reasons];
     const reasons = [
       ...GENERATED_REASONS.map(({ source }) => source),
       ...unchangedReasons,
     ];
     vi.mocked(getJobDetailData).mockResolvedValue({
-      job: { ...TEST_REPORT_JOB, reasons },
+      job: { ...detailJob, reasons },
     });
     const page = JobDetailPage({
-      params: Promise.resolve({ id: TEST_REPORT_JOB.id }),
+      params: Promise.resolve({ id: detailJob.id }),
     });
-    const section = page.props.children[1].props.children as ReactElement<
-      Parameters<typeof JobDetailPage>[0],
-      (props: Parameters<typeof JobDetailPage>[0]) => Promise<ReactNode>
-    >;
-    render(<I18nProvider>{await section.type(section.props)}</I18nProvider>);
+    render(<I18nProvider>{await resolvePageSection(page)}</I18nProvider>);
     const list = within(screen.getByRole('list'));
     expect(
       list.getAllByRole('listitem').map(({ textContent }) => textContent),
@@ -69,33 +70,33 @@ describe('JobDetailPage translation', () => {
   });
 
   it.each([
-    { job: null, errorMessage: REPORT_ERROR_MESSAGE },
-    { job: null },
-    { job: TEST_REPORT_JOB },
+    { data: { job: null }, hasError: true },
+    { data: { job: null }, hasError: false },
+    { data: { job: detailJob }, hasError: false },
   ])(
     'translates the detail state without altering original content',
-    async (data) => {
+    async ({ data, hasError }) => {
       const { jobs, report } = messagesFor('pt-BR');
       document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
-      vi.mocked(getJobDetailData).mockResolvedValue(data);
+      if (hasError) {
+        vi.mocked(getJobDetailData).mockRejectedValueOnce(
+          new Error(TEST_REPORT_ERROR_MESSAGE),
+        );
+      } else {
+        vi.mocked(getJobDetailData).mockResolvedValue(data);
+      }
       const page = JobDetailPage({
-        params: Promise.resolve({ id: TEST_REPORT_JOB.id }),
+        params: Promise.resolve({ id: detailJob.id }),
       });
-      const section = page.props.children[1].props.children as ReactElement<
-        Parameters<typeof JobDetailPage>[0],
-        (props: Parameters<typeof JobDetailPage>[0]) => Promise<ReactNode>
-      >;
-      render(
-        <I18nProvider>
-          {page.props.children[0]}
-          {await section.type(section.props)}
-        </I18nProvider>,
-      );
+      render(<I18nProvider>{await resolvePageSection(page)}</I18nProvider>);
       expect(
         screen.getByRole('link', { name: jobs.backToJobs }),
       ).toHaveAttribute('href', '/jobs');
-      if (data.errorMessage) {
+      if (hasError) {
         expect(screen.getByRole('alert')).toHaveTextContent(report.error);
+        expect(
+          screen.queryByText(TEST_REPORT_ERROR_MESSAGE),
+        ).not.toBeInTheDocument();
       } else if (!data.job) {
         expect(screen.getByText(jobs.notFound)).toBeInTheDocument();
       } else {
@@ -107,7 +108,90 @@ describe('JobDetailPage translation', () => {
           expect(screen.getByText(reason)).toBeInTheDocument();
         }
       }
-      expect(getJobDetailData).toHaveBeenLastCalledWith(TEST_REPORT_JOB.id);
+      expect(getJobDetailData).toHaveBeenLastCalledWith(detailJob.id);
     },
   );
+});
+
+const MALFORMED_IDS = [
+  '',
+  'not-a-uuid',
+  `${TEST_JOB_ID}extra`,
+  ` ${TEST_JOB_ID} `,
+  TEST_JOB_ID.replace('-4789-', '-0789-'),
+  TEST_JOB_ID.replace('-4789-', '-6789-'),
+  TEST_JOB_ID.replace('-4789-', '-7789-'),
+  TEST_JOB_ID.replace('-abcd-', '-cbcd-'),
+];
+
+describe('JobDetailPage cache boundary', () => {
+  beforeEach(() => {
+    vi.mocked(getJobDetailData).mockReset().mockResolvedValue({ job: null });
+  });
+
+  it.each(MALFORMED_IDS)(
+    'renders not found without calling the reader for malformed id %j',
+    async (id) => {
+      render(
+        await resolvePageSection(
+          JobDetailPage({ params: Promise.resolve({ id }) }),
+        ),
+      );
+
+      expect(screen.getByText(JOBS_PAGE_COPY.notFound)).toBeInTheDocument();
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(getJobDetailData).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([1, 2, 3, 4, 5])(
+    'lowercases valid version %i UUIDs before looking up even unknown jobs',
+    async (version) => {
+      const id = TEST_JOB_ID.replace('-4789-', `-${version}789-`);
+      render(
+        await resolvePageSection(
+          JobDetailPage({ params: Promise.resolve({ id: id.toUpperCase() }) }),
+        ),
+      );
+
+      expect(getJobDetailData).toHaveBeenCalledExactlyOnceWith(id);
+      expect(screen.getByText(JOBS_PAGE_COPY.notFound)).toBeInTheDocument();
+    },
+  );
+
+  it('shows only a generic alert on failure and recovers on the next invocation', async () => {
+    const props = { params: Promise.resolve({ id: TEST_JOB_ID }) };
+    vi.mocked(getJobDetailData)
+      .mockRejectedValueOnce(new Error(TEST_REPORT_ERROR_MESSAGE))
+      .mockResolvedValueOnce({
+        job: {
+          ...TEST_JOB,
+          id: TEST_JOB_ID,
+          companyId: TEST_COMPANY.slug,
+          companyName: TEST_COMPANY.name,
+          technologies: [...TEST_JOB.technologies],
+          postedAt: null,
+          reasons: [],
+        },
+      });
+
+    const section = resolvePageSection(JobDetailPage(props));
+    await expect(section).resolves.toBeDefined();
+    const { rerender } = render(await section);
+
+    expect(screen.getByRole('alert').textContent).toBe(REPORT_ERROR_MESSAGE);
+    expect(screen.queryByText(JOBS_PAGE_COPY.notFound)).not.toBeInTheDocument();
+    expect(screen.queryByText(TEST_JOB.title)).not.toBeInTheDocument();
+
+    rerender(await resolvePageSection(JobDetailPage(props)));
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: TEST_JOB.title }),
+    ).toBeInTheDocument();
+    expect(vi.mocked(getJobDetailData).mock.calls).toStrictEqual([
+      [TEST_JOB_ID],
+      [TEST_JOB_ID],
+    ]);
+  });
 });

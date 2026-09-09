@@ -1,7 +1,11 @@
 import { Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
-import { getJobDetailData } from '@/lib/report/get-jobs-page-data';
+import {
+  getJobDetailData,
+  type JobDetailData,
+} from '@/lib/report/get-jobs-page-data';
 import { JobDetailHeading, JobDetailReport } from './job-detail-presentation';
+import { parseJobId } from './parse-job-id';
 
 type JobDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -10,7 +14,19 @@ type JobDetailPageProps = {
 /** Reads the route param, so it streams in behind the static shell. */
 const JobDetail = async ({ params }: JobDetailPageProps) => {
   const { id } = await params;
-  const data = await getJobDetailData(id);
+  const jobId = parseJobId(id);
+
+  if (!jobId) {
+    return <JobDetailReport data={{ job: null }} />;
+  }
+
+  let data: JobDetailData;
+  try {
+    data = await getJobDetailData(jobId);
+  } catch {
+    return <JobDetailReport data={{ job: null }} hasError />;
+  }
+
   return <JobDetailReport data={data} />;
 };
 
