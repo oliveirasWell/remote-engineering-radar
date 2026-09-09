@@ -26,9 +26,10 @@ export type JobDetailData = {
   job: ReportJobDetail | null;
 };
 
-const UNKNOWN_COMPANY_NAME = 'Unknown company';
-
-const toJobCard = (job: JobCard, companyName: string): ReportJobCard => ({
+const toJobCard = (
+  job: JobCard,
+  companyName: string | null,
+): ReportJobCard => ({
   id: job.id,
   title: job.title,
   companyName,
@@ -71,7 +72,7 @@ export const getJobsPageData = async (
 
     return {
       jobs: jobs.map((job) =>
-        toJobCard(job, companyNames.get(job.companyId) ?? UNKNOWN_COMPANY_NAME),
+        toJobCard(job, companyNames.get(job.companyId) ?? null),
       ),
     };
   } catch (error) {
@@ -114,7 +115,7 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
 
     return {
       job: {
-        ...toJobCard(job, company?.name ?? UNKNOWN_COMPANY_NAME),
+        ...toJobCard(job, company?.name ?? null),
         reasons: scored.reasons,
       },
     };

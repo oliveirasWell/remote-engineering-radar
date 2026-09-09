@@ -4,6 +4,7 @@
     "app/**/{page,layout,route}.{ts,tsx}",
     "app/globals.css",
     "lib/db/client.ts",
+    "lib/db/connection-options.ts",
     "lib/db/repositories/*.ts",
     "lib/sources/**/*.ts",
     "lib/classification/**/*.ts",

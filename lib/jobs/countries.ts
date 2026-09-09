@@ -35,9 +35,8 @@ export const normalizeCountryName = (value: string): string | undefined => {
     return undefined;
   }
 
-  const alias = COUNTRY_ALIASES[key];
-  if (alias) {
-    return alias;
+  if (Object.hasOwn(COUNTRY_ALIASES, key)) {
+    return COUNTRY_ALIASES[key];
   }
 
   if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key)) {

@@ -1,136 +1,73 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Suspense } from 'react';
-import { JobCard } from '@/components/report/JobCard/JobCard';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
-import { REPORT_ERROR_MESSAGE } from '@/lib/report/constants';
-import {
-  getJobsPageData,
-  type JobsPageData,
-} from '@/lib/report/get-jobs-page-data';
-import { JOB_FILTER_FIELDS, JOBS_PAGE_COPY } from './constants';
+import { cache, Suspense } from 'react';
+import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
+import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
+import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
+import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
-
-export const metadata: Metadata = {
-  title: JOBS_PAGE_COPY.metaTitle,
-  description: JOBS_PAGE_COPY.subtitle,
-};
+import { JobsHeading, JobsReport } from './jobs-presentation';
 
 type JobsPageProps = {
   searchParams: Promise<JobsSearchParams>;
 };
 
-/**
- * Filters and results both derive from `searchParams`, so they stream in while
- * the header above prerenders as the static shell.
- */
-const JobsResults = async ({
-  searchParams,
-}: {
-  searchParams: JobsPageProps['searchParams'];
-}) => {
-  const params = await searchParams;
+// Request memoization uses normalized primitives, outside the persistent reader.
+const readJobs = cache(
+  (
+    technology: string | undefined,
+    seniority: string | undefined,
+    remote: string | undefined,
+    country: string | undefined,
+    minimumScore: number | undefined,
+  ) =>
+    getJobsPageData({
+      technology,
+      seniority,
+      remote,
+      country,
+      minimumScore,
+      limit: JOBS_PAGE_LIMIT,
+    }),
+);
+
+const readResults = async (params: JobsSearchParams) => {
   const filters = parseJobFilters(params);
-  let data: JobsPageData;
-  let errorMessage: string | undefined;
-
-  try {
-    data = await getJobsPageData(filters);
-  } catch {
-    data = { jobs: [] };
-    errorMessage = REPORT_ERROR_MESSAGE;
-  }
-
-  return (
-    <>
-      {errorMessage ? (
-        <p className="text-sm text-destructive" role="alert">
-          {errorMessage}
-        </p>
-      ) : null}
-
-      <section aria-labelledby="job-filters">
-        <h2 id="job-filters" className="sr-only">
-          {JOBS_PAGE_COPY.filtersHeading}
-        </h2>
-        <form className="grid gap-3 sm:grid-cols-2" method="get">
-          {JOB_FILTER_FIELDS.map((field) => (
-            <label key={field.name} className="flex flex-col gap-1 text-sm">
-              <span>{field.label}</span>
-              <select
-                name={field.name}
-                defaultValue={filters[field.name] ?? ''}
-                className="rounded border border-border bg-card px-3 py-2 disabled:opacity-50"
-              >
-                <option value="">{JOBS_PAGE_COPY.anyOption}</option>
-                {field.options.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ))}
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.minimumScore}</span>
-            <input
-              name="minimumScore"
-              type="number"
-              min={0}
-              max={100}
-              defaultValue={
-                filters.minimumScore !== undefined
-                  ? String(filters.minimumScore)
-                  : ''
-              }
-              className="rounded border border-border bg-card px-3 py-2 disabled:opacity-50"
-            />
-          </label>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-            >
-              {JOBS_PAGE_COPY.apply}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section>
-        {data.jobs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {JOBS_PAGE_COPY.empty}
-          </p>
-        ) : (
-          data.jobs.map((job) => <JobCard key={job.id} job={job} />)
-        )}
-      </section>
-    </>
+  const data = await readJobs(
+    filters.technology,
+    filters.seniority,
+    filters.remote,
+    filters.country,
+    filters.minimumScore,
   );
+  return { filters, data };
+};
+
+export const generateMetadata = async ({
+  searchParams,
+}: JobsPageProps): Promise<Metadata> => {
+  const { filters } = await readResults(await searchParams);
+  return {
+    title: JOBS_PAGE_COPY.metaTitle,
+    description: JOBS_PAGE_COPY.subtitle,
+    ...canonicalMetadata('/jobs', {
+      technology: filters.technology,
+      seniority: filters.seniority,
+      remote: filters.remote,
+      country: filters.country,
+      minimumScore: filters.minimumScore,
+    }),
+  };
+};
+
+const JobsResults = async ({ searchParams }: JobsPageProps) => {
+  const { filters, data } = await readResults(await searchParams);
+  return <JobsReport data={data} filters={filters} />;
 };
 
 const JobsPage = ({ searchParams }: JobsPageProps) => (
   <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-16">
-    <header className="flex flex-col gap-2">
-      <p className="text-sm text-muted-foreground">
-        <Link
-          href="/"
-          className="text-muted-foreground underline underline-offset-2"
-        >
-          Remote Engineering Radar
-        </Link>
-      </p>
-      <PageTitle as="h1">{JOBS_PAGE_COPY.title}</PageTitle>
-      <p className="text-lg text-muted-foreground">{JOBS_PAGE_COPY.subtitle}</p>
-    </header>
-    <Suspense
-      fallback={
-        <p className="text-sm text-muted-foreground">
-          {JOBS_PAGE_COPY.loading}
-        </p>
-      }
-    >
+    <JobsHeading />
+    <Suspense fallback={<ReportLoading report="jobs" />}>
       <JobsResults searchParams={searchParams} />
     </Suspense>
   </main>
