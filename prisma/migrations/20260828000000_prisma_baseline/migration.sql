@@ -5,6 +5,7 @@ CREATE TABLE "companies" (
     "website_url" TEXT,
     "logo_url" TEXT,
     "source" TEXT NOT NULL,
+    "kind" TEXT NOT NULL DEFAULT 'product',
     "hiring_score" INTEGER NOT NULL DEFAULT 0,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
     "updated_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -35,6 +36,8 @@ CREATE TABLE "jobs" (
     "remote_policy" TEXT,
     "description" TEXT,
     "technologies" JSONB NOT NULL DEFAULT '[]'::jsonb,
+    "geographies" JSONB NOT NULL DEFAULT '[]'::jsonb,
+    "countries" JSONB NOT NULL DEFAULT '[]'::jsonb,
     "seniority" TEXT,
     "score" INTEGER NOT NULL DEFAULT 0,
     "posted_at" TIMESTAMPTZ,
@@ -47,6 +50,15 @@ CREATE TABLE "jobs" (
     CONSTRAINT "jobs_source_source_job_id_unique" UNIQUE ("source", "source_job_id")
 );
 
+CREATE TABLE "ingestion_runs" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "completed_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
+    "persisted_jobs" INTEGER NOT NULL DEFAULT 0,
+    "companies_updated" INTEGER NOT NULL DEFAULT 0,
+    CONSTRAINT "ingestion_runs_pkey" PRIMARY KEY ("id")
+);
+
+CREATE INDEX "ingestion_runs_completed_at_idx" ON "ingestion_runs"("completed_at");
 CREATE INDEX "companies_hiring_score_updated_at_idx" ON "companies"("hiring_score", "updated_at");
 CREATE INDEX "hiring_signals_company_id_idx" ON "hiring_signals"("company_id");
 CREATE INDEX "jobs_company_id_idx" ON "jobs"("company_id");
@@ -65,7 +77,7 @@ ALTER TABLE "jobs"
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-        REVOKE ALL PRIVILEGES ON TABLE "companies", "hiring_signals", "jobs" FROM anon;
+        REVOKE ALL PRIVILEGES ON TABLE "companies", "hiring_signals", "ingestion_runs", "jobs" FROM anon;
         REVOKE ALL PRIVILEGES ON TABLE "_prisma_migrations" FROM anon;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
@@ -73,7 +85,7 @@ BEGIN
     END IF;
 
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-        REVOKE ALL PRIVILEGES ON TABLE "companies", "hiring_signals", "jobs" FROM authenticated;
+        REVOKE ALL PRIVILEGES ON TABLE "companies", "hiring_signals", "ingestion_runs", "jobs" FROM authenticated;
         REVOKE ALL PRIVILEGES ON TABLE "_prisma_migrations" FROM authenticated;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM authenticated;

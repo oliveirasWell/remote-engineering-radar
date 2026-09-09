@@ -1,5 +1,9 @@
+import { FOCUS_STACK_LABEL } from '../constants';
+
 export const JOBS_PAGE_COPY = {
   title: 'Jobs',
+  subtitle: `Search remote senior frontend and fullstack openings in ${FOCUS_STACK_LABEL}.`,
+  metaTitle: `Jobs in ${FOCUS_STACK_LABEL}`,
   filtersHeading: 'Filters',
   technology: 'Technology',
   seniority: 'Seniority',
@@ -10,6 +14,8 @@ export const JOBS_PAGE_COPY = {
   empty: 'No active jobs match these filters.',
   notFound: 'This job is inactive or was not found.',
   backToJobs: 'Back to jobs',
+  loading: 'Loading jobs…',
+  whyRelevant: 'Why this is relevant:',
 } as const;
 
 export const MAX_JOB_FILTER_LENGTH = 100;

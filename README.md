@@ -46,10 +46,13 @@ uses:
 pnpm ingest
 ```
 
-Hacker News "Who is Hiring" and FrontendBR need no configuration. Optionally set
-`GITHUB_TOKEN` to raise the GitHub API rate limit for FrontendBR. Set
-`GREENHOUSE_BOARD_TOKENS` and `ASHBY_BOARD_NAMES` (comma-separated) in `.env.local` to
-include those sources too.
+Hacker News "Who is Hiring", GetOnBrd, and FrontendBR need no configuration. Only
+**remote** jobs are persisted; hybrid and on-site listings are skipped at ingest. Optionally
+set `GITHUB_TOKEN` to raise the GitHub API rate limit for FrontendBR. Set
+`GREENHOUSE_BOARD_TOKENS`, `ASHBY_BOARD_NAMES`, and `LEVER_BOARD_SLUGS` (comma-separated) in
+`.env.local` to include those sources too (for example `LEVER_BOARD_SLUGS=ciandt`).
+
+Each ingest run logs per-source `fetched` and `persisted` counts in the JSON summary.
 
 Database data lives in the Docker named volume `radar-pgdata`, outside the repository. It
 survives `pnpm db:down`; `pnpm db:reset` deletes it and starts clean.

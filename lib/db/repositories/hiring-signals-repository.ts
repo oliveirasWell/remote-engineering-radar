@@ -71,6 +71,17 @@ export const createHiringSignalsRepository = (db: Db) => {
         toHiringSignal,
       ),
 
+    listByCompanyIds: async (companyIds: string[]): Promise<HiringSignal[]> => {
+      if (companyIds.length === 0) {
+        return [];
+      }
+
+      const rows = await db.hiringSignal.findMany({
+        where: { companyId: { in: companyIds } },
+      });
+      return rows.map(toHiringSignal);
+    },
+
     deleteByCompanyId: async (companyId: string): Promise<number> =>
       (await db.hiringSignal.deleteMany({ where: { companyId } })).count,
 

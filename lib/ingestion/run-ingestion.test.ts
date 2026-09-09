@@ -1,7 +1,9 @@
 import { createTestDb } from '@/lib/db/test/create-test-db';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
+import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
+import { JOB_RETENTION_MS } from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
 import { Prisma } from '@prisma/client';
@@ -60,6 +62,32 @@ describe('runIngestion', () => {
     );
     expect(result.persistedJobs).toBe(1);
     expect(logs.some((line) => line.includes('ashby failed'))).toBe(true);
+  });
+
+  it('records the ingestion completion time', async () => {
+    const db = await createTestDb();
+    const completedAt = new Date('2026-08-31T15:15:09.000Z');
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => [
+        makeJob({
+          source: 'greenhouse',
+          sourceJobId: '1',
+          title: 'Senior Frontend Engineer',
+          url: 'https://example.com/jobs/1',
+        }),
+      ],
+    };
+
+    await runIngestion({
+      db,
+      sources: [source],
+      completedAt: () => completedAt,
+    });
+
+    expect(
+      await createIngestionRunsRepository(db).getLatestCompletedAt(),
+    ).toEqual(completedAt);
   });
 
   it('is idempotent across duplicate executions', async () => {
@@ -290,5 +318,206 @@ describe('runIngestion', () => {
     await expect(
       signalsRepository.listByCompanyId(companyBefore!.id),
     ).resolves.toEqual(signalsBefore);
+  });
+
+  it('skips non-remote jobs', async () => {
+    const db = await createTestDb();
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => [
+        makeJob({
+          source: 'greenhouse',
+          sourceJobId: 'hybrid-1',
+          title: 'Senior Frontend Engineer',
+          url: 'https://example.com/jobs/hybrid-1',
+          remotePolicy: 'hybrid',
+        }),
+        makeJob({
+          source: 'greenhouse',
+          sourceJobId: 'remote-1',
+          title: 'Senior React Engineer',
+          url: 'https://example.com/jobs/remote-1',
+          remotePolicy: 'remote',
+        }),
+      ],
+    };
+
+    const result = await runIngestion({ db, sources: [source] });
+
+    expect(result.persistedJobs).toBe(1);
+    expect(result.sources).toEqual([
+      { name: 'greenhouse', fetched: 2, persisted: 1 },
+    ]);
+    await expect(
+      createJobsRepository(db).findBySourceJobId('greenhouse', 'hybrid-1'),
+    ).resolves.toBeNull();
+    await expect(
+      createJobsRepository(db).findBySourceJobId('greenhouse', 'remote-1'),
+    ).resolves.toMatchObject({ isActive: true, remotePolicy: 'remote' });
+  });
+
+  it('skips Sales Representative and other unrelated roles', async () => {
+    const db = await createTestDb();
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => [
+        makeJob({
+          source: 'greenhouse',
+          sourceJobId: 'sales-1',
+          title: 'Sales Representative',
+          url: 'https://example.com/jobs/sales-1',
+          description: 'Sell our React product',
+        }),
+        makeJob({
+          source: 'greenhouse',
+          sourceJobId: 'eng-1',
+          title: 'Senior Frontend Engineer',
+          url: 'https://example.com/jobs/eng-1',
+        }),
+      ],
+    };
+
+    const result = await runIngestion({ db, sources: [source] });
+
+    expect(result.persistedJobs).toBe(1);
+    await expect(
+      createJobsRepository(db).findBySourceJobId('greenhouse', 'sales-1'),
+    ).resolves.toBeNull();
+    await expect(
+      createJobsRepository(db).findBySourceJobId('greenhouse', 'eng-1'),
+    ).resolves.toMatchObject({ isActive: true, geographies: ['latam'] });
+  });
+
+  it('purges inactive jobs past the retention window', async () => {
+    const db = await createTestDb();
+    const now = new Date('2026-08-31T12:00:00.000Z');
+    const jobsRepository = createJobsRepository(db);
+    const company = await createCompaniesRepository(db).create({
+      name: 'Acme Robotics',
+      slug: 'acme-robotics',
+      source: 'greenhouse',
+    });
+
+    const expired = await jobsRepository.create({
+      companyId: company.id,
+      source: 'greenhouse',
+      sourceJobId: 'expired',
+      title: 'Senior Frontend Engineer',
+      url: 'https://example.com/jobs/expired',
+      technologies: ['React'],
+      score: 50,
+      postedAt: new Date(now.getTime() - JOB_RETENTION_MS - 1),
+      isActive: false,
+    });
+
+    await runIngestion({ db, now: () => now, sources: [] });
+
+    await expect(jobsRepository.findById(expired.id)).resolves.toBeNull();
+  });
+
+  it('skips jobs posted more than 30 days ago and deactivates aged open jobs', async () => {
+    const db = await createTestDb();
+    const now = new Date('2026-08-31T12:00:00.000Z');
+    const jobsRepository = createJobsRepository(db);
+
+    await runIngestion({
+      db,
+      now: () => now,
+      sources: [
+        {
+          name: 'greenhouse',
+          fetchJobs: async () => [
+            makeJob({
+              source: 'greenhouse',
+              sourceJobId: 'stale',
+              title: 'Senior Frontend Engineer',
+              url: 'https://example.com/jobs/stale',
+              postedAt: new Date('2026-03-01T12:00:00.000Z'),
+            }),
+            makeJob({
+              source: 'greenhouse',
+              sourceJobId: 'fresh',
+              title: 'Senior React Engineer',
+              url: 'https://example.com/jobs/fresh',
+              postedAt: new Date('2026-08-20T12:00:00.000Z'),
+            }),
+          ],
+        },
+      ],
+    });
+
+    await expect(
+      jobsRepository.findBySourceJobId('greenhouse', 'stale'),
+    ).resolves.toBeNull();
+    await expect(
+      jobsRepository.findBySourceJobId('greenhouse', 'fresh'),
+    ).resolves.toMatchObject({ isActive: true });
+
+    const company =
+      await createCompaniesRepository(db).findBySlug('acme-robotics');
+    await jobsRepository.create({
+      companyId: company!.id,
+      source: 'greenhouse',
+      sourceJobId: 'aging',
+      title: 'Senior Frontend Engineer',
+      url: 'https://example.com/jobs/aging',
+      technologies: ['React'],
+      geographies: ['latam'],
+      score: 50,
+      postedAt: new Date('2026-07-20T12:00:00.000Z'),
+      isActive: true,
+    });
+
+    await runIngestion({
+      db,
+      now: () => now,
+      sources: [
+        {
+          name: 'greenhouse',
+          fetchJobs: async () => [
+            makeJob({
+              source: 'greenhouse',
+              sourceJobId: 'fresh',
+              title: 'Senior React Engineer',
+              url: 'https://example.com/jobs/fresh',
+              postedAt: new Date('2026-08-20T12:00:00.000Z'),
+            }),
+          ],
+        },
+      ],
+    });
+
+    await expect(
+      jobsRepository.findBySourceJobId('greenhouse', 'aging'),
+    ).resolves.toMatchObject({ isActive: false });
+  });
+
+  it('labels known consultancies on upsert', async () => {
+    const db = await createTestDb();
+
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'greenhouse',
+          fetchJobs: async () => [
+            makeJob({
+              source: 'greenhouse',
+              sourceJobId: '1',
+              title: 'Senior Frontend Engineer',
+              url: 'https://example.com/jobs/1',
+              company: {
+                name: 'BairesDev',
+                websiteUrl: 'https://bairesdev.example',
+              },
+            }),
+          ],
+        },
+      ],
+    });
+
+    await expect(
+      createCompaniesRepository(db).findBySlug('bairesdev'),
+    ).resolves.toMatchObject({ kind: 'consultancy' });
   });
 });

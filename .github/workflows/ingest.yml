@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   ingest:
@@ -36,4 +38,5 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           GREENHOUSE_BOARD_TOKENS: ${{ secrets.GREENHOUSE_BOARD_TOKENS }}
           ASHBY_BOARD_NAMES: ${{ secrets.ASHBY_BOARD_NAMES }}
+          LEVER_BOARD_SLUGS: ${{ secrets.LEVER_BOARD_SLUGS }}
           NODE_ENV: production

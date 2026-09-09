@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
   reactCompiler: true,
   poweredByHeader: false,
   headers: async () => [
@@ -26,4 +28,12 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: 'wellington-oliveira',
+  project: 'remote-engineering-radar',
+  silent: !process.env.CI,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+});

@@ -1,5 +1,6 @@
 allowBuilds:
   '@prisma/engines': true
+  '@sentry/cli': true
   cypress: true
   esbuild: true
   prisma: true

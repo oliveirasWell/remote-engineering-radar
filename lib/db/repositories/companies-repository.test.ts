@@ -1,6 +1,7 @@
 import { createCompaniesRepository } from './companies-repository';
+import { createJobsRepository } from './jobs-repository';
 import { createTestDb } from '../test/create-test-db';
-import { TEST_COMPANY } from './test-fixtures';
+import { TEST_COMPANY, TEST_JOB } from './test-fixtures';
 
 describe('createCompaniesRepository', () => {
   it('supports create, read, update, and delete', async () => {
@@ -97,12 +98,26 @@ describe('createCompaniesRepository', () => {
   it('uses a strict minimum hiring score', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);
-    await companiesRepository.create({ ...TEST_COMPANY, hiringScore: 12 });
-    await companiesRepository.create({
+    const jobsRepository = createJobsRepository(db);
+    const atMinimum = await companiesRepository.create({
+      ...TEST_COMPANY,
+      hiringScore: 12,
+    });
+    const aboveMinimum = await companiesRepository.create({
       ...TEST_COMPANY,
       slug: 'higher-score',
       hiringScore: 13,
     });
+
+    // Listing only surfaces companies with an active remote job.
+    for (const company of [atMinimum, aboveMinimum]) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId: `job-${company.slug}`,
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
 
     await expect(
       companiesRepository.listByHiringScore({ minimumHiringScore: 12 }),

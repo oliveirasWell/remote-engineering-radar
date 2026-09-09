@@ -13,6 +13,7 @@ model Company {
   websiteUrl    String?        @map("website_url") @db.Text
   logoUrl       String?        @map("logo_url") @db.Text
   source        String         @db.Text
+  kind          String         @default("product") @db.Text
   hiringScore   Int            @default(0) @map("hiring_score")
   createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt     DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
@@ -34,6 +35,8 @@ model Job {
   remotePolicy String?   @map("remote_policy") @db.Text
   description  String?   @db.Text
   technologies Json      @default("[]") @db.JsonB
+  geographies  Json      @default("[]") @db.JsonB
+  countries    Json      @default("[]") @db.JsonB
   seniority    String?   @db.Text
   score        Int       @default(0)
   postedAt     DateTime? @map("posted_at") @db.Timestamptz(6)
@@ -63,4 +66,14 @@ model HiringSignal {
 
   @@index([companyId], map: "hiring_signals_company_id_idx")
   @@map("hiring_signals")
+}
+
+model IngestionRun {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  completedAt      DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)
+  persistedJobs    Int      @default(0) @map("persisted_jobs")
+  companiesUpdated Int      @default(0) @map("companies_updated")
+
+  @@index([completedAt], map: "ingestion_runs_completed_at_idx")
+  @@map("ingestion_runs")
 }

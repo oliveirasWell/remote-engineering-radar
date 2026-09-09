@@ -1,6 +1,7 @@
 import {
   RELEVANT_TECHNOLOGY_NAMES,
   TECHNOLOGY_PATTERNS,
+  UNRELATED_ROLE_PATTERNS,
   UNRELATED_STACK_PATTERNS,
 } from './constants';
 import type { JobClassification } from './types';
@@ -138,6 +139,14 @@ const isUnrelatedStack = (
   return UNRELATED_STACK_PATTERNS.some((pattern) => pattern.test(haystack));
 };
 
+const isUnrelatedRole = (title: string): boolean =>
+  UNRELATED_ROLE_PATTERNS.some((pattern) => pattern.test(title));
+
+export const shouldPersistClassifiedJob = (
+  classification: JobClassification,
+): boolean =>
+  !classification.isUnrelatedRole && !classification.isUnrelatedStack;
+
 export const classifyJob = (input: ClassifyJobInput): JobClassification => {
   const haystack = buildHaystack(input);
   const technologies = extractTechnologies(input, haystack);
@@ -149,6 +158,7 @@ export const classifyJob = (input: ClassifyJobInput): JobClassification => {
     geography: classifyGeography(haystack),
     roleFocus: classifyRoleFocus(haystack),
     isUnrelatedStack: isUnrelatedStack(technologies, haystack),
+    isUnrelatedRole: isUnrelatedRole(input.title),
     requiresRelocation: /\brelocati(on|e)\b/i.test(haystack),
   };
 };

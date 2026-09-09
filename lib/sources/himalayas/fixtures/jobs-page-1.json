@@ -1,0 +1,49 @@
+{
+  "updatedAt": 1788497872,
+  "offset": 0,
+  "limit": 20,
+  "totalCount": 101888,
+  "nextCursor": "MjAyNi0wOS0wNFQwNDo1ODowOS4xODQzMTRafDIxNTQ3MTI",
+  "jobs": [
+    {
+      "title": "Senior Security Data Engineer",
+      "excerpt": "At DoorDash, Global Cyber Defense is a highly talented and globally distributed team.",
+      "companyName": "Doordash",
+      "companySlug": "doordash",
+      "companyLogo": "https://cdn-images.himalayas.app/6mgbwqyc38h4hbtn8f8f4vc5t1w1",
+      "employmentType": "Full Time",
+      "minSalary": 158900,
+      "maxSalary": 254100,
+      "salaryPeriod": "annual",
+      "seniority": ["Senior"],
+      "currency": "USD",
+      "locationRestrictions": ["United States"],
+      "timezoneRestrictions": [-8, -7, -6, -5],
+      "categories": ["Security-Data-Engineering", "Cyber-Defense"],
+      "parentCategories": [],
+      "description": "<h3><strong>About the Team</strong></h3><p>Global Cyber Defense &amp; Detection builds the industry&#39;s most scalable delivery network.</p>",
+      "pubDate": 1788489234,
+      "expiryDate": 1793673234,
+      "applicationLink": "https://himalayas.app/companies/doordash/jobs/senior-security-data-engineer",
+      "guid": "https://himalayas.app/companies/doordash/jobs/senior-security-data-engineer"
+    },
+    {
+      "title": "Special Projects",
+      "excerpt": "Support special analytics projects across the business.",
+      "companyName": "Deeter Analytics",
+      "companySlug": "deeter-analytics",
+      "companyLogo": "https://cdn-images.himalayas.app/z8h4dkkr3xw1pxq5vt7t8yb9m2ns",
+      "employmentType": "Full Time",
+      "seniority": ["Mid-level"],
+      "locationRestrictions": [],
+      "timezoneRestrictions": [],
+      "categories": ["Special-Projects"],
+      "parentCategories": [],
+      "description": "<p>Support special analytics projects across the business.</p>",
+      "pubDate": 1788497865,
+      "expiryDate": 1793681865,
+      "applicationLink": "https://himalayas.app/companies/deeter-analytics/jobs/special-projects",
+      "guid": "https://himalayas.app/companies/deeter-analytics/jobs/special-projects"
+    }
+  ]
+}
