@@ -2,6 +2,13 @@ import { JOBS_PAGE_LIMIT } from './constants';
 import { parseJobFilters } from './parse-job-filters';
 
 describe('parseJobFilters', () => {
+  it('collapses default remote and score-zero spellings into the unfiltered cache key', () => {
+    for (const minimumScore of ['0', '00', '000', ' 0 ']) {
+      expect(
+        parseJobFilters({ remote: ' REMOTE ', minimumScore }),
+      ).toStrictEqual(parseJobFilters({}));
+    }
+  });
   it('drops ambiguous repeated query parameters', () => {
     expect(
       parseJobFilters({

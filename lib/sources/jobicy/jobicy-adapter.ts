@@ -70,6 +70,10 @@ export const createJobicyAdapter = (
 
   return {
     name: JOBICY_SOURCE_NAME,
-    fetchJobs: async () => fetchAllJobs(count, fetchImpl),
+    // The count-limited feed contains recent postings, not every open job.
+    fetchJobs: async () => ({
+      jobs: await fetchAllJobs(count, fetchImpl),
+      complete: false,
+    }),
   };
 };

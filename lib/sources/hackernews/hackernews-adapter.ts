@@ -142,7 +142,11 @@ export const createHackerNewsAdapter = (
     name: HACKER_NEWS_SOURCE_NAME,
     fetchJobs: async () => {
       const storyId = await findLatestWhoIsHiringStoryId(fetchImpl);
-      return fetchStoryComments(storyId, hitsPerPage, fetchImpl);
+      // Exhausting this month's thread says nothing about earlier threads.
+      return {
+        jobs: await fetchStoryComments(storyId, hitsPerPage, fetchImpl),
+        complete: false,
+      };
     },
   };
 };

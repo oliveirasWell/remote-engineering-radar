@@ -110,6 +110,10 @@ export const createHimalayasAdapter = (
 
   return {
     name: HIMALAYAS_SOURCE_NAME,
-    fetchJobs: async () => fetchAllJobs(pageSize, maxPages, fetchImpl),
+    // This bounded discovery feed is not an authoritative site snapshot.
+    fetchJobs: async () => ({
+      jobs: await fetchAllJobs(pageSize, maxPages, fetchImpl),
+      complete: false,
+    }),
   };
 };

@@ -1,6 +1,6 @@
 import { Prisma, type Job as PrismaJob } from '@prisma/client';
 import type { JobGeography } from '@/lib/classification/types';
-import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
 import { coalescedPostedAtFilter } from './posted-at-filter';
@@ -98,6 +98,20 @@ export const createJobsRepository = (db: Db) => ({
     const row = await db.job.findUnique({ where: { id } });
     return row ? toJob(row) : null;
   },
+
+  listSitemapJobs: async (now: Date = new Date()): Promise<{ id: string }[]> =>
+    db.job.findMany({
+      where: {
+        isActive: true,
+        remotePolicy: REMOTE_POLICY_REMOTE,
+        ...coalescedPostedAtFilter(
+          'gte',
+          new Date(now.getTime() - JOB_MAX_AGE_MS),
+        ),
+      },
+      select: { id: true },
+      orderBy: { id: 'asc' },
+    }),
 
   findBySourceJobId: async (
     source: string,
@@ -245,6 +259,20 @@ export const createJobsRepository = (db: Db) => ({
       data: { isActive: false, updatedAt: new Date() },
       select: { companyId: true },
     }),
+
+  deactivateBySourceJobIds: async (
+    source: string,
+    sourceJobIds: string[],
+  ): Promise<{ companyId: string }[]> => {
+    if (sourceJobIds.length === 0) {
+      return [];
+    }
+    return db.job.updateManyAndReturn({
+      where: { source, sourceJobId: { in: sourceJobIds }, isActive: true },
+      data: { isActive: false, updatedAt: new Date() },
+      select: { companyId: true },
+    });
+  },
 
   deactivateOlderThan: async (
     maxAgeMs: number,

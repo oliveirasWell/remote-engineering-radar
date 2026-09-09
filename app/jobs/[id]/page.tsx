@@ -1,9 +1,9 @@
-import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { cache, Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
-import {
-  getJobDetailData,
-  type JobDetailData,
-} from '@/lib/report/get-jobs-page-data';
+import { getJobDetailData } from '@/lib/report/get-jobs-page-data';
+import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
 import { JobDetailHeading, JobDetailReport } from './job-detail-presentation';
 import { parseJobId } from './parse-job-id';
 
@@ -11,23 +11,35 @@ type JobDetailPageProps = {
   params: Promise<{ id: string }>;
 };
 
-/** Reads the route param, so it streams in behind the static shell. */
-const JobDetail = async ({ params }: JobDetailPageProps) => {
-  const { id } = await params;
-  const jobId = parseJobId(id);
-
+const readJob = cache(async (jobId: string | undefined) => {
   if (!jobId) {
-    return <JobDetailReport data={{ job: null }} />;
+    notFound();
   }
 
-  let data: JobDetailData;
-  try {
-    data = await getJobDetailData(jobId);
-  } catch {
-    return <JobDetailReport data={{ job: null }} hasError />;
+  const { job } = await getJobDetailData(jobId);
+  if (!job) {
+    notFound();
   }
+  return job;
+});
 
-  return <JobDetailReport data={data} />;
+export const generateMetadata = async ({
+  params,
+}: JobDetailPageProps): Promise<Metadata> => {
+  const job = await readJob(parseJobId((await params).id));
+  const title = job.companyName
+    ? `${job.title} at ${job.companyName}`
+    : job.title;
+  return {
+    title,
+    description: `${title}. Remote engineering opportunity${job.location ? ` in ${job.location}` : ''}. View the role and original listing.`,
+    ...canonicalMetadata(`/jobs/${job.id}`),
+  };
+};
+
+const JobDetail = async ({ params }: JobDetailPageProps) => {
+  const job = await readJob(parseJobId((await params).id));
+  return <JobDetailReport data={{ job }} />;
 };
 
 const JobDetailPage = ({ params }: JobDetailPageProps) => (

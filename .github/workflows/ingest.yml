@@ -4,6 +4,21 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      operation:
+        description: Production operation
+        type: choice
+        default: ingest
+        options:
+          - ingest
+          - check-baseline
+          - prepare-baseline
+          - resolve-baseline
+          - deploy-migrations
+      confirmation:
+        description: 'Enter PREPARE PRODUCTION BASELINE for prepare-baseline or RESOLVE PRODUCTION BASELINE for resolve-baseline'
+        type: string
+        default: ''
   push:
     branches: [main]
 
@@ -28,11 +43,41 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Require explicit production preparation confirmation
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'prepare-baseline'
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$CONFIRMATION" = 'PREPARE PRODUCTION BASELINE'
+      - name: Prepare the legacy production schema and validate parity and privileges
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'prepare-baseline'
+        run: pnpm db:prepare-baseline
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
+      - name: Require explicit production baseline confirmation
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'resolve-baseline'
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$CONFIRMATION" = 'RESOLVE PRODUCTION BASELINE'
+      - name: Check the existing production schema and privileges
+        if: github.event_name == 'workflow_dispatch' && (inputs.operation == 'check-baseline' || inputs.operation == 'resolve-baseline')
+        run: pnpm db:baseline-check
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
+      - name: Record the existing production baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'resolve-baseline'
+        run: pnpm db:resolve-baseline
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
       - run: pnpm db:deploy
+        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'ingest' || inputs.operation == 'resolve-baseline' || inputs.operation == 'deploy-migrations'
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
       - run: pnpm ingest
+        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'ingest'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}

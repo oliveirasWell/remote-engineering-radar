@@ -175,8 +175,8 @@ describe('site language and navigation', () => {
 
   it('restores translation independently when the global error replaces the layout', () => {
     document.cookie = `${I18N_TEST.cookieName}=${I18N_TEST.portuguese}; path=/`;
-    const reset = vi.fn();
-    render(<GlobalError error={I18N_TEST.error} reset={reset} />, {
+    const retry = vi.fn();
+    render(<GlobalError error={I18N_TEST.error} retry={retry} />, {
       container: document,
     });
     expect(
@@ -191,6 +191,6 @@ describe('site language and navigation', () => {
         name: messagesFor(I18N_TEST.portuguese).globalError.retry,
       }),
     );
-    expect(reset).toHaveBeenCalledOnce();
+    expect(retry).toHaveBeenCalledOnce();
   });
 });

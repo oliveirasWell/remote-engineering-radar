@@ -39,11 +39,26 @@ describe('createLeverAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(true);
     expect(jobs).toHaveLength(1);
     expect(jobs[0]?.sourceJobId).toBe(
       `${BOARD_SLUG}:08e78476-f995-4946-921d-27c3c22b1c6d`,
     );
+  });
+
+  it('fails the snapshot when a later configured board fails', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(page1))
+      .mockResolvedValueOnce(jsonResponse({}, 400));
+    const adapter = createLeverAdapter({
+      boardSlugs: [BOARD_SLUG, `${BOARD_SLUG}-other`],
+      fetch: asFetch(fetchMock),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(/Lever request failed/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
