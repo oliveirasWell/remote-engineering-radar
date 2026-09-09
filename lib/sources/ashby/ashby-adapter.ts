@@ -99,8 +99,11 @@ const fetchBoardJobs = async (
     }
 
     const nextCursor = asCursor(payload.nextCursor);
-    if (!nextCursor || nextCursor === cursor) {
+    if (!nextCursor) {
       break;
+    }
+    if (nextCursor === cursor) {
+      throw new Error('Ashby pagination limit reached');
     }
 
     cursor = nextCursor;
@@ -127,7 +130,7 @@ export const createAshbyAdapter = (options: AshbyAdapterOptions): JobSource => {
         jobs.push(...boardJobs);
       }
 
-      return jobs;
+      return { jobs, complete: true };
     },
   };
 };

@@ -1,147 +1,76 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { JobCard } from '@/components/report/JobCard/JobCard';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
+import { cache, Suspense } from 'react';
+import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
-import {
-  JOBS_PAGE_COPY,
-  JOBS_PAGE_LIMIT,
-  MAX_JOB_FILTER_LENGTH,
-} from './constants';
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 3600;
-
-export const metadata: Metadata = {
-  title: JOBS_PAGE_COPY.metaTitle,
-  description: JOBS_PAGE_COPY.subtitle,
-};
+import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
+import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
+import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
+import { JobsHeading, JobsReport } from './jobs-presentation';
 
 type JobsPageProps = {
-  searchParams: Promise<{
-    technology?: string | string[];
-    seniority?: string | string[];
-    remote?: string | string[];
-    location?: string | string[];
-    minimumScore?: string | string[];
-  }>;
+  searchParams: Promise<JobsSearchParams>;
 };
 
-const JobsPage = async ({ searchParams }: JobsPageProps) => {
-  const params = await searchParams;
-  const readFilter = (
-    value: string | string[] | undefined,
-  ): string | undefined => {
-    const trimmed = typeof value === 'string' ? value.trim() : undefined;
-    return trimmed && trimmed.length <= MAX_JOB_FILTER_LENGTH
-      ? trimmed
-      : undefined;
-  };
-  const minimumScoreValue = readFilter(params.minimumScore);
-  const minimumScore =
-    minimumScoreValue && /^\d{1,3}$/.test(minimumScoreValue)
-      ? Number(minimumScoreValue)
-      : undefined;
+// Request memoization uses normalized primitives, outside the persistent reader.
+const readJobs = cache(
+  (
+    technology: string | undefined,
+    seniority: string | undefined,
+    remote: string | undefined,
+    country: string | undefined,
+    minimumScore: number | undefined,
+  ) =>
+    getJobsPageData({
+      technology,
+      seniority,
+      remote,
+      country,
+      minimumScore,
+      limit: JOBS_PAGE_LIMIT,
+    }),
+);
 
-  const data = await getJobsPageData({
-    technology: readFilter(params.technology),
-    seniority: readFilter(params.seniority),
-    remote: readFilter(params.remote),
-    location: readFilter(params.location),
-    minimumScore:
-      minimumScore !== undefined && minimumScore <= 100
-        ? minimumScore
-        : undefined,
-    limit: JOBS_PAGE_LIMIT,
-  });
-
-  return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-16">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm text-muted">
-          <Link href="/" className="hover:text-accent">
-            Remote Engineering Radar
-          </Link>
-        </p>
-        <PageTitle as="h1">{JOBS_PAGE_COPY.title}</PageTitle>
-        <p className="text-lg text-muted">{JOBS_PAGE_COPY.subtitle}</p>
-        {data.errorMessage ? (
-          <p className="text-sm text-accent" role="alert">
-            {data.errorMessage}
-          </p>
-        ) : null}
-      </header>
-
-      <section aria-labelledby="job-filters">
-        <h2 id="job-filters" className="sr-only">
-          {JOBS_PAGE_COPY.filtersHeading}
-        </h2>
-        <form className="grid gap-3 sm:grid-cols-2" method="get">
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.technology}</span>
-            <input
-              name="technology"
-              defaultValue={readFilter(params.technology) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.seniority}</span>
-            <input
-              name="seniority"
-              defaultValue={readFilter(params.seniority) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.remote}</span>
-            <input
-              name="remote"
-              defaultValue={readFilter(params.remote) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.location}</span>
-            <input
-              name="location"
-              defaultValue={readFilter(params.location) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.minimumScore}</span>
-            <input
-              name="minimumScore"
-              type="number"
-              min={0}
-              max={100}
-              defaultValue={
-                minimumScore !== undefined ? String(minimumScore) : ''
-              }
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="rounded bg-accent px-4 py-2 text-sm font-medium text-background"
-            >
-              {JOBS_PAGE_COPY.apply}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section>
-        {data.jobs.length === 0 ? (
-          <p className="text-sm text-muted">{JOBS_PAGE_COPY.empty}</p>
-        ) : (
-          data.jobs.map((job) => <JobCard key={job.id} job={job} />)
-        )}
-      </section>
-    </main>
+const readResults = async (params: JobsSearchParams) => {
+  const filters = parseJobFilters(params);
+  const data = await readJobs(
+    filters.technology,
+    filters.seniority,
+    filters.remote,
+    filters.country,
+    filters.minimumScore,
   );
+  return { filters, data };
 };
+
+export const generateMetadata = async ({
+  searchParams,
+}: JobsPageProps): Promise<Metadata> => {
+  const { filters } = await readResults(await searchParams);
+  return {
+    title: JOBS_PAGE_COPY.metaTitle,
+    description: JOBS_PAGE_COPY.subtitle,
+    ...canonicalMetadata('/jobs', {
+      technology: filters.technology,
+      seniority: filters.seniority,
+      remote: filters.remote,
+      country: filters.country,
+      minimumScore: filters.minimumScore,
+    }),
+  };
+};
+
+const JobsResults = async ({ searchParams }: JobsPageProps) => {
+  const { filters, data } = await readResults(await searchParams);
+  return <JobsReport data={data} filters={filters} />;
+};
+
+const JobsPage = ({ searchParams }: JobsPageProps) => (
+  <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-16">
+    <JobsHeading />
+    <Suspense fallback={<ReportLoading report="jobs" />}>
+      <JobsResults searchParams={searchParams} />
+    </Suspense>
+  </main>
+);
 
 export default JobsPage;

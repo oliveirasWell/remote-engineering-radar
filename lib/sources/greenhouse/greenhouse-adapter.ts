@@ -94,6 +94,8 @@ const fetchBoardJobs = async (
 ): Promise<NormalizedJob[]> => {
   const normalized: NormalizedJob[] = [];
   let page = 1;
+  let fetched = 0;
+  let total: number | undefined;
 
   while (page <= 50) {
     const payload = await fetchJobsPage(
@@ -103,8 +105,12 @@ const fetchBoardJobs = async (
       fetchImpl,
     );
     const records = payload.jobs;
+    total = readTotal(payload) ?? total;
 
     if (records.length === 0) {
+      if (total !== undefined && fetched < total) {
+        throw new Error('Greenhouse pagination ended before advertised total');
+      }
       break;
     }
 
@@ -122,12 +128,12 @@ const fetchBoardJobs = async (
       }
     }
 
-    const total = readTotal(payload);
-    if (total !== undefined && normalized.length >= total) {
+    fetched += records.length;
+    if (total !== undefined && fetched >= total) {
       break;
     }
 
-    if (records.length < jobsPerPage) {
+    if (total === undefined && records.length < jobsPerPage) {
       break;
     }
 
@@ -161,7 +167,7 @@ export const createGreenhouseAdapter = (
         jobs.push(...boardJobs);
       }
 
-      return jobs;
+      return { jobs, complete: true };
     },
   };
 };

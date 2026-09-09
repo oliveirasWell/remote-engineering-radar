@@ -1,3 +1,4 @@
+import { JOB_MAX_AGE_MS, JOB_RETENTION_MS } from '@/lib/jobs/constants';
 import { createCompaniesRepository } from './companies-repository';
 import { createJobsRepository } from './jobs-repository';
 import { createTestDb } from '../test/create-test-db';
@@ -93,8 +94,10 @@ describe('createJobsRepository', () => {
     });
 
     expect(second.id).toBe(first.id);
-    expect(second.companyId).toBe(secondCompany.id);
-    expect(second.title).toBe('Updated Engineer');
+    await expect(jobsRepository.findById(second.id)).resolves.toMatchObject({
+      companyId: secondCompany.id,
+      title: 'Updated Engineer',
+    });
     await expect(jobsRepository.listActiveByScore()).resolves.toHaveLength(1);
   });
 
@@ -153,10 +156,175 @@ describe('createJobsRepository', () => {
       ['present-job'],
     );
 
-    expect(deactivated).toHaveLength(1);
-    expect(deactivated[0]?.sourceJobId).toBe('missing-job');
+    expect(deactivated).toEqual([{ companyId: company.id }]);
+    await expect(
+      jobsRepository.findBySourceJobId(TEST_JOB.source, 'missing-job'),
+    ).resolves.toMatchObject({ isActive: false });
     await expect(
       jobsRepository.findBySourceJobId(TEST_JOB.source, 'present-job'),
     ).resolves.toMatchObject({ isActive: true });
+  });
+
+  it('batch retires only active requested IDs in the specified source', async () => {
+    const db = await createTestDb();
+    const jobsRepository = createJobsRepository(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobs = await Promise.all(
+      [true, true, false, true].map((isActive, index) =>
+        jobsRepository.create({
+          ...TEST_JOB,
+          companyId: company.id,
+          sourceJobId: `${TEST_JOB.sourceJobId}-${index}`,
+          technologies: [...TEST_JOB.technologies],
+          isActive,
+        }),
+      ),
+    );
+    const otherSource = await jobsRepository.create({
+      ...TEST_JOB,
+      source: `${TEST_JOB.source}-other`,
+      sourceJobId: jobs[0]!.sourceJobId,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const updateManyAndReturn = vi.spyOn(db.job, 'updateManyAndReturn');
+
+    await expect(
+      jobsRepository.deactivateBySourceJobIds(TEST_JOB.source, []),
+    ).resolves.toEqual([]);
+    expect(updateManyAndReturn).not.toHaveBeenCalled();
+
+    const sourceJobIds = [
+      ...jobs.slice(0, 3).map((job) => job.sourceJobId),
+      ...Array.from(
+        { length: 1_000 },
+        (_, index) => `${TEST_JOB.sourceJobId}-missing-${index}`,
+      ),
+    ];
+    await expect(
+      jobsRepository.deactivateBySourceJobIds(TEST_JOB.source, sourceJobIds),
+    ).resolves.toEqual([{ companyId: company.id }, { companyId: company.id }]);
+    expect(updateManyAndReturn).toHaveBeenCalledTimes(1);
+    for (const job of jobs.slice(0, 2)) {
+      await expect(jobsRepository.findById(job.id)).resolves.toMatchObject({
+        isActive: false,
+      });
+    }
+    for (const job of [...jobs.slice(2), otherSource]) {
+      await expect(jobsRepository.findById(job.id)).resolves.toEqual(job);
+    }
+    await expect(
+      jobsRepository.deactivateBySourceJobIds(TEST_JOB.source, sourceJobIds),
+    ).resolves.toEqual([]);
+  });
+
+  it('lists recent card rows for many companies without shipping descriptions', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const first = await companiesRepository.create(TEST_COMPANY);
+    const second = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'globex',
+      name: 'Globex',
+    });
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: first.id,
+      sourceJobId: 'recent-remote',
+      postedAt: now,
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: second.id,
+      sourceJobId: 'other-company',
+      postedAt: now,
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: first.id,
+      sourceJobId: 'too-old',
+      postedAt: new Date(now.getTime() - JOB_MAX_AGE_MS - 1),
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: first.id,
+      sourceJobId: 'not-remote',
+      remotePolicy: 'hybrid',
+      postedAt: now,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const inactive = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: first.id,
+      sourceJobId: 'inactive',
+      postedAt: now,
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.deactivate(inactive.id);
+
+    const cards = await jobsRepository.listCardsByCompanyIds(
+      [first.id, second.id],
+      { maxAgeMs: JOB_MAX_AGE_MS, now },
+    );
+
+    expect(cards.map((card) => card.sourceJobId).sort()).toEqual([
+      'other-company',
+      'recent-remote',
+    ]);
+    for (const card of cards) {
+      expect(card).not.toHaveProperty('description');
+    }
+  });
+
+  it('deletes inactive jobs past the retention window and keeps the rest', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    const stale = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'stale',
+      postedAt: new Date(now.getTime() - JOB_RETENTION_MS - 1),
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.deactivate(stale.id);
+
+    const recentInactive = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'recent-inactive',
+      postedAt: now,
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.deactivate(recentInactive.id);
+
+    const active = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'still-active',
+      postedAt: new Date(now.getTime() - JOB_RETENTION_MS - 1),
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const deleted = await jobsRepository.deleteInactiveOlderThan(
+      JOB_RETENTION_MS,
+      now,
+    );
+
+    expect(deleted).toBe(1);
+    await expect(jobsRepository.findById(stale.id)).resolves.toBeNull();
+    await expect(
+      jobsRepository.findById(recentInactive.id),
+    ).resolves.not.toBeNull();
+    await expect(jobsRepository.findById(active.id)).resolves.not.toBeNull();
   });
 });

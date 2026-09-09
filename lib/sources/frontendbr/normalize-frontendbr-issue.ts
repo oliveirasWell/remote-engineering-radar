@@ -233,6 +233,7 @@ export const normalizeFrontendBrIssue = (
       highestRanked(labelNames, REMOTE_POLICY_RULES),
     description: asString(issue.body),
     technologies: [],
+    countries: ['brazil'],
     seniority: highestRanked(labelNames, SENIORITY_RULES),
     postedAt: readPostedAt(issue.created_at),
   };
