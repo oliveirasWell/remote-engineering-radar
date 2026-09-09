@@ -10,12 +10,13 @@ database_password="$(node -e 'process.stdout.write(require("node:crypto").random
 container_id="$(docker run --detach --rm --publish 127.0.0.1::5432 --env POSTGRES_PASSWORD="$database_password" postgres:17-alpine)"
 trap 'docker rm --force --volumes "$container_id"' EXIT
 for attempt in {1..30}; do
-  if docker exec "$container_id" pg_isready --username postgres; then
+  # The temporary bootstrap server only accepts Unix-socket connections.
+  if docker exec "$container_id" pg_isready --host 127.0.0.1 --username postgres; then
     break
   fi
   sleep 1
 done
-docker exec "$container_id" pg_isready --username postgres
+docker exec "$container_id" pg_isready --host 127.0.0.1 --username postgres
 database_address="$(docker port "$container_id" 5432/tcp)"
 database_url="postgresql://postgres:${database_password}@${database_address}/${database_name}"
 
