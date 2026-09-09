@@ -1,7 +1,15 @@
 import Script from 'next/script';
 import { GA_MEASUREMENT_ID, GA_SCRIPT_ID } from './constants';
 
+/**
+ * The measurement id names one production property, so preview deployments and
+ * local runs would report their own traffic as real. Only production loads it.
+ */
 export const GoogleAnalytics = () => {
+  if (process.env.VERCEL_ENV !== 'production') {
+    return null;
+  }
+
   return (
     <>
       <Script
