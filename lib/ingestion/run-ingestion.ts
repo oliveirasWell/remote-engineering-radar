@@ -2,7 +2,7 @@ import {
   classifyJob,
   shouldPersistClassifiedJob,
 } from '@/lib/classification/classify-job';
-import type { Db } from '@/lib/db/client';
+import type { RootDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
@@ -93,7 +93,7 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
 };
 
 export const runIngestion = async (options: {
-  db: Db;
+  db: RootDb;
   sources: JobSource[];
   logger?: IngestionLogger;
   completedAt?: () => Date;
@@ -107,11 +107,15 @@ export const runIngestion = async (options: {
 
   const sourceResults: IngestionSourceResult[] = [];
   const fetchedJobs: NormalizedJob[] = [];
+  const completeSources = new Set<string>();
 
   for (const source of options.sources) {
     try {
-      const jobs = await source.fetchJobs();
+      const { jobs, complete } = await source.fetchJobs();
       fetchedJobs.push(...jobs);
+      if (complete) {
+        completeSources.add(source.name);
+      }
       sourceResults.push({
         name: source.name,
         fetched: jobs.length,
@@ -138,15 +142,12 @@ export const runIngestion = async (options: {
 
   const persistedBySource = new Map<string, number>();
 
-  const { persistedJobs, companiesUpdated } = await options.db.transaction(
+  const { persistedJobs, companiesUpdated } = await options.db.$transaction(
     async (tx) => {
-      const transactionDb = tx as unknown as Db;
-      const companiesRepository = createCompaniesRepository(transactionDb);
-      const jobsRepository = createJobsRepository(transactionDb);
-      const hiringSignalsRepository =
-        createHiringSignalsRepository(transactionDb);
-      const ingestionRunsRepository =
-        createIngestionRunsRepository(transactionDb);
+      const companiesRepository = createCompaniesRepository(tx);
+      const jobsRepository = createJobsRepository(tx);
+      const hiringSignalsRepository = createHiringSignalsRepository(tx);
+      const ingestionRunsRepository = createIngestionRunsRepository(tx);
       const companyIds = new Set<string>();
       let persistedJobs = 0;
 
@@ -188,17 +189,31 @@ export const runIngestion = async (options: {
       }
 
       for (const sourceResult of sourceResults) {
-        if (sourceResult.error) {
+        if (sourceResult.error !== undefined) {
           continue;
         }
 
-        const sourceJobIds = uniqueJobs
-          .filter((job) => job.source === sourceResult.name)
-          .map((job) => job.sourceJobId);
-        const deactivatedJobs = await jobsRepository.deactivateMissingBySource(
-          sourceResult.name,
-          sourceJobIds,
+        const sourceJobIds = new Set(
+          uniqueJobs
+            .filter((job) => job.source === sourceResult.name)
+            .map((job) => job.sourceJobId),
         );
+        // Partial feeds can retire observed ineligible jobs and duplicates,
+        // but only complete snapshots can retire jobs that were not observed.
+        const deactivatedJobs = completeSources.has(sourceResult.name)
+          ? await jobsRepository.deactivateMissingBySource(sourceResult.name, [
+              ...sourceJobIds,
+            ])
+          : await jobsRepository.deactivateBySourceJobIds(
+              sourceResult.name,
+              fetchedJobs
+                .filter(
+                  (job) =>
+                    job.source === sourceResult.name &&
+                    !sourceJobIds.has(job.sourceJobId),
+                )
+                .map((job) => job.sourceJobId),
+            );
         for (const job of deactivatedJobs) {
           companyIds.add(job.companyId);
         }

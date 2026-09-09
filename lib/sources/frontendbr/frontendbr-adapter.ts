@@ -27,7 +27,7 @@ const isIssue = (value: unknown): value is FrontendBrIssue =>
 
 /**
  * Only open issues are requested: the repository closes an issue once the
- * vacancy is filled, so `deactivateMissingBySource` retires it on the next run.
+ * vacancy is filled, so an exhaustive fetch can retire missing jobs.
  */
 const buildIssuesRequest = (
   page: number,
@@ -107,7 +107,7 @@ export const createFrontendBrAdapter = (
         }
 
         if (records.length < perPage) {
-          return normalized;
+          return { jobs: normalized, complete: true };
         }
 
         page += 1;

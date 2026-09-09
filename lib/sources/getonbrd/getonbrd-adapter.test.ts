@@ -38,10 +38,62 @@ describe('createGetOnBrdAdapter', () => {
     const fetchMock = vi.fn(async () => jsonResponse(page1));
     const adapter = createGetOnBrdAdapter({ fetch: asFetch(fetchMock) });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(true);
     expect(adapter.name).toBe(GETONBRD_SOURCE_NAME);
     expect(jobs).toHaveLength(1);
     expect(jobs[0]?.title).toBe('Senior React Engineer');
+  });
+
+  it('marks a capped category listing incomplete', async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        ...page1,
+        meta: { ...page1.meta, total_pages: 2 },
+      }),
+    );
+    const adapter = createGetOnBrdAdapter({
+      fetch: asFetch(fetchMock),
+      maxPages: 1,
+    });
+
+    const result = await adapter.fetchJobs();
+
+    expect(result.complete).toBe(false);
+    expect(result.jobs).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('follows total_pages even when a page is shorter than requested', async () => {
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        ...page1,
+        meta: { ...page1.meta, total_pages: 2 },
+      }),
+    );
+    const adapter = createGetOnBrdAdapter({ fetch: asFetch(fetchMock) });
+
+    const result = await adapter.fetchJobs();
+
+    expect(result.complete).toBe(true);
+    expect(result.jobs).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not declare an unexpectedly empty page complete', async () => {
+    const adapter = createGetOnBrdAdapter({
+      fetch: asFetch(async () =>
+        jsonResponse({
+          data: [],
+          meta: { total_pages: 2 },
+        }),
+      ),
+    });
+
+    await expect(adapter.fetchJobs()).resolves.toEqual({
+      jobs: [],
+      complete: false,
+    });
   });
 });

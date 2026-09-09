@@ -22,3 +22,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm quality
+      - run: pnpm db:smoke
+      - run: pnpm audit --prod

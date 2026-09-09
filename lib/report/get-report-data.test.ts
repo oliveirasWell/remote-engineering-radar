@@ -1,5 +1,5 @@
 import { getDb } from '@/lib/db/client';
-import { createTestDb } from '@/lib/db/test/create-test-db';
+import { createTestDb, disconnectTestDb } from '@/lib/db/test/create-test-db';
 import { getCompaniesPageData } from './get-companies-page-data';
 import { getJobDetailData, getJobsPageData } from './get-jobs-page-data';
 import { logReportError } from './log-report-error';
@@ -44,18 +44,21 @@ describe.each([
     const db = await createTestDb();
     vi.mocked(getDb).mockReturnValue(db);
     const error = new Error(TEST_REPORT_ERROR_MESSAGE);
-    const query = vi.spyOn(db.$client, 'query').mockRejectedValueOnce(error);
+    const query =
+      operation === 'companies'
+        ? vi.spyOn(db.company, 'findMany')
+        : operation === 'jobs'
+          ? vi.spyOn(db.job, 'findMany')
+          : vi.spyOn(db.job, 'findUnique');
+    query.mockRejectedValueOnce(error);
 
     try {
-      await expect(read()).rejects.toMatchObject({ cause: error });
-      expect(logReportError).toHaveBeenCalledExactlyOnceWith(
-        operation,
-        expect.objectContaining({ cause: error }),
-      );
+      await expect(read()).rejects.toBe(error);
+      expect(logReportError).toHaveBeenCalledExactlyOnceWith(operation, error);
       await expect(read()).resolves.toStrictEqual(empty);
     } finally {
       query.mockRestore();
-      await db.$client.close();
+      await disconnectTestDb(db);
     }
   });
 });

@@ -1,8 +1,8 @@
-import { Suspense } from 'react';
-import {
-  getCompaniesPageData,
-  type CompaniesPageData,
-} from '@/lib/report/get-companies-page-data';
+import type { Metadata } from 'next';
+import { cache, Suspense } from 'react';
+import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import type { JobCountrySlug } from '@/lib/jobs/constants';
+import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
 import { parseCountryFilter } from '@/lib/report/parse-country-filter';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { CompaniesReport, HomeHeading } from './home-presentation';
@@ -11,22 +11,22 @@ type HomeProps = {
   searchParams: Promise<{ country?: string | string[] }>;
 };
 
-/** Streams request-dependent data while the header prerenders. */
+const readCompanies = cache((country: JobCountrySlug | undefined) =>
+  getCompaniesPageData({ country }),
+);
+
+export const generateMetadata = async ({
+  searchParams,
+}: HomeProps): Promise<Metadata> => {
+  const country = parseCountryFilter((await searchParams).country);
+  await readCompanies(country);
+  return canonicalMetadata('/', { country });
+};
+
 const CompaniesSection = async ({ searchParams }: HomeProps) => {
   const params = await searchParams;
   const country = parseCountryFilter(params.country);
-  let data: CompaniesPageData;
-
-  try {
-    data = await getCompaniesPageData({ country });
-  } catch {
-    return (
-      <CompaniesReport
-        data={{ companies: [], country, updatedAt: null }}
-        hasError
-      />
-    );
-  }
+  const data = await readCompanies(country);
 
   return <CompaniesReport data={data} />;
 };

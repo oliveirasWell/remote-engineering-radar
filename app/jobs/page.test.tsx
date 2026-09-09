@@ -5,13 +5,13 @@ import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
-import { REPORT_ERROR_MESSAGE } from '@/lib/report/constants';
 import { I18N_TEST } from '../i18n-fixtures';
 import { TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import JobsPage from './page';
+import * as jobsRoute from './page';
 
 vi.mock('@/lib/report/get-jobs-page-data', () => ({
   getJobsPageData: vi.fn(async () => ({ jobs: [] })),
@@ -45,12 +45,9 @@ describe('JobsPage', () => {
     expect(screen.getByText(jobs.loading)).toBeInTheDocument();
   });
 
-  it('translates every filter option and empty/error state without changing query values', async () => {
+  it('translates every filter option and empty state without changing query values', async () => {
     const messages = messagesFor(I18N_TEST.portuguese);
     document.cookie = `${LOCALE_COOKIE}=${I18N_TEST.portuguese}; path=/`;
-    vi.mocked(getJobsPageData).mockRejectedValueOnce(
-      new Error(TEST_REPORT_ERROR_MESSAGE),
-    );
     const page = JobsPage({ searchParams: Promise.resolve(FILTERS) });
     render(<I18nProvider>{await resolvePageSection(page)}</I18nProvider>);
 
@@ -72,7 +69,7 @@ describe('JobsPage', () => {
         expect(screen.getByRole('option', { name: label })).toHaveValue(value);
       }
     }
-    expect(screen.getByRole('alert')).toHaveTextContent(messages.report.error);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(
       screen.queryByText(TEST_REPORT_ERROR_MESSAGE),
     ).not.toBeInTheDocument();
@@ -97,7 +94,7 @@ describe('JobsPage', () => {
     expect(screen.getByText(JOBS_PAGE_COPY.subtitle)).toBeInTheDocument();
   });
 
-  it('catches errors outside the reader, preserves normalized filters, and recovers on the next invocation', async () => {
+  it('propagates read errors with normalized filters and recovers on the next request', async () => {
     const country = JOB_COUNTRY_FILTER_OPTIONS[0].slug;
     const minimumScore = 90;
     const props = {
@@ -112,7 +109,7 @@ describe('JobsPage', () => {
     const filters = {
       technology: TEST_JOB.technologies[0],
       seniority: TEST_JOB.seniority,
-      remote: TEST_JOB.remotePolicy,
+      remote: undefined,
       country,
       minimumScore,
       limit: JOBS_PAGE_LIMIT,
@@ -121,27 +118,22 @@ describe('JobsPage', () => {
       new Error(TEST_REPORT_ERROR_MESSAGE),
     );
 
-    const section = resolvePageSection(JobsPage(props));
-    await expect(section).resolves.toBeDefined();
-    const { rerender } = render(await section);
+    await expect(resolvePageSection(JobsPage(props))).rejects.toThrow(
+      TEST_REPORT_ERROR_MESSAGE,
+    );
+    render(await resolvePageSection(JobsPage(props)));
 
-    expect(screen.getByRole('alert').textContent).toBe(REPORT_ERROR_MESSAGE);
-    expect(screen.getByText(JOBS_PAGE_COPY.empty)).toBeInTheDocument();
     expect(screen.getByLabelText(JOBS_PAGE_COPY.technology)).toHaveValue(
       filters.technology,
     );
     expect(screen.getByLabelText(JOBS_PAGE_COPY.seniority)).toHaveValue(
       filters.seniority,
     );
-    expect(screen.getByLabelText(JOBS_PAGE_COPY.remote)).toHaveValue(
-      filters.remote,
-    );
+    expect(screen.getByLabelText(JOBS_PAGE_COPY.remote)).toHaveValue('');
     expect(screen.getByLabelText(JOBS_PAGE_COPY.country)).toHaveValue(country);
     expect(screen.getByLabelText(JOBS_PAGE_COPY.minimumScore)).toHaveValue(
       minimumScore,
     );
-
-    rerender(await resolvePageSection(JobsPage(props)));
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(screen.getByText(JOBS_PAGE_COPY.empty)).toBeInTheDocument();
@@ -150,4 +142,66 @@ describe('JobsPage', () => {
       [filters],
     ]);
   });
+
+  it('gates metadata on the same normalized full reader and preserves substantive filter canonicals', async () => {
+    expect(jobsRoute).toHaveProperty('generateMetadata', expect.any(Function));
+    const metadata = await jobsRoute.generateMetadata({
+      searchParams: Promise.resolve({
+        technology: ` ${TEST_JOB.technologies[0].toLowerCase()} `,
+        country: FILTERS.country.toUpperCase(),
+        minimumScore: '090',
+      }),
+    });
+    expect(metadata).toMatchObject({
+      alternates: {
+        canonical: `/jobs?technology=${TEST_JOB.technologies[0]}&country=${FILTERS.country}&minimumScore=90`,
+      },
+      robots: { index: false, follow: true },
+    });
+    expect(getJobsPageData).toHaveBeenCalledExactlyOnceWith({
+      technology: TEST_JOB.technologies[0],
+      country: FILTERS.country,
+      seniority: undefined,
+      remote: undefined,
+      minimumScore: 90,
+      limit: JOBS_PAGE_LIMIT,
+    });
+    const error = new Error(TEST_REPORT_ERROR_MESSAGE);
+    vi.mocked(getJobsPageData).mockRejectedValueOnce(error);
+    await expect(
+      jobsRoute.generateMetadata({ searchParams: Promise.resolve({}) }),
+    ).rejects.toBe(error);
+  });
+
+  it.each([
+    {},
+    { minimumScore: '000' },
+    { country: '' },
+    { country: 'unknown' },
+    { remote: ' REMOTE ' },
+    { technology: ['React', 'TypeScript'] },
+    { ignored: 'tracking' },
+  ])(
+    'uses the indexable base canonical for ignored/default filters %j',
+    async (params) => {
+      expect(jobsRoute).toHaveProperty(
+        'generateMetadata',
+        expect.any(Function),
+      );
+      await expect(
+        jobsRoute.generateMetadata({ searchParams: Promise.resolve(params) }),
+      ).resolves.toMatchObject({
+        alternates: { canonical: '/jobs' },
+        robots: { index: true, follow: true },
+      });
+      expect(getJobsPageData).toHaveBeenCalledExactlyOnceWith({
+        technology: undefined,
+        seniority: undefined,
+        remote: undefined,
+        country: undefined,
+        minimumScore: undefined,
+        limit: JOBS_PAGE_LIMIT,
+      });
+    },
+  );
 });

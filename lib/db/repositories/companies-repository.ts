@@ -1,4 +1,4 @@
-import { and, desc, eq, exists, gt, inArray, sql } from 'drizzle-orm';
+import type { Prisma, Company as PrismaCompany } from '@prisma/client';
 import {
   DEFAULT_COMPANY_KIND,
   resolveCompanyKind,
@@ -7,9 +7,6 @@ import {
 import type { Company, NewCompany } from '@/lib/companies/types';
 import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import type { Db } from '../client';
-import { coalescedPostedAt } from './posted-at-filter';
-import { companies } from '../schema/companies';
-import { jobs } from '../schema/jobs';
 
 const toCompanyKind = (value: string): CompanyKind => {
   if (value === 'consultancy' || value === 'staffing' || value === 'product') {
@@ -18,7 +15,7 @@ const toCompanyKind = (value: string): CompanyKind => {
   return DEFAULT_COMPANY_KIND;
 };
 
-const toCompany = (row: typeof companies.$inferSelect): Company => ({
+const toCompany = (row: PrismaCompany): Company => ({
   id: row.id,
   name: row.name,
   slug: row.slug,
@@ -34,166 +31,125 @@ const toCompany = (row: typeof companies.$inferSelect): Company => ({
 const resolveKindForInput = (input: NewCompany): CompanyKind =>
   input.kind ?? resolveCompanyKind(input.slug);
 
-export const createCompaniesRepository = (db: Db) => {
-  const repository = {
-    create: async (input: NewCompany): Promise<Company> => {
-      const kind = resolveKindForInput(input);
-      const [row] = await db
-        .insert(companies)
-        .values({
+/** Mirrors `coalesce(posted_at, first_seen_at) >= cutoff`. */
+const postedSinceFilter = (cutoff: Date): Prisma.JobWhereInput => ({
+  OR: [
+    { postedAt: { gte: cutoff } },
+    { postedAt: null, firstSeenAt: { gte: cutoff } },
+  ],
+});
+
+export const createCompaniesRepository = (db: Db) => ({
+  create: async (input: NewCompany): Promise<Company> =>
+    toCompany(
+      await db.company.create({
+        data: {
           name: input.name,
           slug: input.slug,
           websiteUrl: input.websiteUrl ?? null,
           logoUrl: input.logoUrl ?? null,
           source: input.source,
-          kind,
+          kind: resolveKindForInput(input),
           hiringScore: input.hiringScore ?? 0,
-        })
-        .returning();
+        },
+      }),
+    ),
 
-      if (!row) {
-        throw new Error('Failed to create company');
-      }
+  findById: async (id: string): Promise<Company | null> => {
+    const row = await db.company.findUnique({ where: { id } });
+    return row ? toCompany(row) : null;
+  },
 
-      return toCompany(row);
-    },
+  findBySlug: async (slug: string): Promise<Company | null> => {
+    const row = await db.company.findUnique({ where: { slug } });
+    return row ? toCompany(row) : null;
+  },
 
-    findById: async (id: string): Promise<Company | null> => {
-      const [row] = await db
-        .select()
-        .from(companies)
-        .where(eq(companies.id, id));
-      return row ? toCompany(row) : null;
-    },
+  listByIds: async (ids: string[]): Promise<Company[]> => {
+    if (ids.length === 0) {
+      return [];
+    }
 
-    findBySlug: async (slug: string): Promise<Company | null> => {
-      const [row] = await db
-        .select()
-        .from(companies)
-        .where(eq(companies.slug, slug));
-      return row ? toCompany(row) : null;
-    },
+    const rows = await db.company.findMany({ where: { id: { in: ids } } });
+    return rows.map(toCompany);
+  },
 
-    listByIds: async (ids: string[]): Promise<Company[]> => {
-      if (ids.length === 0) {
-        return [];
-      }
+  listByHiringScore: async (options?: {
+    limit?: number;
+    minimumHiringScore?: number;
+    country?: string;
+    maxJobAgeMs?: number;
+    now?: Date;
+  }): Promise<Company[]> => {
+    const now = options?.now ?? new Date();
+    const maxJobAgeMs = options?.maxJobAgeMs;
+    const cutoff =
+      maxJobAgeMs === undefined
+        ? undefined
+        : new Date(now.getTime() - maxJobAgeMs);
 
-      const rows = await db
-        .select()
-        .from(companies)
-        .where(inArray(companies.id, ids));
-      return rows.map(toCompany);
-    },
-
-    listByHiringScore: async (options?: {
-      limit?: number;
-      minimumHiringScore?: number;
-      country?: string;
-      maxJobAgeMs?: number;
-      now?: Date;
-    }): Promise<Company[]> => {
-      const minimum = options?.minimumHiringScore ?? 0;
-      const filters = [gt(companies.hiringScore, minimum)];
-      const now = options?.now ?? new Date();
-      const maxJobAgeMs = options?.maxJobAgeMs;
-      const cutoff =
-        maxJobAgeMs === undefined
-          ? undefined
-          : new Date(now.getTime() - maxJobAgeMs);
-
-      const jobConditions = [
-        eq(jobs.companyId, companies.id),
-        eq(jobs.isActive, true),
-        eq(jobs.remotePolicy, REMOTE_POLICY_REMOTE),
-        ...(cutoff ? [coalescedPostedAt('>=', cutoff)] : []),
-        ...(options?.country
-          ? [
-              sql`${jobs.countries} @> ${JSON.stringify([options.country])}::jsonb`,
-            ]
-          : []),
-      ];
-
-      filters.push(
-        exists(
-          db
-            .select({ id: jobs.id })
-            .from(jobs)
-            .where(and(...jobConditions)),
-        ),
-      );
-
-      const query = db
-        .select()
-        .from(companies)
-        .where(and(...filters))
-        .orderBy(desc(companies.hiringScore), desc(companies.updatedAt));
-
-      const rows =
-        options?.limit !== undefined
-          ? await query.limit(options.limit)
-          : await query;
-      return rows.map(toCompany);
-    },
-
-    updateHiringScore: async (
-      id: string,
-      hiringScore: number,
-    ): Promise<Company | null> => {
-      const [row] = await db
-        .update(companies)
-        .set({ hiringScore, updatedAt: new Date() })
-        .where(eq(companies.id, id))
-        .returning();
-      return row ? toCompany(row) : null;
-    },
-
-    upsertBySlug: async (input: NewCompany): Promise<Company> => {
-      const kind = resolveKindForInput(input);
-      const [row] = await db
-        .insert(companies)
-        .values({
-          name: input.name,
-          slug: input.slug,
-          websiteUrl: input.websiteUrl ?? null,
-          logoUrl: input.logoUrl ?? null,
-          source: input.source,
-          kind,
-          hiringScore: input.hiringScore ?? 0,
-        })
-        .onConflictDoUpdate({
-          target: companies.slug,
-          set: {
-            name: input.name,
-            source: input.source,
-            kind,
-            ...(input.websiteUrl === undefined
-              ? {}
-              : { websiteUrl: input.websiteUrl }),
-            ...(input.logoUrl === undefined ? {} : { logoUrl: input.logoUrl }),
-            ...(input.hiringScore === undefined
-              ? {}
-              : { hiringScore: input.hiringScore }),
-            updatedAt: new Date(),
+    const rows = await db.company.findMany({
+      where: {
+        hiringScore: { gt: options?.minimumHiringScore ?? 0 },
+        jobs: {
+          some: {
+            isActive: true,
+            remotePolicy: REMOTE_POLICY_REMOTE,
+            ...(cutoff ? postedSinceFilter(cutoff) : {}),
+            ...(options?.country
+              ? { countries: { array_contains: [options.country] } }
+              : {}),
           },
-        })
-        .returning();
+        },
+      },
+      orderBy: [{ hiringScore: 'desc' }, { updatedAt: 'desc' }],
+      ...(options?.limit === undefined ? {} : { take: options.limit }),
+    });
+    return rows.map(toCompany);
+  },
 
-      if (!row) {
-        throw new Error('Failed to upsert company');
-      }
+  updateHiringScore: async (
+    id: string,
+    hiringScore: number,
+  ): Promise<Company | null> => {
+    const [row] = await db.company.updateManyAndReturn({
+      where: { id },
+      data: { hiringScore, updatedAt: new Date() },
+    });
+    return row ? toCompany(row) : null;
+  },
 
-      return toCompany(row);
-    },
+  upsertBySlug: async (input: NewCompany): Promise<Company> => {
+    const kind = resolveKindForInput(input);
+    return toCompany(
+      await db.company.upsert({
+        where: { slug: input.slug },
+        create: {
+          name: input.name,
+          slug: input.slug,
+          websiteUrl: input.websiteUrl ?? null,
+          logoUrl: input.logoUrl ?? null,
+          source: input.source,
+          kind,
+          hiringScore: input.hiringScore ?? 0,
+        },
+        update: {
+          name: input.name,
+          source: input.source,
+          kind,
+          ...(input.websiteUrl === undefined
+            ? {}
+            : { websiteUrl: input.websiteUrl }),
+          ...(input.logoUrl === undefined ? {} : { logoUrl: input.logoUrl }),
+          ...(input.hiringScore === undefined
+            ? {}
+            : { hiringScore: input.hiringScore }),
+          updatedAt: new Date(),
+        },
+      }),
+    );
+  },
 
-    deleteById: async (id: string): Promise<boolean> => {
-      const deleted = await db
-        .delete(companies)
-        .where(eq(companies.id, id))
-        .returning();
-      return deleted.length > 0;
-    },
-  };
-
-  return repository;
-};
+  deleteById: async (id: string): Promise<boolean> =>
+    (await db.company.deleteMany({ where: { id } })).count > 0,
+});
