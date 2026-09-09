@@ -1,8 +1,9 @@
-import { and, desc, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, notInArray, sql } from 'drizzle-orm';
 import type { JobGeography } from '@/lib/classification/types';
 import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
+import { coalescedPostedAt } from './posted-at-filter';
 import { jobs } from '../schema/jobs';
 
 const toGeographies = (value: string[]): JobGeography[] =>
@@ -140,7 +141,7 @@ export const createJobsRepository = (db: Db) => {
         filters.push(
           eq(jobs.isActive, true),
           eq(jobs.remotePolicy, REMOTE_POLICY_REMOTE),
-          sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
+          coalescedPostedAt('>=', cutoff),
         );
       } else if (options?.activeOnly) {
         filters.push(eq(jobs.isActive, true));
@@ -192,9 +193,7 @@ export const createJobsRepository = (db: Db) => {
       if (options?.maxAgeMs !== undefined) {
         const now = options.now ?? new Date();
         const cutoff = new Date(now.getTime() - options.maxAgeMs);
-        filters.push(
-          sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
-        );
+        filters.push(coalescedPostedAt('>=', cutoff));
       }
 
       const query = db
@@ -297,12 +296,7 @@ export const createJobsRepository = (db: Db) => {
       return db
         .update(jobs)
         .set({ isActive: false, updatedAt: now })
-        .where(
-          and(
-            eq(jobs.isActive, true),
-            sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) < ${cutoff}`,
-          ),
-        )
+        .where(and(eq(jobs.isActive, true), coalescedPostedAt('<', cutoff)))
         .returning({ companyId: jobs.companyId });
     },
 
@@ -314,12 +308,7 @@ export const createJobsRepository = (db: Db) => {
       const cutoff = new Date(now.getTime() - retentionMs);
       const deleted = await db
         .delete(jobs)
-        .where(
-          and(
-            eq(jobs.isActive, false),
-            lt(sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt})`, cutoff),
-          ),
-        )
+        .where(and(eq(jobs.isActive, false), coalescedPostedAt('<', cutoff)))
         .returning({ id: jobs.id });
       return deleted.length;
     },
