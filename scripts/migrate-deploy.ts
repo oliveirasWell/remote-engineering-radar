@@ -175,6 +175,17 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
         JOIN pg_roles grantee ON grantee.oid = privilege.grantee
         JOIN pg_roles owner ON owner.oid = defaults.defaclrole
         WHERE defaults.defaclobjtype = 'r'
+          -- Unrelated provider defaults do not apply to tables created by Radar's roles.
+          AND (
+            owner.rolname = current_user
+            OR EXISTS (
+              SELECT 1 FROM pg_class relation
+              WHERE relation.relowner = defaults.defaclrole
+                AND relation.relnamespace = 'public'::regnamespace
+                AND relation.relkind IN ('r', 'p')
+                AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', '_prisma_migrations')
+            )
+          )
           AND (
             defaults.defaclnamespace = 0
             OR defaults.defaclnamespace = 'public'::regnamespace

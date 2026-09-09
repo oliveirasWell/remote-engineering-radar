@@ -167,11 +167,11 @@ describe('explicit baseline preparation', () => {
     },
   );
 
-  it('reports sanitized default-grant contexts without exempting unrelated owners', async () => {
+  it('reports sanitized default-grant contexts for migration and application owners', async () => {
     const contexts = [
       {
         owner_is_current_role: false,
-        owner_owns_radar_tables: false,
+        owner_owns_radar_tables: true,
         owner_is_postgres: false,
         current_role_can_manage_owner: false,
         namespace: 'global',

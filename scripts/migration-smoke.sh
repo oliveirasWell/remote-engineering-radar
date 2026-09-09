@@ -22,10 +22,22 @@ database_url="postgresql://postgres:${database_password}@${database_address}/${d
 docker exec "$container_id" createdb --username postgres "$database_name"
 docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --command \
   "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN CREATE ROLE anon; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN CREATE ROLE authenticated; END IF; END \$\$; ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;"
+docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --command \
+  "CREATE ROLE provider_owner; ALTER DEFAULT PRIVILEGES FOR ROLE provider_owner IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;"
 
 DATABASE_MIGRATION_URL="$database_url" pnpm db:deploy
 DATABASE_MIGRATION_URL="$database_url" pnpm db:deploy
 DATABASE_MIGRATION_URL="$database_url" pnpm db:baseline-check
+provider_defaults="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --tuples-only --no-align --command "SELECT EXISTS (SELECT 1 FROM pg_default_acl WHERE defaclrole = (SELECT oid FROM pg_roles WHERE rolname = 'provider_owner'))")"
+test "$provider_defaults" = 't'
+docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --command \
+  "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT SELECT ON TABLES TO anon;"
+if DATABASE_MIGRATION_URL="$database_url" pnpm db:baseline-check; then
+  echo 'Unsafe Radar creator defaults were not blocked.' >&2
+  exit 1
+fi
+docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --command \
+  "ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE SELECT ON TABLES FROM anon;"
 
 table_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --tuples-only --no-align --command "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('companies', 'jobs', 'hiring_signals')")"
 test "$table_count" = '3'

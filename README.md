@@ -118,7 +118,10 @@ preserved. Incompatible existing columns are not repaired. Neither Drizzle migra
 history nor the Prisma baseline SQL is changed.
 
 The command then runs the full schema parity and public-role/default-privilege checks
-against the same trusted migration URL. It does **not** register the baseline, deploy
+against the same trusted migration URL. Default ACL checks cover the current migration
+role and owners of Radar's application/migration tables. Defaults belonging to unrelated
+provider-owned roles do not apply to Radar-created tables and are not modified. Actual
+public access to Radar tables is always checked. It does **not** register the baseline, deploy
 migrations, or run ingestion. SQL errors roll back the preparation transaction; a later
 validation failure leaves the committed additive changes in place but fails the operation.
 Stop on any failure and investigate; do not resolve or merge. A lock-timeout failure can
