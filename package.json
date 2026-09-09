@@ -24,6 +24,7 @@
     "db:status": "node --env-file-if-exists=.env.local node_modules/prisma/build/index.js migrate status",
     "db:validate": "prisma validate",
     "db:baseline-check": "tsx --env-file-if-exists=.env.local scripts/migrate-deploy.ts --check-only",
+    "db:prepare-baseline": "tsx --env-file-if-exists=.env.local scripts/migrate-deploy.ts --prepare-baseline",
     "db:resolve-baseline": "node --env-file-if-exists=.env.local node_modules/prisma/build/index.js migrate resolve --applied 20260828000000_prisma_baseline",
     "db:smoke": "bash scripts/migration-smoke.sh",
     "db:up": "docker compose up -d --wait && pnpm db:deploy",

@@ -171,10 +171,21 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
   }
 };
 
-export const baselineCheck = async (): Promise<void> => {
-  const connectionString = getMigrationUrl();
+export const baselineCheck = async (
+  connectionString = getMigrationUrl(),
+): Promise<void> => {
   await verifySchemaParity(connectionString);
   await verifyPrivileges(connectionString);
+};
+
+export const prepareBaseline = async (): Promise<void> => {
+  const connectionString = getMigrationUrl();
+  await runPrisma(
+    connectionString,
+    ['db', 'execute', '--file', 'scripts/prepare-prisma-baseline.sql'],
+    'prisma baseline preparation',
+  );
+  await baselineCheck(connectionString);
 };
 
 export const migrateDeploy = async (): Promise<void> => {
@@ -193,9 +204,11 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const operation = process.argv.includes('--check-only')
-    ? baselineCheck
-    : migrateDeploy;
+  const operation = process.argv.includes('--prepare-baseline')
+    ? prepareBaseline
+    : process.argv.includes('--check-only')
+      ? baselineCheck
+      : migrateDeploy;
   operation().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;

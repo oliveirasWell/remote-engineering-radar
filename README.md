@@ -69,8 +69,9 @@ CA file; include that file in the migration environment. The PEM and the runtime
 
 Repository tests use pinned `prisma-pglite-bridge` with the production Prisma `pg` adapter,
 so they remain in-process and require neither Docker nor a live database. `pnpm db:smoke`
-uses the Docker service to verify the baseline and a second idempotent deploy against real
-PostgreSQL.
+uses a disposable PostgreSQL Docker container to verify fresh deploys and the legacy
+preparation/check/resolve/deploy bridge, including data preservation. It does not use the
+application database or its volume, and removes the test container on exit.
 
 ### Required production baseline gate
 
@@ -94,7 +95,48 @@ branch. Only after reviewing that read-only result and confirming a backup is av
 run `resolve-baseline` with confirmation `RESOLVE PRODUCTION BASELINE`. This validates
 the existing schema again, records the baseline, and deploys pending migrations without
 running ingestion. `deploy-migrations` applies pending migrations without resolving a
-baseline or running ingestion. Scheduled and push-triggered runs never resolve baselines.
+baseline or running ingestion. Scheduled and push-triggered runs only deploy and ingest;
+they never prepare or resolve baselines. Normal `pnpm db:deploy` never adds the missing
+legacy columns or resolves an existing baseline automatically.
+
+#### Narrow legacy preparation bridge
+
+The read-only production check in Actions run `34330899604` reported only three missing
+columns: `companies.kind`, `jobs.geographies`, and `jobs.countries`. For this known legacy
+state only, review the result and confirm a backup is available, then manually dispatch
+**Ingest** on the reviewed release branch with operation `prepare-baseline` and the exact
+confirmation `PREPARE PRODUCTION BASELINE`.
+
+This explicit operation runs `scripts/prepare-prisma-baseline.sql` in one transaction with
+a five-second lock timeout. It adds only those three columns if absent, using the legacy
+`NOT NULL` defaults (`'product'` for `kind`, `'[]'::jsonb` for both location arrays), and
+revokes all table privileges on `companies` and `jobs` from `anon` and `authenticated` if
+those roles exist. Rows and existing column values are preserved. Incompatible existing
+columns are not repaired. Neither Drizzle migration history nor the Prisma baseline SQL
+is changed.
+
+The command then runs the full schema parity and public-role/default-privilege checks
+against the same trusted migration URL. It does **not** register the baseline, deploy
+migrations, or run ingestion. SQL errors roll back the preparation transaction; a later
+validation failure leaves the committed additive changes in place but fails the operation.
+Stop on any failure and investigate; do not resolve or merge. A lock-timeout failure can
+be retried explicitly after investigating contention, since preparation is idempotent.
+
+Only after preparation and validation succeed, dispatch the separate `resolve-baseline`
+operation with `RESOLVE PRODUCTION BASELINE`. It rechecks parity and privileges, records
+the baseline, and deploys pending migrations. Continue the final merge only after that
+production gate succeeds. The equivalent explicit CLI sequence, using the same protected
+direct migration URL for every command, is:
+
+```bash
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:prepare-baseline
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:resolve-baseline
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:deploy
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:status
+```
+
+Run each command only after the preceding command succeeds. Preparation is a narrow
+rollout bridge, not a general schema repair command or a replacement for migrations.
 
 The Vercel Git integration deploys independently of this workflow. For this first Prisma
 rollout, complete the production baseline and migration gate **before** the final merge
@@ -147,10 +189,12 @@ signal. Bounded or failed pagination is not treated as proof that a vacancy clos
 | `pnpm db:dev`      | Create and apply development migrations                 |
 | `pnpm db:status`   | Show Prisma migration status                            |
 | `pnpm db:validate` | Validate the Prisma schema without a live database      |
-| `pnpm db:smoke`    | Deploy twice to a fresh real PostgreSQL smoke database  |
+| `pnpm db:smoke`    | Verify fresh and legacy rollout in disposable Postgres  |
 
 `pnpm db:baseline-check` verifies schema parity and public-role ACLs before the one-time
 production baseline resolution.
+`pnpm db:prepare-baseline` explicitly adds the three known missing legacy columns and
+then performs that full check, without resolving or deploying migrations.
 | `pnpm db:up` | Start Docker PostgreSQL and safely deploy migrations |
 | `pnpm db:down` | Stop the container, keeping the data volume |
 | `pnpm db:reset` | Destroy the data volume and start a fresh, migrated database |

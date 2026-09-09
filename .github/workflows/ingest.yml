@@ -12,10 +12,11 @@ on:
         options:
           - ingest
           - check-baseline
+          - prepare-baseline
           - resolve-baseline
           - deploy-migrations
       confirmation:
-        description: 'For resolve-baseline only: enter RESOLVE PRODUCTION BASELINE'
+        description: 'Enter PREPARE PRODUCTION BASELINE for prepare-baseline or RESOLVE PRODUCTION BASELINE for resolve-baseline'
         type: string
         default: ''
   push:
@@ -42,6 +43,17 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Require explicit production preparation confirmation
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'prepare-baseline'
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$CONFIRMATION" = 'PREPARE PRODUCTION BASELINE'
+      - name: Prepare the legacy production schema and validate parity and privileges
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'prepare-baseline'
+        run: pnpm db:prepare-baseline
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
       - name: Require explicit production baseline confirmation
         if: github.event_name == 'workflow_dispatch' && inputs.operation == 'resolve-baseline'
         env:
@@ -60,7 +72,7 @@ jobs:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
       - run: pnpm db:deploy
-        if: github.event_name != 'workflow_dispatch' || inputs.operation != 'check-baseline'
+        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'ingest' || inputs.operation == 'resolve-baseline' || inputs.operation == 'deploy-migrations'
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
