@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { LanguagePicker } from '@/components/i18n/LanguagePicker/LanguagePicker';
+import { SiteWordmark } from '@/components/site/SiteWordmark/SiteWordmark';
 
 const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
   const { messages } = useI18n();
@@ -47,10 +48,15 @@ const ActiveNavigation = () => <NavigationLinks pathname={usePathname()} />;
 
 export const SiteHeader = () => (
   <header className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-4 border-b border-border px-6 py-4">
-    {/* Dynamic job routes suspend pathname reads during prerendering. */}
-    <Suspense fallback={<NavigationLinks />}>
-      <ActiveNavigation />
-    </Suspense>
-    <LanguagePicker />
+    <Link href="/" className="inline-flex items-center">
+      <SiteWordmark className="text-base" />
+    </Link>
+    <div className="flex flex-wrap items-center gap-4">
+      {/* Dynamic job routes suspend pathname reads during prerendering. */}
+      <Suspense fallback={<NavigationLinks />}>
+        <ActiveNavigation />
+      </Suspense>
+      <LanguagePicker />
+    </div>
   </header>
 );

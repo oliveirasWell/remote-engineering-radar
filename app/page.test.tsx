@@ -13,6 +13,7 @@ import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { TEST_REPORT_COMPANY } from '@/components/report/test-fixtures';
 import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { I18N_TEST } from './i18n-fixtures';
+import { CompaniesReport } from './home-presentation';
 import Home from './page';
 import * as homeRoute from './page';
 import PageError from './error';
@@ -309,4 +310,65 @@ describe('Home cache boundary', () => {
       });
     },
   );
+});
+
+describe('home company sorting', () => {
+  const COMPANIES = [
+    {
+      ...TEST_REPORT_COMPANY,
+      id: 'company-1',
+      name: 'Zeta Labs',
+      openEngineeringJobs: 2,
+      jobs: [],
+      signalSourceUrls: [],
+    },
+    {
+      ...TEST_REPORT_COMPANY,
+      id: 'company-2',
+      name: 'Acme Robotics',
+      openEngineeringJobs: 5,
+      jobs: [],
+      signalSourceUrls: [],
+    },
+    {
+      ...TEST_REPORT_COMPANY,
+      id: 'company-3',
+      name: 'Nimbus Systems',
+      openEngineeringJobs: 9,
+      jobs: [],
+      signalSourceUrls: [],
+    },
+  ];
+  const NAMES = COMPANIES.map((company) => company.name);
+  const orderedNames = () =>
+    screen
+      .getAllByRole('group')
+      .map((row) => NAMES.find((name) => within(row).queryByText(name)));
+
+  it.each([
+    { sort: 'default', expected: NAMES },
+    {
+      sort: 'jobs',
+      expected: ['Nimbus Systems', 'Acme Robotics', 'Zeta Labs'],
+    },
+    {
+      sort: 'name',
+      expected: ['Acme Robotics', 'Nimbus Systems', 'Zeta Labs'],
+    },
+  ])('orders the companies by $sort', ({ sort, expected }) => {
+    render(
+      <I18nProvider>
+        <CompaniesReport
+          data={{ companies: COMPANIES, updatedAt: UPDATED_AT }}
+        />
+      </I18nProvider>,
+    );
+
+    fireEvent.change(
+      screen.getByLabelText(HOME_SECTIONS.sortLabel, { exact: false }),
+      { target: { value: sort } },
+    );
+
+    expect(orderedNames()).toEqual(expected);
+  });
 });

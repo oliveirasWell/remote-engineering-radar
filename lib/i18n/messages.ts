@@ -28,6 +28,12 @@ export const EN_MESSAGES = {
     evidence: 'Evidence / sources',
     countryFilterLabel: 'Country',
     countryAll: 'All countries',
+    sortLabel: 'Sort',
+    sortOptions: {
+      default: 'Hiring signal',
+      jobs: 'Open roles',
+      name: 'Name (A–Z)',
+    },
     loading: 'Loading companies…',
   },
   jobs: {
@@ -164,6 +170,12 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     evidence: 'Evidências / fontes',
     countryFilterLabel: 'País',
     countryAll: 'Todos os países',
+    sortLabel: 'Ordenar',
+    sortOptions: {
+      default: 'Sinal de contratação',
+      jobs: 'Vagas abertas',
+      name: 'Nome (A–Z)',
+    },
     loading: 'Carregando empresas…',
   },
   jobs: {
