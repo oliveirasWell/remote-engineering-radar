@@ -33,16 +33,21 @@ export const JobCard = ({ job }: JobCardProps) => {
   return (
     <article className="border-b border-border py-5">
       <h3 className="text-lg font-semibold tracking-tight">
-        <Link href={`/jobs/${job.id}`} className="hover:text-accent">
+        <Link
+          href={`/jobs/${job.id}`}
+          className="text-muted-foreground underline underline-offset-2"
+        >
           {job.title}
         </Link>
       </h3>
-      <p className="mt-1 text-sm text-muted">{job.companyName}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{job.companyName}</p>
       {job.technologies.length > 0 ? (
         <p className="mt-2 text-sm">{job.technologies.join(' · ')}</p>
       ) : null}
-      {meta ? <p className="mt-1 text-sm text-muted">{meta}</p> : null}
-      <p className="mt-1 text-sm text-muted">
+      {meta ? (
+        <p className="mt-1 text-sm text-muted-foreground">{meta}</p>
+      ) : null}
+      <p className="mt-1 text-sm text-muted-foreground">
         {JOB_CARD_COPY.postedLabel}: {formatRelativeTime(job.postedAt)}
       </p>
       <div className="mt-3 flex items-center gap-4">
@@ -51,14 +56,14 @@ export const JobCard = ({ job }: JobCardProps) => {
             href={job.url}
             target="_blank"
             rel="noreferrer"
-            className="text-sm text-accent underline-offset-2 hover:underline"
+            className="text-sm text-muted-foreground underline underline-offset-2"
           >
             {JOB_CARD_COPY.viewOriginal}
           </a>
         ) : null}
         <button
           type="button"
-          className="text-sm text-muted underline-offset-2 hover:text-foreground hover:underline"
+          className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
           onClick={handleHide}
         >
           {JOB_CARD_COPY.hideAction}

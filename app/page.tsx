@@ -32,7 +32,9 @@ const CompaniesSection = async ({
 
   return (
     <>
-      <p className="text-muted">{formatUpdatedLabel(data.updatedAt)}</p>
+      <p className="text-muted-foreground">
+        {formatUpdatedLabel(data.updatedAt)}
+      </p>
       <nav
         aria-label={HOME_SECTIONS.countryFilterLabel}
         className="flex flex-wrap gap-3 text-sm"
@@ -41,8 +43,8 @@ const CompaniesSection = async ({
           href="/"
           className={
             !data.country
-              ? 'font-medium text-foreground'
-              : 'text-accent underline-offset-2 hover:underline'
+              ? 'inline-flex min-h-[44px] items-center font-semibold text-foreground shadow-[inset_0_-2px_0_var(--primary)]'
+              : 'inline-flex min-h-[44px] items-center text-muted-foreground underline underline-offset-2'
           }
         >
           {HOME_SECTIONS.countryAll}
@@ -53,8 +55,8 @@ const CompaniesSection = async ({
             href={`/?country=${option.slug}`}
             className={
               data.country === option.slug
-                ? 'font-medium text-foreground'
-                : 'text-accent underline-offset-2 hover:underline'
+                ? 'inline-flex min-h-[44px] items-center font-semibold text-foreground shadow-[inset_0_-2px_0_var(--primary)]'
+                : 'inline-flex min-h-[44px] items-center text-muted-foreground underline underline-offset-2'
             }
           >
             {option.label}
@@ -62,7 +64,7 @@ const CompaniesSection = async ({
         ))}
       </nav>
       {data.errorMessage ? (
-        <p className="text-sm text-accent" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {data.errorMessage}
         </p>
       ) : null}
@@ -72,7 +74,9 @@ const CompaniesSection = async ({
           {HOME_SECTIONS.companiesToWatch}
         </h2>
         {data.companies.length === 0 ? (
-          <p className="mt-4 text-sm text-muted">{EMPTY_COMPANIES_MESSAGE}</p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            {EMPTY_COMPANIES_MESSAGE}
+          </p>
         ) : (
           <div className="mt-2 flex flex-col">
             {data.companies.map((company) => (
@@ -80,12 +84,12 @@ const CompaniesSection = async ({
                 key={company.id}
                 className="group border-b border-border pb-4"
               >
-                <summary className="cursor-pointer list-none py-2 marker:content-none">
+                <summary className="cursor-pointer list-none py-2 marker:content-none hover:bg-muted/40">
                   <div className="flex items-baseline justify-between gap-3">
                     <CompanySummary company={company} />
                     <span
                       aria-hidden
-                      className="text-sm text-muted transition-transform group-open:rotate-90"
+                      className="text-sm text-muted-foreground opacity-70 transition-transform group-open:rotate-90 hover:opacity-100"
                     >
                       &rsaquo;
                     </span>
@@ -106,7 +110,7 @@ const CompaniesSection = async ({
                               href={url}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-accent underline-offset-2 hover:underline"
+                              className="text-muted-foreground underline underline-offset-2"
                             >
                               {url}
                             </a>
@@ -140,19 +144,21 @@ const Home = ({ searchParams }: HomeProps) => (
       <PageTitle as="h1" className="text-4xl tracking-tight">
         {APP_NAME}
       </PageTitle>
-      <p className="text-lg text-muted">{HOME_SECTIONS.subtitle}</p>
+      <p className="text-lg text-muted-foreground">{HOME_SECTIONS.subtitle}</p>
       <nav className="flex flex-wrap gap-4 text-sm">
         <span className="font-medium text-foreground">Companies</span>
         <Link
           href="/jobs"
-          className="text-accent underline-offset-2 hover:underline"
+          className="text-muted-foreground underline underline-offset-2"
         >
           Jobs
         </Link>
       </nav>
     </header>
     <Suspense
-      fallback={<p className="text-sm text-muted">{HOME_SECTIONS.loading}</p>}
+      fallback={
+        <p className="text-sm text-muted-foreground">{HOME_SECTIONS.loading}</p>
+      }
     >
       <CompaniesSection searchParams={searchParams} />
     </Suspense>

@@ -13,13 +13,13 @@ type CompanyCardProps = {
  */
 export const CompanyCard = ({ company }: CompanyCardProps) => (
   <article className="pt-1 pb-4">
-    <p className="text-sm text-muted">
+    <p className="text-sm text-muted-foreground">
       {COMPANY_CARD_COPY.hiringSignalLabel}: {company.summary}
     </p>
     {company.signalDescriptions.length > 0 ? (
       <div className="mt-3">
         <p className="text-sm font-medium">{COMPANY_CARD_COPY.signalsLabel}</p>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted">
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
           {company.signalDescriptions.map((description) => (
             <li key={description}>{description}</li>
           ))}
@@ -32,14 +32,14 @@ export const CompanyCard = ({ company }: CompanyCardProps) => (
           href={company.websiteUrl}
           target="_blank"
           rel="noreferrer"
-          className="text-sm text-accent underline-offset-2 hover:underline"
+          className="text-sm text-muted-foreground underline underline-offset-2"
         >
           {COMPANY_CARD_COPY.viewCompany}
         </a>
       ) : (
         <Link
           href="/"
-          className="text-sm text-accent underline-offset-2 hover:underline"
+          className="text-sm text-muted-foreground underline underline-offset-2"
         >
           {COMPANY_CARD_COPY.viewCompany}
         </Link>
