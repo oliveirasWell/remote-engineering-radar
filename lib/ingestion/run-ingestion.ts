@@ -2,6 +2,7 @@ import {
   classifyJob,
   shouldPersistClassifiedJob,
 } from '@/lib/classification/classify-job';
+import type { NewCompany } from '@/lib/companies/types';
 import type { RootDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
@@ -10,6 +11,7 @@ import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { normalizeCompanyName } from '@/lib/deduplication/normalize';
 import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
+import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
 import { resolveJobCountries } from '@/lib/jobs/countries';
 import {
   JOB_MAX_AGE_MS,
@@ -140,6 +142,21 @@ export const runIngestion = async (options: {
   const persistable = enriched.filter((job) => job.shouldPersist);
   const { jobs: uniqueJobs } = deduplicateJobs(persistable);
 
+  const companyInputsBySlug = new Map<string, NewCompany>();
+  for (const job of uniqueJobs) {
+    const slug = toSlug(job.company.name);
+    // Match sequential upserts: last name/source wins, but only safe URLs
+    // replace websites.
+    companyInputsBySlug.set(slug, {
+      name: job.company.name,
+      slug,
+      websiteUrl: isSafeExternalUrl(job.company.websiteUrl)
+        ? job.company.websiteUrl
+        : companyInputsBySlug.get(slug)?.websiteUrl,
+      source: job.source,
+    });
+  }
+
   const persistedBySource = new Map<string, number>();
 
   const { persistedJobs, companiesUpdated } = await options.db.$transaction(
@@ -149,23 +166,19 @@ export const runIngestion = async (options: {
       const hiringSignalsRepository = createHiringSignalsRepository(tx);
       const ingestionRunsRepository = createIngestionRunsRepository(tx);
       const companyIds = new Set<string>();
+      const companyIdsBySlug = new Map<string, string>();
       let persistedJobs = 0;
 
-      for (const job of uniqueJobs) {
-        const slug = toSlug(job.company.name);
-        const company = await companiesRepository.upsertBySlug({
-          name: job.company.name,
-          slug,
-          websiteUrl: isSafeExternalUrl(job.company.websiteUrl)
-            ? job.company.websiteUrl
-            : undefined,
-          source: job.source,
-        });
+      for (const input of companyInputsBySlug.values()) {
+        const company = await companiesRepository.upsertBySlug(input);
+        companyIdsBySlug.set(input.slug, company.id);
         companyIds.add(company.id);
+      }
 
+      for (const job of uniqueJobs) {
         const scoredJob = job as EnrichedJob;
         await jobsRepository.upsertBySourceJobId({
-          companyId: company.id,
+          companyId: companyIdsBySlug.get(toSlug(job.company.name))!,
           source: job.source,
           sourceJobId: job.sourceJobId,
           title: job.title,
@@ -281,6 +294,7 @@ export const runIngestion = async (options: {
 
       return { persistedJobs, companiesUpdated };
     },
+    { timeout: INGESTION_TRANSACTION_TIMEOUT_MS },
   );
 
   const sources = sourceResults.map((source) => ({

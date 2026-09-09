@@ -15,7 +15,30 @@ import jobicyPage from '@/lib/sources/jobicy/fixtures/jobs-page-1.json';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
 import { asFetch, jsonResponse } from '@/test/http';
 import { Prisma } from '@prisma/client';
+import { INGESTION_TRANSACTION_TIMEOUT_MS } from './constants';
 import { runIngestion } from './run-ingestion';
+
+vi.mock(
+  '@/lib/db/repositories/companies-repository',
+  async (importOriginal) => {
+    const original =
+      await importOriginal<
+        typeof import('@/lib/db/repositories/companies-repository')
+      >();
+    return {
+      ...original,
+      createCompaniesRepository: vi.fn(
+        (db: Parameters<typeof original.createCompaniesRepository>[0]) => {
+          const repository = original.createCompaniesRepository(db);
+          return {
+            ...repository,
+            upsertBySlug: vi.fn(repository.upsertBySlug),
+          };
+        },
+      ),
+    };
+  },
+);
 
 const makeJob = (
   overrides: Partial<NormalizedJob> &
@@ -30,6 +53,162 @@ const makeJob = (
 });
 
 describe('runIngestion', () => {
+  it('uses an ingestion-only ten-minute transaction timeout without overriding maxWait', async () => {
+    const db = await createTestDb();
+    const transaction = vi.spyOn(db, '$transaction');
+
+    try {
+      await runIngestion({ db, sources: [] });
+
+      expect(INGESTION_TRANSACTION_TIMEOUT_MS).toBe(600_000);
+      expect(transaction).toHaveBeenCalledExactlyOnceWith(
+        expect.any(Function),
+        { timeout: INGESTION_TRANSACTION_TIMEOUT_MS },
+      );
+      expect(
+        await createIngestionRunsRepository(db).getLatestCompletedAt(),
+      ).toBeInstanceOf(Date);
+    } finally {
+      transaction.mockRestore();
+    }
+  });
+
+  it.each([
+    {
+      scenario: 'last supplied safe website for a new company',
+      existingWebsiteUrl: undefined,
+      websiteUrls: [
+        'https://first.example',
+        'https://last.example',
+        undefined,
+        'javascript:alert(1)',
+      ],
+      expectedWebsiteUrl: 'https://last.example',
+    },
+    {
+      scenario: 'last supplied safe website replacing a stored website',
+      existingWebsiteUrl: 'https://stored.example',
+      websiteUrls: [
+        'https://first.example',
+        'https://last.example',
+        undefined,
+        'javascript:alert(1)',
+      ],
+      expectedWebsiteUrl: 'https://last.example',
+    },
+    {
+      scenario:
+        'stored website when all supplied websites are missing or unsafe',
+      existingWebsiteUrl: 'https://stored.example',
+      websiteUrls: [
+        undefined,
+        'javascript:alert(1)',
+        'http://unsafe.example',
+        undefined,
+      ],
+      expectedWebsiteUrl: 'https://stored.example',
+    },
+    {
+      scenario:
+        'null website for a new company without a supplied safe website',
+      existingWebsiteUrl: undefined,
+      websiteUrls: [
+        undefined,
+        'javascript:alert(1)',
+        'http://unsafe.example',
+        undefined,
+      ],
+      expectedWebsiteUrl: null,
+    },
+  ])(
+    'upserts once per normalized slug with last-job metadata and $scenario',
+    async ({ existingWebsiteUrl, websiteUrls, expectedWebsiteUrl }) => {
+      const db = await createTestDb();
+      const companiesRepository = createCompaniesRepository(db);
+      if (existingWebsiteUrl) {
+        await companiesRepository.create({
+          name: 'Old Acme Robotics',
+          slug: 'acme-robotics',
+          source: 'old-source',
+          websiteUrl: existingWebsiteUrl,
+        });
+      }
+      const jobs = websiteUrls.map((websiteUrl, index) =>
+        makeJob({
+          source: index === websiteUrls.length - 1 ? 'ashby' : 'greenhouse',
+          sourceJobId: String(index),
+          title: `Senior React Engineer ${index}`,
+          url: `https://example.com/jobs/${index}`,
+          company: {
+            name: [
+              'Acme Robotics',
+              'ACME-ROBOTICS',
+              'acme robotics',
+              ' Acme / Robotics ',
+            ][index]!,
+            websiteUrl,
+          },
+        }),
+      );
+      jobs.push(
+        makeJob({
+          source: 'ashby',
+          sourceJobId: 'consultancy',
+          title: 'Senior Frontend Engineer',
+          url: 'https://example.com/jobs/consultancy',
+          company: { name: 'BairesDev' },
+        }),
+      );
+      vi.mocked(createCompaniesRepository).mockClear();
+
+      const result = await runIngestion({
+        db,
+        sources: ['greenhouse', 'ashby'].map((name) => ({
+          name,
+          fetchJobs: async () => ({
+            jobs: jobs.filter((job) => job.source === name),
+            complete: true,
+          }),
+        })),
+      });
+
+      expect(createCompaniesRepository).toHaveBeenCalledOnce();
+      expect(vi.mocked(createCompaniesRepository).mock.calls[0]![0]).not.toBe(
+        db,
+      );
+      const transactionRepository = vi.mocked(createCompaniesRepository).mock
+        .results[0]!.value;
+      expect.soft(transactionRepository.upsertBySlug).toHaveBeenCalledTimes(2);
+      expect(result).toMatchObject({
+        persistedJobs: jobs.length,
+        companiesUpdated: 2,
+      });
+      const acme = await companiesRepository.findBySlug('acme-robotics');
+      expect(acme).toMatchObject({
+        id: expect.any(String),
+        name: ' Acme / Robotics ',
+        source: 'ashby',
+        websiteUrl: expectedWebsiteUrl,
+        kind: 'product',
+      });
+      const consultancy = await companiesRepository.findBySlug('bairesdev');
+      expect(consultancy).toMatchObject({
+        id: expect.any(String),
+        kind: 'consultancy',
+      });
+      const jobsRepository = createJobsRepository(db);
+      for (const job of jobs) {
+        await expect(
+          jobsRepository.findBySourceJobId(job.source, job.sourceJobId),
+        ).resolves.toMatchObject({
+          companyId:
+            job.sourceJobId === 'consultancy' ? consultancy!.id : acme!.id,
+          isActive: true,
+        });
+      }
+    },
+  );
+
   it('continues when one source fails and persists successful jobs', async () => {
     const db = await createTestDb();
     const logs: string[] = [];
