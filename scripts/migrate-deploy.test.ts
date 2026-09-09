@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import { Pool } from 'pg';
 import {
   assertBaselineSafe,
+  baselineCheck,
   getMigrationUrl,
   migrateDeploy,
   prepareBaseline,
@@ -165,6 +166,50 @@ describe('explicit baseline preparation', () => {
       expect(mocks.end).toHaveBeenCalledOnce();
     },
   );
+
+  it('reports sanitized default-grant contexts without exempting unrelated owners', async () => {
+    const contexts = [
+      {
+        owner_is_current_role: false,
+        owner_owns_radar_tables: false,
+        owner_is_postgres: false,
+        current_role_can_manage_owner: false,
+        namespace: 'global',
+      },
+      {
+        owner_is_current_role: true,
+        owner_owns_radar_tables: true,
+        owner_is_postgres: true,
+        current_role_can_manage_owner: true,
+        namespace: 'public',
+      },
+    ];
+    mocks.query
+      .mockResolvedValueOnce({ rows: [{ unsafe: false }] })
+      .mockResolvedValueOnce({ rows: [{ unsafe: true, contexts }] });
+
+    await expect(baselineCheck()).rejects.toEqual(
+      new Error(
+        'Public Supabase roles retain default privileges for future tables. ' +
+          `Unsafe default grant contexts: ${JSON.stringify(contexts)}`,
+      ),
+    );
+    expect(mocks.query).toHaveBeenCalledTimes(2);
+    expect(mocks.spawn.mock.calls.map((call) => call[1].slice(1, 3))).toEqual([
+      ['migrate', 'diff'],
+    ]);
+    expect(mocks.end).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the default-privilege failure when diagnostic contexts are absent', async () => {
+    mocks.query
+      .mockResolvedValueOnce({ rows: [{ unsafe: false }] })
+      .mockResolvedValueOnce({ rows: [{ unsafe: true }] });
+    await expect(baselineCheck()).rejects.toThrow(
+      /^Public Supabase roles retain default privileges for future tables\.$/,
+    );
+    expect(mocks.end).toHaveBeenCalledOnce();
+  });
 
   it('refuses preparation without a trusted migration URL', async () => {
     delete process.env.DATABASE_MIGRATION_URL;
