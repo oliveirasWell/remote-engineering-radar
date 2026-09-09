@@ -60,8 +60,12 @@ survives `pnpm db:down`; `pnpm db:reset` deletes it and starts clean.
 `DATABASE_URL` must not use a `NEXT_PUBLIC_` prefix; it is the runtime application URL and
 may use a pooler. `DATABASE_MIGRATION_URL` is the protected direct URL used by Prisma CLI
 operations. `DIRECT_URL` is accepted as a migration fallback. Non-local runtime
-connections enforce certificate verification; Prisma CLI migration connections require
-TLS using its documented `sslmode=require` mode.
+connections enforce certificate verification. Prisma CLI migration connections enforce
+`sslmode=require` and `sslaccept=strict`; encryption alone is not certificate verification.
+Supabase hosts automatically use the bundled public `lib/db/supabase-root-ca.pem`.
+Explicit nonblank `sslcert` or `sslrootcert` URL parameters select an alternative trusted
+CA file; include that file in the migration environment. The PEM and the runtime CA in
+`lib/db/supabase-root-ca.ts` must be updated together when rotating the public trust anchor.
 
 Repository tests use pinned `prisma-pglite-bridge` with the production Prisma `pg` adapter,
 so they remain in-process and require neither Docker nor a live database. `pnpm db:smoke`
@@ -75,7 +79,7 @@ deployed, run this once with the protected direct Supabase migration URL:
 
 ```bash
 DATABASE_MIGRATION_URL='postgresql://...' pnpm db:baseline-check
-DATABASE_MIGRATION_URL='postgresql://...' pnpm prisma migrate resolve --applied 20260828000000_prisma_baseline
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:resolve-baseline
 DATABASE_MIGRATION_URL='postgresql://...' pnpm db:deploy
 DATABASE_MIGRATION_URL='postgresql://...' pnpm db:status
 ```
@@ -84,9 +88,47 @@ Do not run `prisma migrate deploy` against the existing production database befo
 resolve command succeeds. `pnpm db:deploy` performs an additional preflight and refuses to
 apply the baseline when canonical tables exist without the completed baseline record.
 
+The same operations are available in the **Ingest** workflow using the protected
+`production-ingestion` environment. Run `check-baseline` first on the reviewed release
+branch. Only after reviewing that read-only result and confirming a backup is available,
+run `resolve-baseline` with confirmation `RESOLVE PRODUCTION BASELINE`. This validates
+the existing schema again, records the baseline, and deploys pending migrations without
+running ingestion. `deploy-migrations` applies pending migrations without resolving a
+baseline or running ingestion. Scheduled and push-triggered runs never resolve baselines.
+
+The Vercel Git integration deploys independently of this workflow. For this first Prisma
+rollout, complete the production baseline and migration gate **before** the final merge
+to `main`. A passing local baseline check is not a production check. Future migrations
+must remain backward-compatible with the running version unless deployment promotion is
+explicitly gated on migration success; the ingestion workflow alone is not that gate.
+
 Keep `drizzle.__drizzle_migrations` unchanged through the rollback window. Prisma does not
 read or modify that historical table. See [SPEC-014](specs/014-prisma-data-layer.md) for the
 rollout and rollback decision.
+
+### Indexing and freshness
+
+`SITE_URL` optionally overrides the canonical public origin; previews must not set their
+own preview URL as the canonical origin. Main pages and available job details are
+indexable. Substantive filter combinations have normalized self-canonicals and
+`noindex,follow`; redundant defaults and invalid values resolve to the unfiltered
+canonical. Locale selection remains browser-only, so no separate locale URLs or
+`hreflang` variants are advertised.
+
+`/sitemap.xml` lists all active, remote jobs within the 30-day visibility window, without
+the listing page's 100-row limit. It loads a cached ID-only query at request time, so
+builds do not require database access. No artificial modification dates are published.
+`/robots.txt` advertises the sitemap.
+
+Metadata and page content share the same cached read. Metadata blocks document streaming
+for nonempty User-Agent requests so missing jobs and failed reads can return 404 and 500
+instead of successful empty reports. Data caching is retained, but cold document requests
+wait for that read. Next.js bypasses the metadata gate for missing/empty User-Agent headers;
+client-navigation RSC responses also have separate transport semantics.
+
+Only exhaustive source snapshots retire absent jobs. Rolling feeds (Hacker News,
+Himalayas, and Jobicy) retain absent jobs until expiry or another explicit retirement
+signal. Bounded or failed pagination is not treated as proof that a vacancy closed.
 
 ## Commands
 

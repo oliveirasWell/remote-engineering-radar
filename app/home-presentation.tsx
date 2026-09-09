@@ -11,20 +11,11 @@ import type { CompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import Link from 'next/link';
 
-export const CompaniesReport = ({
-  data,
-  hasError,
-}: {
-  data: CompaniesPageData;
-  hasError?: boolean;
-}) => {
+export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
   const { locale, messages } = useI18n();
 
   return (
     <>
-      <p className="text-muted-foreground">
-        {formatUpdatedLabel(data.updatedAt, locale)}
-      </p>
       <nav
         aria-label={messages.home.countryFilterLabel}
         className="flex flex-wrap gap-3 text-sm"
@@ -53,16 +44,24 @@ export const CompaniesReport = ({
           </Link>
         ))}
       </nav>
-      {hasError ? (
-        <p className="text-sm text-destructive" role="alert">
-          {messages.report.error}
-        </p>
-      ) : null}
-
       <section aria-labelledby="companies-to-watch">
-        <h2 id="companies-to-watch" className="text-xl font-semibold">
-          {messages.home.companiesToWatch}
-        </h2>
+        <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 id="companies-to-watch" className="text-xl font-semibold">
+            {messages.home.companiesToWatch}
+          </h2>
+          {data.updatedAt ? (
+            <time
+              dateTime={data.updatedAt.toISOString()}
+              className="text-xs text-muted-foreground tabular-nums"
+            >
+              {formatUpdatedLabel(data.updatedAt, locale)}
+            </time>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              {formatUpdatedLabel(null, locale)}
+            </span>
+          )}
+        </header>
         {data.companies.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
             {messages.report.emptyCompanies}
@@ -74,7 +73,7 @@ export const CompaniesReport = ({
                 key={company.id}
                 className="group border-b border-border pb-4"
               >
-                <summary className="cursor-pointer list-none py-2 marker:content-none hover:bg-muted/40">
+                <summary className="-mx-3 cursor-pointer list-none px-3 py-3 marker:content-none hover:bg-muted/40">
                   <div className="flex items-baseline justify-between gap-3">
                     <CompanySummary company={company} />
                     <span

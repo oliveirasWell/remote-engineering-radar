@@ -190,8 +190,9 @@ describe('createFrontendBrAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(true);
     expect(adapter.name).toBe(FRONTENDBR_SOURCE_NAME);
     expect(requested).toEqual(['1', '2']);
     expect(jobs.map((job) => job.sourceJobId)).toEqual([
@@ -231,7 +232,7 @@ describe('createFrontendBrAdapter', () => {
       fetch: asFetch(async () => jsonResponse(malformed)),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs } = await adapter.fetchJobs();
 
     expect(jobs.map((job) => job.sourceJobId)).toEqual(['8600']);
     expect(jobs[0]?.company.name).toBe('GoodCo');
@@ -259,5 +260,14 @@ describe('createFrontendBrAdapter', () => {
     await expect(adapter.fetchJobs()).rejects.toThrow(
       /frontendbr response has an unexpected shape/i,
     );
+  });
+
+  it('fails rather than treating the page cap as exhaustion', async () => {
+    const adapter = createFrontendBrAdapter({
+      perPage: issuesPage1.length,
+      fetch: asFetch(async () => jsonResponse(issuesPage1)),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination limit/);
   });
 });

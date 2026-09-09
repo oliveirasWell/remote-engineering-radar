@@ -1,4 +1,3 @@
-import { PRISMA_BASELINE } from '../lib/db/constants';
 import { assertBaselineSafe, getMigrationUrl } from './migrate-deploy';
 
 describe('migration deployment safety', () => {
@@ -20,7 +19,7 @@ describe('migration deployment safety', () => {
   it('blocks existing tables until the baseline is resolved', () => {
     expect(() =>
       assertBaselineSafe({ applicationTableCount: 3, baselineApplied: false }),
-    ).toThrow(`migrate resolve --applied ${PRISMA_BASELINE}`);
+    ).toThrow('pnpm db:resolve-baseline');
   });
 
   it('uses migration-only URL precedence and fails without a URL', () => {

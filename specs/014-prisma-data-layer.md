@@ -18,8 +18,9 @@ and pooling requirements.
 - Use `DATABASE_URL` only for application runtime access. Prisma CLI commands prefer
   `DATABASE_MIGRATION_URL`, then `DIRECT_URL`, then local `DATABASE_URL`.
 - Construct Prisma lazily with the official `pg` adapter. Non-local runtime hosts use
-  certificate verification, while the Prisma CLI uses its documented `sslmode=require`
-  mode. The pool has explicit connection, idle, query, and size limits.
+  certificate verification. The Prisma CLI enforces `sslmode=require` with
+  `sslaccept=strict` and uses the bundled public CA PEM for Supabase hosts. The pool
+  has explicit connection, idle, query, and size limits.
 - Keep domain models independent of Prisma. Repository factories accept both a root
   client and Prisma interactive transaction clients. Ingestion owns one outer interactive
   transaction; signal replacement reuses it rather than attempting a nested transaction.
@@ -49,7 +50,7 @@ against the existing Supabase database using its protected direct migration URL:
 
 ```bash
 DATABASE_MIGRATION_URL='postgresql://...' pnpm db:baseline-check
-DATABASE_MIGRATION_URL='postgresql://...' pnpm prisma migrate resolve --applied 20260828000000_prisma_baseline
+DATABASE_MIGRATION_URL='postgresql://...' pnpm db:resolve-baseline
 DATABASE_MIGRATION_URL='postgresql://...' pnpm db:deploy
 DATABASE_MIGRATION_URL='postgresql://...' pnpm db:status
 ```

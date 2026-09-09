@@ -87,8 +87,9 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(true);
     expect(adapter.name).toBe(GREENHOUSE_SOURCE_NAME);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(jobs.map((job) => job.sourceJobId)).toEqual([
@@ -106,7 +107,7 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(async () => jsonResponse(malformed)),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs } = await adapter.fetchJobs();
 
     expect(jobs.map((job) => job.sourceJobId)).toEqual(['6001', '6003']);
   });
@@ -117,7 +118,10 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ jobs: [] })),
     });
 
-    await expect(adapter.fetchJobs()).resolves.toEqual([]);
+    await expect(adapter.fetchJobs()).resolves.toEqual({
+      jobs: [],
+      complete: true,
+    });
   });
 
   it('rejects a successful response with an unexpected shape', async () => {
@@ -151,5 +155,58 @@ describe('createGreenhouseAdapter', () => {
     await expect(adapter.fetchJobs()).rejects.toThrow(
       /Greenhouse request failed/,
     );
+  });
+
+  it('fails rather than treating the page cap as exhaustion', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse({ jobs: page1.jobs }));
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN],
+      jobsPerPage: page1.jobs.length,
+      fetch: asFetch(fetchMock),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination limit/);
+    expect(fetchMock).toHaveBeenCalledTimes(50);
+  });
+
+  it('follows the advertised total even when the first page is short', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) =>
+      jsonResponse(readPage(input) === '1' ? page1 : page2),
+    );
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN],
+      fetch: asFetch(fetchMock),
+    });
+
+    const result = await adapter.fetchJobs();
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.complete).toBe(true);
+    expect(result.jobs).toHaveLength(page1.jobs.length + page2.jobs.length);
+  });
+
+  it('does not authorize deactivation when a page is empty before the advertised total', async () => {
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN],
+      fetch: asFetch(async () => jsonResponse({ ...page1, jobs: [] })),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination/);
+  });
+
+  it('fails the snapshot when a later configured board fails', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ jobs: page1.jobs }))
+      .mockResolvedValueOnce(jsonResponse({}, 400));
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN, `${BOARD_TOKEN}-other`],
+      fetch: asFetch(fetchMock),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(
+      /Greenhouse request failed/,
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

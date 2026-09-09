@@ -4,6 +4,20 @@ on:
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
+    inputs:
+      operation:
+        description: Production operation
+        type: choice
+        default: ingest
+        options:
+          - ingest
+          - check-baseline
+          - resolve-baseline
+          - deploy-migrations
+      confirmation:
+        description: 'For resolve-baseline only: enter RESOLVE PRODUCTION BASELINE'
+        type: string
+        default: ''
   push:
     branches: [main]
 
@@ -28,11 +42,30 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
+      - name: Require explicit production baseline confirmation
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'resolve-baseline'
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$CONFIRMATION" = 'RESOLVE PRODUCTION BASELINE'
+      - name: Check the existing production schema and privileges
+        if: github.event_name == 'workflow_dispatch' && (inputs.operation == 'check-baseline' || inputs.operation == 'resolve-baseline')
+        run: pnpm db:baseline-check
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
+      - name: Record the existing production baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'resolve-baseline'
+        run: pnpm db:resolve-baseline
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
       - run: pnpm db:deploy
+        if: github.event_name != 'workflow_dispatch' || inputs.operation != 'check-baseline'
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
       - run: pnpm ingest
+        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'ingest'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}

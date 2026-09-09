@@ -4,6 +4,7 @@ import {
   TECHNOLOGY_NAMES,
 } from '@/lib/classification/constants';
 import type { JobFilters } from '@/lib/report/get-jobs-page-data';
+import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import { parseCountryFilter } from '@/lib/report/parse-country-filter';
 import { JOBS_PAGE_LIMIT } from './constants';
 
@@ -40,13 +41,16 @@ const readMinimumScore = (
     return undefined;
   }
   const parsed = Number(raw);
-  return parsed <= MAX_SCORE ? parsed : undefined;
+  return parsed > 0 && parsed <= MAX_SCORE ? parsed : undefined;
 };
 
 export const parseJobFilters = (params: JobsSearchParams): JobFilters => ({
   technology: matchOption(TECHNOLOGY_NAMES, params.technology),
   seniority: matchOption(JOB_SENIORITY_LEVELS, params.seniority),
-  remote: matchOption(JOB_REMOTE_POLICIES, params.remote),
+  remote: matchOption(
+    JOB_REMOTE_POLICIES.filter((policy) => policy !== REMOTE_POLICY_REMOTE),
+    params.remote,
+  ),
   country: parseCountryFilter(params.country),
   minimumScore: readMinimumScore(params.minimumScore),
   limit: JOBS_PAGE_LIMIT,

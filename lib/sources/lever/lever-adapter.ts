@@ -65,7 +65,7 @@ export const createLeverAdapter = (options: LeverAdapterOptions): JobSource => {
         jobs.push(...boardJobs);
       }
 
-      return jobs;
+      return { jobs, complete: true };
     },
   };
 };

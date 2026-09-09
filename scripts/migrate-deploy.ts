@@ -15,7 +15,7 @@ import {
 
 const BASELINE_GATE_MESSAGE =
   `Existing application tables require the Prisma baseline to be resolved first. ` +
-  `Run: pnpm prisma migrate resolve --applied ${PRISMA_BASELINE}`;
+  `Run pnpm db:baseline-check, then pnpm db:resolve-baseline with the intended migration URL.`;
 
 export const getMigrationUrl = (): string => {
   const dedicatedUrl =

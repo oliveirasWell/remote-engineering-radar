@@ -6,8 +6,25 @@ const decodeBasicEntities = (value: string): string =>
     .replaceAll('&#39;', "'")
     .replaceAll('&quot;', '"');
 
-export const stripHtml = (value: string): string =>
-  decodeBasicEntities(value)
-    .replaceAll(/<[^>]+>/g, ' ')
-    .replaceAll(/\s+/g, ' ')
-    .trim();
+export const stripHtml = (value: string): string => {
+  const decoded = decodeBasicEntities(value);
+  const parts: string[] = [];
+  let textStart = 0;
+  let opening = decoded.indexOf('<');
+
+  // Never rescan an unclosed suffix for each nested '<'.
+  while (opening !== -1) {
+    const closing = decoded.indexOf('>', opening + 1);
+    if (closing === -1) {
+      break;
+    }
+    if (closing > opening + 1) {
+      parts.push(decoded.slice(textStart, opening), ' ');
+      textStart = closing + 1;
+    }
+    opening = decoded.indexOf('<', closing + 1);
+  }
+
+  parts.push(decoded.slice(textStart));
+  return parts.join('').replaceAll(/\s+/g, ' ').trim();
+};
