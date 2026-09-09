@@ -4,13 +4,8 @@ import { Suspense } from 'react';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
-import { JOBS_PAGE_COPY } from './constants';
-import {
-  parseJobFilters,
-  readFilter,
-  readMinimumScore,
-  type JobsSearchParams,
-} from './parse-job-filters';
+import { JOB_FILTER_FIELDS, JOBS_PAGE_COPY } from './constants';
+import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
 
 export const metadata: Metadata = {
   title: JOBS_PAGE_COPY.metaTitle,
@@ -31,8 +26,8 @@ const JobsResults = async ({
   searchParams: JobsPageProps['searchParams'];
 }) => {
   const params = await searchParams;
-  const minimumScore = readMinimumScore(params.minimumScore);
-  const data = await getJobsPageData(parseJobFilters(params));
+  const filters = parseJobFilters(params);
+  const data = await getJobsPageData(filters);
 
   return (
     <>
@@ -47,38 +42,23 @@ const JobsResults = async ({
           {JOBS_PAGE_COPY.filtersHeading}
         </h2>
         <form className="grid gap-3 sm:grid-cols-2" method="get">
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.technology}</span>
-            <input
-              name="technology"
-              defaultValue={readFilter(params.technology) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.seniority}</span>
-            <input
-              name="seniority"
-              defaultValue={readFilter(params.seniority) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.remote}</span>
-            <input
-              name="remote"
-              defaultValue={readFilter(params.remote) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span>{JOBS_PAGE_COPY.location}</span>
-            <input
-              name="location"
-              defaultValue={readFilter(params.location) ?? ''}
-              className="rounded border border-border bg-surface px-3 py-2"
-            />
-          </label>
+          {JOB_FILTER_FIELDS.map((field) => (
+            <label key={field.name} className="flex flex-col gap-1 text-sm">
+              <span>{field.label}</span>
+              <select
+                name={field.name}
+                defaultValue={filters[field.name] ?? ''}
+                className="rounded border border-border bg-surface px-3 py-2"
+              >
+                <option value="">{JOBS_PAGE_COPY.anyOption}</option>
+                {field.options.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
           <label className="flex flex-col gap-1 text-sm">
             <span>{JOBS_PAGE_COPY.minimumScore}</span>
             <input
@@ -87,7 +67,9 @@ const JobsResults = async ({
               min={0}
               max={100}
               defaultValue={
-                minimumScore !== undefined ? String(minimumScore) : ''
+                filters.minimumScore !== undefined
+                  ? String(filters.minimumScore)
+                  : ''
               }
               className="rounded border border-border bg-surface px-3 py-2"
             />

@@ -13,7 +13,7 @@ export type JobFilters = {
   technology?: string;
   seniority?: string;
   remote?: string;
-  location?: string;
+  country?: string;
   minimumScore?: number;
   limit?: number;
 };
@@ -58,7 +58,7 @@ export const getJobsPageData = async (
       technology: filters.technology,
       seniority: filters.seniority,
       remotePolicy: filters.remote ?? REMOTE_POLICY_REMOTE,
-      location: filters.location,
+      country: filters.country,
       minimumScore: filters.minimumScore ?? 0,
       limit: filters.limit,
       maxAgeMs: JOB_MAX_AGE_MS,

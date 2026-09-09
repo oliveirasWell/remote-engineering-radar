@@ -13,9 +13,21 @@ export const TECHNOLOGY_PATTERNS = [
   { name: 'Expo', pattern: /\bexpo\b/i },
 ] as const;
 
+export const TECHNOLOGY_NAMES = TECHNOLOGY_PATTERNS.map((entry) => entry.name);
+
 export const RELEVANT_TECHNOLOGY_NAMES: ReadonlySet<string> = new Set(
-  TECHNOLOGY_PATTERNS.map((entry) => entry.name),
+  TECHNOLOGY_NAMES,
 );
+
+export const JOB_SENIORITY_LEVELS = [
+  'junior',
+  'mid',
+  'senior',
+  'staff',
+  'principal',
+] as const;
+
+export const JOB_REMOTE_POLICIES = ['remote', 'hybrid', 'onsite'] as const;
 
 export const UNRELATED_STACK_PATTERNS = [
   /\bdevops\b/i,
