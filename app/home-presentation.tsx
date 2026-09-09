@@ -1,18 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
 import { CompanySummary } from '@/components/report/CompanySummary/CompanySummary';
 import { JobCard } from '@/components/report/JobCard/JobCard';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import type { CompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
+import { COMPANY_SORTS, type CompanySort } from './home-constants';
 import Link from 'next/link';
 
 export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
   const { locale, messages } = useI18n();
+  const [sort, setSort] = useState<CompanySort>('default');
+  const companies = [...data.companies].sort(COMPANY_SORTS[sort]);
 
   return (
     <>
@@ -49,6 +52,20 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
           <h2 id="companies-to-watch" className="text-xl font-semibold">
             {messages.home.companiesToWatch}
           </h2>
+          <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+            {messages.home.sortLabel}
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as CompanySort)}
+              className="rounded border border-border bg-card px-2 py-1 text-sm text-foreground"
+            >
+              {Object.keys(COMPANY_SORTS).map((key) => (
+                <option key={key} value={key}>
+                  {messages.home.sortOptions[key as CompanySort]}
+                </option>
+              ))}
+            </select>
+          </label>
           {data.updatedAt ? (
             <time
               dateTime={data.updatedAt.toISOString()}
@@ -62,13 +79,13 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
             </span>
           )}
         </header>
-        {data.companies.length === 0 ? (
+        {companies.length === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
             {messages.report.emptyCompanies}
           </p>
         ) : (
           <div className="mt-2 flex flex-col">
-            {data.companies.map((company) => (
+            {companies.map((company) => (
               <details
                 key={company.id}
                 className="group border-b border-border pb-4"
@@ -130,11 +147,8 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
 export const HomeHeading = () => {
   const { messages } = useI18n();
   return (
-    <header className="flex flex-col gap-2">
-      <PageTitle as="h1" className="text-4xl tracking-tight">
-        {messages.app.name}
-      </PageTitle>
-      <p className="text-lg text-muted-foreground">{messages.home.subtitle}</p>
-    </header>
+    <h1 className="text-2xl font-semibold tracking-tight text-balance">
+      {messages.home.subtitle}
+    </h1>
   );
 };

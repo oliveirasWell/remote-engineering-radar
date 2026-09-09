@@ -19,7 +19,7 @@ import RootLayout from './layout';
 import GlobalError from './global-error';
 import { messagesFor } from '@/lib/i18n/messages';
 
-vi.mock('next/font/google', () => ({ Geist: () => ({ variable: '' }) }));
+vi.mock('next/font/google', () => ({ Inter: () => ({ variable: '' }) }));
 vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 vi.mock('@/components/observability/GoogleAnalytics/GoogleAnalytics', () => ({
   GoogleAnalytics: () => null,
