@@ -1,4 +1,5 @@
 import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
+import { CompanySummary } from '@/components/report/CompanySummary/CompanySummary';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
@@ -73,16 +74,23 @@ const CompaniesSection = async ({
         {data.companies.length === 0 ? (
           <p className="mt-4 text-sm text-muted">{EMPTY_COMPANIES_MESSAGE}</p>
         ) : (
-          <div className="mt-2 flex flex-col gap-8">
+          <div className="mt-2 flex flex-col">
             {data.companies.map((company) => (
-              <section
+              <details
                 key={company.id}
-                aria-labelledby={`company-${company.id}`}
-                className="border-b border-border pb-8"
+                className="group border-b border-border pb-4"
               >
-                <h3 id={`company-${company.id}`} className="sr-only">
-                  {company.name}
-                </h3>
+                <summary className="cursor-pointer list-none py-2 marker:content-none">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <CompanySummary company={company} />
+                    <span
+                      aria-hidden
+                      className="text-sm text-muted transition-transform group-open:rotate-90"
+                    >
+                      &rsaquo;
+                    </span>
+                  </div>
+                </summary>
                 <CompanyCard company={company} />
                 {company.signalSourceUrls.length > 0 ? (
                   <div className="mt-4">
@@ -117,7 +125,7 @@ const CompaniesSection = async ({
                     ))}
                   </div>
                 ) : null}
-              </section>
+              </details>
             ))}
           </div>
         )}

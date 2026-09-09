@@ -4,6 +4,8 @@ export const HOME_SECTIONS = {
   subtitle: `Remote senior frontend and fullstack companies hiring in ${FOCUS_STACK_LABEL}.`,
   companiesToWatch: 'Companies to watch',
   relevantJobs: 'Relevant jobs',
+  openRoles: (count: number) =>
+    `${count} ${count === 1 ? 'open role' : 'open roles'}`,
   evidence: 'Evidence / sources',
   countryFilterLabel: 'Country',
   countryAll: 'All countries',
