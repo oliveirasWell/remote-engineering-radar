@@ -1,8 +1,8 @@
 import 'server-only';
 
 import { drizzle } from 'drizzle-orm/postgres-js';
+import type { PgDatabase, PgQueryResultHKT } from 'drizzle-orm/pg-core';
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import type { PgliteDatabase } from 'drizzle-orm/pglite';
 import { rootCertificates } from 'node:tls';
 import postgres from 'postgres';
 import { DATABASE_URL_ENV, MISSING_DATABASE_URL_MESSAGE } from './constants';
@@ -13,8 +13,11 @@ const DB_CONNECT_TIMEOUT_SECONDS = 10;
 const DB_IDLE_TIMEOUT_SECONDS = 20;
 const DB_MAX_CONNECTIONS = 10;
 
-export type Db =
-  PostgresJsDatabase<typeof schema> | PgliteDatabase<typeof schema>;
+/**
+ * The base both the postgres-js and the PGlite drivers extend. A union of the
+ * two collapses the arity of builder methods like `.returning(columns)`.
+ */
+export type Db = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 export const databaseSslMode = (
   connectionString: string,
@@ -49,7 +52,7 @@ export const createDb = (
 
 let dbSingleton: PostgresJsDatabase<typeof schema> | undefined;
 
-export const getDb = (): PostgresJsDatabase<typeof schema> => {
+export const getDb = (): Db => {
   if (!dbSingleton) {
     dbSingleton = createDb();
   }

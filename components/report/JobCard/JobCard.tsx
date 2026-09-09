@@ -45,16 +45,6 @@ export const JobCard = ({ job }: JobCardProps) => {
       <p className="mt-1 text-sm text-muted">
         {JOB_CARD_COPY.postedLabel}: {formatRelativeTime(job.postedAt)}
       </p>
-      {job.reasons.length > 0 ? (
-        <div className="mt-3">
-          <p className="text-sm font-medium">{JOB_CARD_COPY.whyRelevant}</p>
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted">
-            {job.reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
       <div className="mt-3 flex items-center gap-4">
         {isSafeExternalUrl(job.url) ? (
           <a

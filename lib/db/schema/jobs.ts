@@ -27,6 +27,7 @@ export const jobs = pgTable(
     description: text('description'),
     technologies: jsonb('technologies').$type<string[]>().notNull().default([]),
     geographies: jsonb('geographies').$type<string[]>().notNull().default([]),
+    countries: jsonb('countries').$type<string[]>().notNull().default([]),
     seniority: text('seniority'),
     score: integer('score').notNull().default(0),
     postedAt: timestamp('posted_at', { withTimezone: true }),

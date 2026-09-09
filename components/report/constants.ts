@@ -1,7 +1,6 @@
 export const JOB_CARD_COPY = {
   hideAction: 'Hide job',
   hideConfirmation: 'Hide this job? You will not see it again in this browser.',
-  whyRelevant: 'Why this is relevant:',
   viewOriginal: 'View original job',
   postedLabel: 'Posted',
 } as const;

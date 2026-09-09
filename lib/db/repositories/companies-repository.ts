@@ -1,11 +1,11 @@
-import { and, desc, eq, exists, gt, sql } from 'drizzle-orm';
+import { and, desc, eq, exists, gt, inArray, sql } from 'drizzle-orm';
 import {
   DEFAULT_COMPANY_KIND,
   resolveCompanyKind,
   type CompanyKind,
 } from '@/lib/companies/constants';
 import type { Company, NewCompany } from '@/lib/companies/types';
-import type { CompanyMarketFilter } from '@/lib/jobs/constants';
+import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import type { Db } from '../client';
 import { companies } from '../schema/companies';
 import { jobs } from '../schema/jobs';
@@ -73,46 +73,56 @@ export const createCompaniesRepository = (db: Db) => {
       return row ? toCompany(row) : null;
     },
 
+    listByIds: async (ids: string[]): Promise<Company[]> => {
+      if (ids.length === 0) {
+        return [];
+      }
+
+      const rows = await db
+        .select()
+        .from(companies)
+        .where(inArray(companies.id, ids));
+      return rows.map(toCompany);
+    },
+
     listByHiringScore: async (options?: {
       limit?: number;
       minimumHiringScore?: number;
-      market?: CompanyMarketFilter;
+      country?: string;
       maxJobAgeMs?: number;
       now?: Date;
     }): Promise<Company[]> => {
       const minimum = options?.minimumHiringScore ?? 0;
       const filters = [gt(companies.hiringScore, minimum)];
+      const now = options?.now ?? new Date();
+      const maxJobAgeMs = options?.maxJobAgeMs;
+      const cutoff =
+        maxJobAgeMs === undefined
+          ? undefined
+          : new Date(now.getTime() - maxJobAgeMs);
 
-      if (options?.market === 'brazil') {
-        const now = options.now ?? new Date();
-        const cutoff =
-          options.maxJobAgeMs === undefined
-            ? undefined
-            : new Date(now.getTime() - options.maxJobAgeMs);
+      const jobConditions = [
+        eq(jobs.companyId, companies.id),
+        eq(jobs.isActive, true),
+        eq(jobs.remotePolicy, REMOTE_POLICY_REMOTE),
+        ...(cutoff
+          ? [sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`]
+          : []),
+        ...(options?.country
+          ? [
+              sql`${jobs.countries} @> ${JSON.stringify([options.country])}::jsonb`,
+            ]
+          : []),
+      ];
 
-        filters.push(
-          exists(
-            db
-              .select({ id: jobs.id })
-              .from(jobs)
-              .where(
-                and(
-                  eq(jobs.companyId, companies.id),
-                  eq(jobs.isActive, true),
-                  ...(cutoff
-                    ? [
-                        sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
-                      ]
-                    : []),
-                  sql`(
-                    ${jobs.geographies} @> ${JSON.stringify(['brazil'])}::jsonb
-                    OR ${jobs.geographies} @> ${JSON.stringify(['latam'])}::jsonb
-                  )`,
-                ),
-              ),
-          ),
-        );
-      }
+      filters.push(
+        exists(
+          db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(and(...jobConditions)),
+        ),
+      );
 
       const query = db
         .select()

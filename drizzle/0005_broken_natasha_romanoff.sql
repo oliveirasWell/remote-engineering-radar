@@ -1,0 +1,1 @@
+ALTER TABLE "jobs" ADD COLUMN "countries" jsonb DEFAULT '[]'::jsonb NOT NULL;

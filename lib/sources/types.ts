@@ -11,6 +11,7 @@ export type NormalizedJob = {
   remotePolicy?: string;
   description?: string;
   technologies: string[];
+  countries?: string[];
   seniority?: string;
   postedAt?: Date;
 };

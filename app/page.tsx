@@ -1,76 +1,70 @@
 import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
-import { COMPANY_MARKET_FILTERS } from '@/lib/jobs/constants';
+import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
 import { EMPTY_COMPANIES_MESSAGE } from '@/lib/report/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { APP_NAME } from './constants';
 import { HOME_SECTIONS } from './home-constants';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 3600;
-
 type HomeProps = {
   searchParams: Promise<{
-    market?: string | string[];
+    country?: string | string[];
   }>;
 };
 
-const Home = async ({ searchParams }: HomeProps) => {
+/**
+ * Everything below depends on `searchParams`, so it streams in while the
+ * header above prerenders as the static shell.
+ */
+const CompaniesSection = async ({
+  searchParams,
+}: {
+  searchParams: HomeProps['searchParams'];
+}) => {
   const params = await searchParams;
-  const data = await getCompaniesPageData({ market: params.market });
+  const data = await getCompaniesPageData({ country: params.country });
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-10 px-6 py-16">
-      <header className="flex flex-col gap-2">
-        <PageTitle as="h1" className="text-4xl tracking-tight">
-          {APP_NAME}
-        </PageTitle>
-        <p className="text-lg text-muted">{HOME_SECTIONS.subtitle}</p>
-        <p className="text-muted">{formatUpdatedLabel(data.updatedAt)}</p>
-        <nav className="flex flex-wrap gap-4 text-sm">
-          <span className="font-medium text-foreground">Companies</span>
-          <Link
-            href="/jobs"
-            className="text-accent underline-offset-2 hover:underline"
-          >
-            Jobs
-          </Link>
-        </nav>
-        <nav
-          aria-label="Market filter"
-          className="flex flex-wrap gap-3 text-sm"
+    <>
+      <p className="text-muted">{formatUpdatedLabel(data.updatedAt)}</p>
+      <nav
+        aria-label={HOME_SECTIONS.countryFilterLabel}
+        className="flex flex-wrap gap-3 text-sm"
+      >
+        <Link
+          href="/"
+          className={
+            !data.country
+              ? 'font-medium text-foreground'
+              : 'text-accent underline-offset-2 hover:underline'
+          }
         >
+          {HOME_SECTIONS.countryAll}
+        </Link>
+        {JOB_COUNTRY_FILTER_OPTIONS.map((option) => (
           <Link
-            href={`/?market=${COMPANY_MARKET_FILTERS.brazil}`}
+            key={option.slug}
+            href={`/?country=${option.slug}`}
             className={
-              data.market === COMPANY_MARKET_FILTERS.brazil
+              data.country === option.slug
                 ? 'font-medium text-foreground'
                 : 'text-accent underline-offset-2 hover:underline'
             }
           >
-            {HOME_SECTIONS.marketBrazil}
+            {option.label}
           </Link>
-          <Link
-            href={`/?market=${COMPANY_MARKET_FILTERS.all}`}
-            className={
-              data.market === COMPANY_MARKET_FILTERS.all
-                ? 'font-medium text-foreground'
-                : 'text-accent underline-offset-2 hover:underline'
-            }
-          >
-            {HOME_SECTIONS.marketAll}
-          </Link>
-        </nav>
-        {data.errorMessage ? (
-          <p className="text-sm text-accent" role="alert">
-            {data.errorMessage}
-          </p>
-        ) : null}
-      </header>
+        ))}
+      </nav>
+      {data.errorMessage ? (
+        <p className="text-sm text-accent" role="alert">
+          {data.errorMessage}
+        </p>
+      ) : null}
 
       <section aria-labelledby="companies-to-watch">
         <h2 id="companies-to-watch" className="text-xl font-semibold">
@@ -128,8 +122,33 @@ const Home = async ({ searchParams }: HomeProps) => {
           </div>
         )}
       </section>
-    </main>
+    </>
   );
 };
+
+const Home = ({ searchParams }: HomeProps) => (
+  <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-10 px-6 py-16">
+    <header className="flex flex-col gap-2">
+      <PageTitle as="h1" className="text-4xl tracking-tight">
+        {APP_NAME}
+      </PageTitle>
+      <p className="text-lg text-muted">{HOME_SECTIONS.subtitle}</p>
+      <nav className="flex flex-wrap gap-4 text-sm">
+        <span className="font-medium text-foreground">Companies</span>
+        <Link
+          href="/jobs"
+          className="text-accent underline-offset-2 hover:underline"
+        >
+          Jobs
+        </Link>
+      </nav>
+    </header>
+    <Suspense
+      fallback={<p className="text-sm text-muted">{HOME_SECTIONS.loading}</p>}
+    >
+      <CompaniesSection searchParams={searchParams} />
+    </Suspense>
+  </main>
+);
 
 export default Home;

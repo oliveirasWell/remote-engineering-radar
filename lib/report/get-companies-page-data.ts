@@ -1,17 +1,17 @@
+import { cacheLife } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
+import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
 import {
-  DEFAULT_COMPANY_MARKET_FILTER,
-  JOB_MAX_AGE_MS,
-  type CompanyMarketFilter,
-} from '@/lib/jobs/constants';
-import { scoreJob } from '@/lib/scoring/score-job';
-import { COMPANIES_PAGE_LIMIT, REPORT_ERROR_MESSAGE } from './constants';
+  COMPANIES_PAGE_LIMIT,
+  REPORT_CACHE_LIFE,
+  REPORT_ERROR_MESSAGE,
+} from './constants';
 import { logReportError } from './log-report-error';
-import { parseCompanyMarketFilter } from './parse-company-market-filter';
+import { parseCountryFilter } from './parse-country-filter';
 import type { ReportCompanyCard, ReportJobCard } from './types';
 
 export type CompaniesPageItem = ReportCompanyCard & {
@@ -21,35 +21,39 @@ export type CompaniesPageItem = ReportCompanyCard & {
 
 export type CompaniesPageData = {
   companies: CompaniesPageItem[];
-  market: CompanyMarketFilter;
+  country?: string;
   updatedAt: Date | null;
   errorMessage?: string;
 };
 
 export type CompaniesPageOptions = {
-  market?: string | string[];
+  country?: string | string[];
 };
 
-const isRecentJob = (
-  job: {
-    postedAt: Date | null;
-    firstSeenAt: Date;
-    isActive: boolean;
-  },
-  now: Date,
-): boolean => {
-  if (!job.isActive) {
-    return false;
+const groupByCompanyId = <T extends { companyId: string }>(
+  rows: T[],
+): Map<string, T[]> => {
+  const grouped = new Map<string, T[]>();
+  for (const row of rows) {
+    const existing = grouped.get(row.companyId);
+    if (existing) {
+      existing.push(row);
+    } else {
+      grouped.set(row.companyId, [row]);
+    }
   }
-  const timestamp = job.postedAt ?? job.firstSeenAt;
-  return now.getTime() - timestamp.getTime() <= JOB_MAX_AGE_MS;
+  return grouped;
 };
+
+const STRONG_HIRING_SCORE = 40;
 
 export const getCompaniesPageData = async (
   options: CompaniesPageOptions = {},
 ): Promise<CompaniesPageData> => {
-  const market =
-    parseCompanyMarketFilter(options.market) ?? DEFAULT_COMPANY_MARKET_FILTER;
+  'use cache';
+  cacheLife(REPORT_CACHE_LIFE);
+
+  const country = parseCountryFilter(options.country);
 
   try {
     const db = getDb();
@@ -61,31 +65,43 @@ export const getCompaniesPageData = async (
     const companies = await companiesRepository.listByHiringScore({
       limit: COMPANIES_PAGE_LIMIT,
       minimumHiringScore: 0,
-      market,
+      country,
       maxJobAgeMs: JOB_MAX_AGE_MS,
       now,
     });
+    const companyIds = companies.map((company) => company.id);
 
-    const items: CompaniesPageItem[] = [];
+    // Two batched reads instead of one pair per company.
+    const [signals, jobs, updatedAt] = await Promise.all([
+      hiringSignalsRepository.listByCompanyIds(companyIds),
+      jobsRepository.listCardsByCompanyIds(companyIds, {
+        maxAgeMs: JOB_MAX_AGE_MS,
+        now,
+      }),
+      createIngestionRunsRepository(db).getLatestCompletedAt(),
+    ]);
 
-    for (const company of companies) {
-      const [signals, jobs] = await Promise.all([
-        hiringSignalsRepository.listByCompanyId(company.id),
-        jobsRepository.listByCompanyId(company.id),
-      ]);
+    const signalsByCompany = groupByCompanyId(signals);
+    const jobsByCompany = groupByCompanyId(jobs);
 
-      const recentJobs = jobs.filter((job) => isRecentJob(job, now));
-      const jobCards = recentJobs.map((job) => {
-        const scored = scoreJob({
-          title: job.title,
-          description: job.description ?? undefined,
-          location: job.location ?? undefined,
-          remotePolicy: job.remotePolicy ?? undefined,
-          technologies: job.technologies,
-          seniority: job.seniority ?? undefined,
-        });
+    const items = companies.map((company) => {
+      const companySignals = signalsByCompany.get(company.id) ?? [];
+      const companyJobs = jobsByCompany.get(company.id) ?? [];
 
-        return {
+      return {
+        id: company.id,
+        name: company.name,
+        slug: company.slug,
+        hiringScore: company.hiringScore,
+        kind: company.kind,
+        summary:
+          company.hiringScore >= STRONG_HIRING_SCORE
+            ? 'Strong hiring signal'
+            : 'Company is actively expanding engineering hiring.',
+        signalDescriptions: companySignals.map((signal) => signal.description),
+        websiteUrl: company.websiteUrl,
+        openEngineeringJobs: companyJobs.length,
+        jobs: companyJobs.map((job) => ({
           id: job.id,
           title: job.title,
           companyName: company.name,
@@ -94,45 +110,25 @@ export const getCompaniesPageData = async (
           location: job.location,
           remotePolicy: job.remotePolicy,
           score: job.score,
-          reasons: scored.reasons,
           postedAt: job.postedAt,
           url: job.url,
-        };
-      });
-
-      items.push({
-        id: company.id,
-        name: company.name,
-        slug: company.slug,
-        hiringScore: company.hiringScore,
-        kind: company.kind,
-        summary:
-          company.hiringScore >= 40
-            ? 'Strong hiring signal'
-            : 'Company is actively expanding engineering hiring.',
-        signalDescriptions: signals.map((signal) => signal.description),
-        websiteUrl: company.websiteUrl,
-        openEngineeringJobs: recentJobs.length,
-        jobs: jobCards,
+        })),
         signalSourceUrls: [
           ...new Set(
-            signals
+            companySignals
               .map((signal) => signal.sourceUrl)
               .filter((url): url is string => Boolean(url)),
           ),
         ],
-      });
-    }
+      };
+    });
 
-    const updatedAt =
-      await createIngestionRunsRepository(db).getLatestCompletedAt();
-
-    return { companies: items, market, updatedAt };
+    return { companies: items, country, updatedAt };
   } catch (error) {
     logReportError('companies', error);
     return {
       companies: [],
-      market,
+      country,
       updatedAt: null,
       errorMessage: REPORT_ERROR_MESSAGE,
     };

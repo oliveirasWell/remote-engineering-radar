@@ -1,9 +1,9 @@
 import { getCompaniesPageData } from './get-companies-page-data';
 import type { HomeReport } from './types';
 
-/** Home is the companies watchlist (Brazil market by default). */
+/** Home is the remote companies watchlist. */
 export const getHomeReport = async (options?: {
-  market?: string | string[];
+  country?: string | string[];
 }): Promise<HomeReport> => {
   const data = await getCompaniesPageData(options);
   return {

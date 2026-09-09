@@ -1,0 +1,26 @@
+[
+  {
+    "id": "08e78476-f995-4946-921d-27c3c22b1c6d",
+    "text": "[30790] Senior Frontend Engineer, Brazil",
+    "hostedUrl": "https://jobs.lever.co/ciandt/08e78476-f995-4946-921d-27c3c22b1c6d",
+    "workplaceType": "remote",
+    "country": "Brazil",
+    "categories": {
+      "location": "Brazil",
+      "allLocations": ["Brazil"]
+    },
+    "descriptionPlain": "Senior React and TypeScript engineer.",
+    "createdAt": 1785365285283
+  },
+  {
+    "id": "onsite-only",
+    "text": "Onsite Engineer",
+    "hostedUrl": "https://jobs.lever.co/ciandt/onsite-only",
+    "workplaceType": "onsite",
+    "categories": {
+      "location": "Brazil"
+    },
+    "descriptionPlain": "Office only.",
+    "createdAt": 1785365285283
+  }
+]

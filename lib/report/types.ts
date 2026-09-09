@@ -9,9 +9,13 @@ export type ReportJobCard = {
   location: string | null;
   remotePolicy: string | null;
   score: number;
-  reasons: string[];
   postedAt: Date | null;
   url: string;
+};
+
+/** The detail page is the only view that explains why a job scored. */
+export type ReportJobDetail = ReportJobCard & {
+  reasons: string[];
 };
 
 export type ReportCompanyCard = {

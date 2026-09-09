@@ -1,6 +1,7 @@
-import { and, desc, eq, gte, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, notInArray, sql } from 'drizzle-orm';
 import type { JobGeography } from '@/lib/classification/types';
-import type { Job, NewJob } from '@/lib/jobs/types';
+import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
 import { jobs } from '../schema/jobs';
 
@@ -25,6 +26,7 @@ const toJob = (row: typeof jobs.$inferSelect): Job => ({
   description: row.description,
   technologies: row.technologies,
   geographies: toGeographies(row.geographies),
+  countries: row.countries,
   seniority: row.seniority,
   score: row.score,
   postedAt: row.postedAt,
@@ -33,6 +35,35 @@ const toJob = (row: typeof jobs.$inferSelect): Job => ({
   isActive: row.isActive,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
+});
+
+/** Every column a list view renders — notably not `description`. */
+const jobCardColumns = {
+  id: jobs.id,
+  companyId: jobs.companyId,
+  source: jobs.source,
+  sourceJobId: jobs.sourceJobId,
+  title: jobs.title,
+  url: jobs.url,
+  location: jobs.location,
+  remotePolicy: jobs.remotePolicy,
+  technologies: jobs.technologies,
+  geographies: jobs.geographies,
+  countries: jobs.countries,
+  seniority: jobs.seniority,
+  score: jobs.score,
+  postedAt: jobs.postedAt,
+  firstSeenAt: jobs.firstSeenAt,
+  isActive: jobs.isActive,
+} as const;
+
+type JobCardRow = {
+  [K in keyof typeof jobCardColumns]: (typeof jobs.$inferSelect)[K];
+};
+
+const toJobCard = (row: JobCardRow): JobCard => ({
+  ...row,
+  geographies: toGeographies(row.geographies),
 });
 
 export const createJobsRepository = (db: Db) => {
@@ -52,6 +83,7 @@ export const createJobsRepository = (db: Db) => {
           description: input.description ?? null,
           technologies: input.technologies ?? [],
           geographies: input.geographies ?? [],
+          countries: input.countries ?? [],
           seniority: input.seniority ?? null,
           score: input.score ?? 0,
           postedAt: input.postedAt ?? null,
@@ -92,16 +124,47 @@ export const createJobsRepository = (db: Db) => {
       return rows.map(toJob);
     },
 
+    listCardsByCompanyIds: async (
+      companyIds: string[],
+      options?: { maxAgeMs?: number; now?: Date; activeOnly?: boolean },
+    ): Promise<JobCard[]> => {
+      if (companyIds.length === 0) {
+        return [];
+      }
+
+      const filters = [inArray(jobs.companyId, companyIds)];
+
+      if (options?.maxAgeMs !== undefined) {
+        const now = options.now ?? new Date();
+        const cutoff = new Date(now.getTime() - options.maxAgeMs);
+        filters.push(
+          eq(jobs.isActive, true),
+          eq(jobs.remotePolicy, REMOTE_POLICY_REMOTE),
+          sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
+        );
+      } else if (options?.activeOnly) {
+        filters.push(eq(jobs.isActive, true));
+      }
+
+      const rows = await db
+        .select(jobCardColumns)
+        .from(jobs)
+        .where(and(...filters))
+        .orderBy(desc(jobs.score), desc(jobs.postedAt));
+      return rows.map(toJobCard);
+    },
+
     listActiveByScore: async (options?: {
       limit?: number;
       minimumScore?: number;
       technology?: string;
       seniority?: string;
       remotePolicy?: string;
+      country?: string;
       location?: string;
       maxAgeMs?: number;
       now?: Date;
-    }): Promise<Job[]> => {
+    }): Promise<JobCard[]> => {
       const filters = [eq(jobs.isActive, true)];
 
       if (options?.minimumScore !== undefined) {
@@ -110,8 +173,13 @@ export const createJobsRepository = (db: Db) => {
       if (options?.seniority) {
         filters.push(eq(jobs.seniority, options.seniority));
       }
-      if (options?.remotePolicy) {
-        filters.push(eq(jobs.remotePolicy, options.remotePolicy));
+      filters.push(
+        eq(jobs.remotePolicy, options?.remotePolicy ?? REMOTE_POLICY_REMOTE),
+      );
+      if (options?.country) {
+        filters.push(
+          sql`${jobs.countries} @> ${JSON.stringify([options.country])}::jsonb`,
+        );
       }
       if (options?.location) {
         filters.push(sql`${jobs.location} ilike ${`%${options.location}%`}`);
@@ -130,7 +198,7 @@ export const createJobsRepository = (db: Db) => {
       }
 
       const query = db
-        .select()
+        .select(jobCardColumns)
         .from(jobs)
         .where(and(...filters))
         .orderBy(desc(jobs.score), desc(jobs.postedAt));
@@ -139,7 +207,7 @@ export const createJobsRepository = (db: Db) => {
         options?.limit !== undefined
           ? await query.limit(options.limit)
           : await query;
-      return rows.map(toJob);
+      return rows.map(toJobCard);
     },
 
     updateScore: async (id: string, score: number): Promise<Job | null> => {
@@ -151,7 +219,7 @@ export const createJobsRepository = (db: Db) => {
       return row ? toJob(row) : null;
     },
 
-    upsertBySourceJobId: async (input: NewJob): Promise<Job> => {
+    upsertBySourceJobId: async (input: NewJob): Promise<{ id: string }> => {
       const now = new Date();
       const [row] = await db
         .insert(jobs)
@@ -166,6 +234,7 @@ export const createJobsRepository = (db: Db) => {
           description: input.description ?? null,
           technologies: input.technologies ?? [],
           geographies: input.geographies ?? [],
+          countries: input.countries ?? [],
           seniority: input.seniority ?? null,
           score: input.score ?? 0,
           postedAt: input.postedAt ?? null,
@@ -184,6 +253,7 @@ export const createJobsRepository = (db: Db) => {
             description: input.description ?? null,
             technologies: input.technologies ?? [],
             geographies: input.geographies ?? [],
+            countries: input.countries ?? [],
             seniority: input.seniority ?? null,
             ...(input.score === undefined ? {} : { score: input.score }),
             ...(input.postedAt === undefined
@@ -194,38 +264,37 @@ export const createJobsRepository = (db: Db) => {
             updatedAt: now,
           },
         })
-        .returning();
+        .returning({ id: jobs.id });
 
       if (!row) {
         throw new Error('Failed to upsert job');
       }
 
-      return toJob(row);
+      return row;
     },
 
     deactivateMissingBySource: async (
       source: string,
       sourceJobIds: string[],
-    ): Promise<Job[]> => {
+    ): Promise<{ companyId: string }[]> => {
       const conditions = [eq(jobs.source, source), eq(jobs.isActive, true)];
       if (sourceJobIds.length > 0) {
         conditions.push(notInArray(jobs.sourceJobId, sourceJobIds));
       }
 
-      const rows = await db
+      return db
         .update(jobs)
         .set({ isActive: false, updatedAt: new Date() })
         .where(and(...conditions))
-        .returning();
-      return rows.map(toJob);
+        .returning({ companyId: jobs.companyId });
     },
 
     deactivateOlderThan: async (
       maxAgeMs: number,
       now: Date = new Date(),
-    ): Promise<Job[]> => {
+    ): Promise<{ companyId: string }[]> => {
       const cutoff = new Date(now.getTime() - maxAgeMs);
-      const rows = await db
+      return db
         .update(jobs)
         .set({ isActive: false, updatedAt: now })
         .where(
@@ -234,8 +303,25 @@ export const createJobsRepository = (db: Db) => {
             sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) < ${cutoff}`,
           ),
         )
-        .returning();
-      return rows.map(toJob);
+        .returning({ companyId: jobs.companyId });
+    },
+
+    /** Rows are only ever deactivated, so without this the table grows forever. */
+    deleteInactiveOlderThan: async (
+      retentionMs: number,
+      now: Date = new Date(),
+    ): Promise<number> => {
+      const cutoff = new Date(now.getTime() - retentionMs);
+      const deleted = await db
+        .delete(jobs)
+        .where(
+          and(
+            eq(jobs.isActive, false),
+            lt(sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt})`, cutoff),
+          ),
+        )
+        .returning({ id: jobs.id });
+      return deleted.length;
     },
 
     deactivate: async (id: string): Promise<Job | null> => {

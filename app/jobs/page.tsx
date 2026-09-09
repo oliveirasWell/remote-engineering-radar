@@ -1,16 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
+import { JOBS_PAGE_COPY } from './constants';
 import {
-  JOBS_PAGE_COPY,
-  JOBS_PAGE_LIMIT,
-  MAX_JOB_FILTER_LENGTH,
-} from './constants';
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 3600;
+  parseJobFilters,
+  readFilter,
+  readMinimumScore,
+  type JobsSearchParams,
+} from './parse-job-filters';
 
 export const metadata: Metadata = {
   title: JOBS_PAGE_COPY.metaTitle,
@@ -18,59 +18,29 @@ export const metadata: Metadata = {
 };
 
 type JobsPageProps = {
-  searchParams: Promise<{
-    technology?: string | string[];
-    seniority?: string | string[];
-    remote?: string | string[];
-    location?: string | string[];
-    minimumScore?: string | string[];
-  }>;
+  searchParams: Promise<JobsSearchParams>;
 };
 
-const JobsPage = async ({ searchParams }: JobsPageProps) => {
+/**
+ * Filters and results both derive from `searchParams`, so they stream in while
+ * the header above prerenders as the static shell.
+ */
+const JobsResults = async ({
+  searchParams,
+}: {
+  searchParams: JobsPageProps['searchParams'];
+}) => {
   const params = await searchParams;
-  const readFilter = (
-    value: string | string[] | undefined,
-  ): string | undefined => {
-    const trimmed = typeof value === 'string' ? value.trim() : undefined;
-    return trimmed && trimmed.length <= MAX_JOB_FILTER_LENGTH
-      ? trimmed
-      : undefined;
-  };
-  const minimumScoreValue = readFilter(params.minimumScore);
-  const minimumScore =
-    minimumScoreValue && /^\d{1,3}$/.test(minimumScoreValue)
-      ? Number(minimumScoreValue)
-      : undefined;
-
-  const data = await getJobsPageData({
-    technology: readFilter(params.technology),
-    seniority: readFilter(params.seniority),
-    remote: readFilter(params.remote),
-    location: readFilter(params.location),
-    minimumScore:
-      minimumScore !== undefined && minimumScore <= 100
-        ? minimumScore
-        : undefined,
-    limit: JOBS_PAGE_LIMIT,
-  });
+  const minimumScore = readMinimumScore(params.minimumScore);
+  const data = await getJobsPageData(parseJobFilters(params));
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-16">
-      <header className="flex flex-col gap-2">
-        <p className="text-sm text-muted">
-          <Link href="/" className="hover:text-accent">
-            Remote Engineering Radar
-          </Link>
+    <>
+      {data.errorMessage ? (
+        <p className="text-sm text-accent" role="alert">
+          {data.errorMessage}
         </p>
-        <PageTitle as="h1">{JOBS_PAGE_COPY.title}</PageTitle>
-        <p className="text-lg text-muted">{JOBS_PAGE_COPY.subtitle}</p>
-        {data.errorMessage ? (
-          <p className="text-sm text-accent" role="alert">
-            {data.errorMessage}
-          </p>
-        ) : null}
-      </header>
+      ) : null}
 
       <section aria-labelledby="job-filters">
         <h2 id="job-filters" className="sr-only">
@@ -140,8 +110,27 @@ const JobsPage = async ({ searchParams }: JobsPageProps) => {
           data.jobs.map((job) => <JobCard key={job.id} job={job} />)
         )}
       </section>
-    </main>
+    </>
   );
 };
+
+const JobsPage = ({ searchParams }: JobsPageProps) => (
+  <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-16">
+    <header className="flex flex-col gap-2">
+      <p className="text-sm text-muted">
+        <Link href="/" className="hover:text-accent">
+          Remote Engineering Radar
+        </Link>
+      </p>
+      <PageTitle as="h1">{JOBS_PAGE_COPY.title}</PageTitle>
+      <p className="text-lg text-muted">{JOBS_PAGE_COPY.subtitle}</p>
+    </header>
+    <Suspense
+      fallback={<p className="text-sm text-muted">{JOBS_PAGE_COPY.loading}</p>}
+    >
+      <JobsResults searchParams={searchParams} />
+    </Suspense>
+  </main>
+);
 
 export default JobsPage;

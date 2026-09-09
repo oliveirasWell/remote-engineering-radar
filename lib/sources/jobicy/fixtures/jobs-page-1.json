@@ -1,0 +1,72 @@
+{
+  "success": true,
+  "statusCode": 200,
+  "apiVersion": "2.0",
+  "documentationUrl": "https://jobicy.com/jobs-rss-feed",
+  "friendlyNotice": "Please provide attribution to Jobicy when using this API.",
+  "lastUpdate": "2026-09-04T05:12:11+00:00",
+  "jobCount": 3,
+  "appliedFilters": {
+    "count": 50,
+    "industry": "engineering"
+  },
+  "jobs": [
+    {
+      "id": 152499,
+      "url": "https://jobicy.com/jobs/152499-backend-engineer-iii",
+      "jobSlug": "152499-backend-engineer-iii",
+      "jobTitle": "Backend Engineer III",
+      "companyName": "Monzo",
+      "companyLogo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2025/06/5b4c0ec3.png",
+      "jobIndustry": ["Software Engineering"],
+      "jobType": ["Part-Time"],
+      "jobGeo": "UK",
+      "jobLevel": "Any",
+      "jobExcerpt": "We are on a mission to make money work for everyone.",
+      "jobDescription": "<p><strong><em>We&#39;re on a mission to make money work for everyone.</em></strong></p>\n<p>We&#39;re waving goodbye to the complicated and confusing ways of traditional banking.</p>",
+      "pubDate": "2026-09-03T19:27:15+00:00",
+      "salaryMin": 85000,
+      "salaryMax": 110000,
+      "salaryCurrency": "GBP",
+      "salaryPeriod": "yearly"
+    },
+    {
+      "id": 152458,
+      "url": "https://jobicy.com/jobs/152458-aem-developer",
+      "jobSlug": "152458-aem-developer",
+      "jobTitle": "AEM Developer",
+      "companyName": "Vonage",
+      "companyLogo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2024/11/9c1a77de.png",
+      "jobIndustry": ["Software Engineering"],
+      "jobType": ["Full-Time"],
+      "jobGeo": "Anywhere",
+      "jobLevel": "Senior",
+      "jobExcerpt": "Join Vonage and help us innovate cloud communications for businesses worldwide.",
+      "jobDescription": "<h3><strong>Join Vonage and help us innovate cloud communications for businesses worldwide!</strong></h3>\n<p>We are seeking an experienced Senior AEM Developer.</p>",
+      "pubDate": "2026-09-03T18:54:08+00:00",
+      "salaryMin": 0,
+      "salaryMax": 0,
+      "salaryCurrency": "",
+      "salaryPeriod": ""
+    },
+    {
+      "id": 152495,
+      "url": "https://jobicy.com/jobs/152495-backend-engineer-platform-stacks-sweden-remote",
+      "jobSlug": "152495-backend-engineer-platform-stacks-sweden-remote",
+      "jobTitle": "Backend Engineer - Platform - Stacks | Sweden | Remote",
+      "companyName": "Grafana Labs",
+      "companyLogo": "https://jobicy.com/data/server-nyc0409/galaxy/mercury/2023/02/1f7a24bb.png",
+      "jobIndustry": ["Software Engineering"],
+      "jobType": ["Full-Time"],
+      "jobGeo": "Germany,  Ireland,  Spain,  Sweden,  UK",
+      "jobLevel": "Senior",
+      "jobExcerpt": "Grafana Labs is the company behind Grafana Cloud.",
+      "jobDescription": "<p>Grafana Labs is the company behind Grafana Cloud, the fully managed observability platform.</p>",
+      "pubDate": "2026-09-03T19:25:55+00:00",
+      "salaryMin": 0,
+      "salaryMax": 0,
+      "salaryCurrency": "",
+      "salaryPeriod": ""
+    }
+  ]
+}

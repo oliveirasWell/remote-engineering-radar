@@ -12,6 +12,7 @@ export const DEFAULT_COMPANY_KIND: CompanyKind = COMPANY_KINDS.product;
 const COMPANY_KIND_BY_SLUG: Readonly<Record<string, CompanyKind>> = {
   bairesdev: COMPANY_KINDS.consultancy,
   'ci-t': COMPANY_KINDS.consultancy,
+  ciandt: COMPANY_KINDS.consultancy,
   cit: COMPANY_KINDS.consultancy,
   accenture: COMPANY_KINDS.consultancy,
   thoughtworks: COMPANY_KINDS.consultancy,

@@ -13,7 +13,6 @@ const job = {
   location: 'LATAM',
   remotePolicy: 'remote',
   score: 94,
-  reasons: ['React', 'TypeScript', 'GraphQL', 'Senior', 'Remote'],
   postedAt: new Date('2026-08-26T06:00:00Z'),
   url: 'https://example.com/jobs/1',
 };
@@ -24,7 +23,7 @@ describe('JobCard', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders reasons and original job link without exposing the score', () => {
+  it('renders the original job link without exposing the score', () => {
     render(<JobCard job={job} />);
 
     expect(
@@ -34,8 +33,6 @@ describe('JobCard', () => {
     expect(
       screen.queryByText((content) => content.includes(String(job.score))),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(JOB_CARD_COPY.whyRelevant)).toBeInTheDocument();
-    expect(screen.getByText('React')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: JOB_CARD_COPY.viewOriginal }),
     ).toHaveAttribute('href', job.url);

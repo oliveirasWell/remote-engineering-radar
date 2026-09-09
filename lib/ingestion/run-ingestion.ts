@@ -10,8 +10,14 @@ import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { normalizeCompanyName } from '@/lib/deduplication/normalize';
 import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
-import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
+import { resolveJobCountries } from '@/lib/jobs/countries';
+import {
+  JOB_MAX_AGE_MS,
+  JOB_RETENTION_MS,
+  REMOTE_POLICY_REMOTE,
+} from '@/lib/jobs/constants';
 import { scoreClassifiedJob } from '@/lib/scoring/score-job';
+import type { JobCard } from '@/lib/jobs/types';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 
@@ -23,6 +29,7 @@ export type IngestionLogger = {
 export type IngestionSourceResult = {
   name: string;
   fetched: number;
+  persisted: number;
   error?: string;
 };
 
@@ -35,6 +42,7 @@ export type IngestionResult = {
 type EnrichedJob = NormalizedJob & {
   score: number;
   geographies: ReturnType<typeof classifyJob>['geography'];
+  countries: string[];
   shouldPersist: boolean;
 };
 
@@ -61,16 +69,25 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
     technologies: job.technologies,
   });
   const scored = scoreClassifiedJob(classification, job.seniority);
+  const remotePolicy = classification.remotePolicy ?? job.remotePolicy;
+  const geographies = classification.geography;
+  const countries = resolveJobCountries({
+    sourceCountries: job.countries,
+    location: job.location,
+    geographies,
+  });
 
   return {
     ...job,
     technologies: classification.technologies,
     seniority: classification.seniority ?? job.seniority,
-    remotePolicy: classification.remotePolicy ?? job.remotePolicy,
+    remotePolicy,
     score: scored.score,
-    geographies: classification.geography,
+    geographies,
+    countries,
     shouldPersist:
       shouldPersistClassifiedJob(classification) &&
+      remotePolicy === REMOTE_POLICY_REMOTE &&
       !isPostedBeyondMaxAge(job, now, JOB_MAX_AGE_MS),
   };
 };
@@ -95,11 +112,20 @@ export const runIngestion = async (options: {
     try {
       const jobs = await source.fetchJobs();
       fetchedJobs.push(...jobs);
-      sourceResults.push({ name: source.name, fetched: jobs.length });
+      sourceResults.push({
+        name: source.name,
+        fetched: jobs.length,
+        persisted: 0,
+      });
       logger.info(`Source ${source.name}: fetched ${jobs.length} jobs`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      sourceResults.push({ name: source.name, fetched: 0, error: message });
+      sourceResults.push({
+        name: source.name,
+        fetched: 0,
+        persisted: 0,
+        error: message,
+      });
       logger.error(`Source ${source.name} failed: ${message}`);
     }
   }
@@ -109,6 +135,8 @@ export const runIngestion = async (options: {
     .map((job) => enrichJob(job, now));
   const persistable = enriched.filter((job) => job.shouldPersist);
   const { jobs: uniqueJobs } = deduplicateJobs(persistable);
+
+  const persistedBySource = new Map<string, number>();
 
   const { persistedJobs, companiesUpdated } = await options.db.transaction(
     async (tx) => {
@@ -146,12 +174,17 @@ export const runIngestion = async (options: {
           description: job.description,
           technologies: job.technologies,
           geographies: scoredJob.geographies,
+          countries: scoredJob.countries,
           seniority: job.seniority,
           score: scoredJob.score,
           postedAt: job.postedAt,
           isActive: true,
         });
         persistedJobs += 1;
+        persistedBySource.set(
+          job.source,
+          (persistedBySource.get(job.source) ?? 0) + 1,
+        );
       }
 
       for (const sourceResult of sourceResults) {
@@ -179,9 +212,25 @@ export const runIngestion = async (options: {
         companyIds.add(job.companyId);
       }
 
+      await jobsRepository.deleteInactiveOlderThan(JOB_RETENTION_MS, now);
+
+      // One batched read instead of one query per touched company, and
+      // without the description column, which signal detection never reads.
+      const jobsByCompany = new Map<string, JobCard[]>();
+      for (const job of await jobsRepository.listCardsByCompanyIds([
+        ...companyIds,
+      ])) {
+        const existing = jobsByCompany.get(job.companyId);
+        if (existing) {
+          existing.push(job);
+        } else {
+          jobsByCompany.set(job.companyId, [job]);
+        }
+      }
+
       let companiesUpdated = 0;
       for (const companyId of companyIds) {
-        const companyJobs = await jobsRepository.listByCompanyId(companyId);
+        const companyJobs = jobsByCompany.get(companyId) ?? [];
         const detection = detectHiringSignals({
           companyName: companyId,
           jobs: companyJobs.map((job) => ({
@@ -219,12 +268,17 @@ export const runIngestion = async (options: {
     },
   );
 
+  const sources = sourceResults.map((source) => ({
+    ...source,
+    persisted: persistedBySource.get(source.name) ?? 0,
+  }));
+
   logger.info(
     `Ingestion complete: ${persistedJobs} jobs across ${companiesUpdated} companies`,
   );
 
   return {
-    sources: sourceResults,
+    sources,
     persistedJobs,
     companiesUpdated,
   };
