@@ -7,6 +7,7 @@ import {
 import type { Company, NewCompany } from '@/lib/companies/types';
 import type { CompanyMarketFilter } from '@/lib/jobs/constants';
 import type { Db } from '../client';
+import { coalescedPostedAt } from './posted-at-filter';
 import { companies } from '../schema/companies';
 import { jobs } from '../schema/jobs';
 
@@ -99,11 +100,7 @@ export const createCompaniesRepository = (db: Db) => {
               and(
                 eq(jobs.companyId, companies.id),
                 eq(jobs.isActive, true),
-                ...(cutoff
-                  ? [
-                      sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
-                    ]
-                  : []),
+                ...(cutoff ? [coalescedPostedAt('>=', cutoff)] : []),
                 ...(options?.market === 'brazil'
                   ? [
                       sql`(
