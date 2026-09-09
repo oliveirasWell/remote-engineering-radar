@@ -83,4 +83,34 @@ describe('createCompaniesRepository country filter', () => {
 
     await expect(companiesRepository.listByHiringScore()).resolves.toEqual([]);
   });
+
+  it('excludes companies whose jobs are all stale', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-08-31T12:00:00.000Z');
+
+    const company = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'stale-co',
+      name: 'Stale Co',
+      hiringScore: 20,
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'stale-1',
+      technologies: [...TEST_JOB.technologies],
+      countries: ['brazil'],
+      remotePolicy: REMOTE_POLICY_REMOTE,
+      postedAt: new Date(now.getTime() - JOB_MAX_AGE_MS - 1),
+    });
+
+    await expect(
+      companiesRepository.listByHiringScore({
+        maxJobAgeMs: JOB_MAX_AGE_MS,
+        now,
+      }),
+    ).resolves.toEqual([]);
+  });
 });

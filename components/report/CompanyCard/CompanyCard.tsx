@@ -22,9 +22,7 @@ export const CompanyCard = ({ company }: CompanyCardProps) => {
             {company.name}
           </h3>
           {kindLabel ? (
-            <span className="text-sm text-accent" role="status">
-              {kindLabel}
-            </span>
+            <span className="text-sm text-accent">{kindLabel}</span>
           ) : null}
         </div>
         <p className="text-sm text-muted">
