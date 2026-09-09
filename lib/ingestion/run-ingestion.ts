@@ -107,11 +107,15 @@ export const runIngestion = async (options: {
 
   const sourceResults: IngestionSourceResult[] = [];
   const fetchedJobs: NormalizedJob[] = [];
+  const completeSources = new Set<string>();
 
   for (const source of options.sources) {
     try {
-      const jobs = await source.fetchJobs();
+      const { jobs, complete } = await source.fetchJobs();
       fetchedJobs.push(...jobs);
+      if (complete) {
+        completeSources.add(source.name);
+      }
       sourceResults.push({
         name: source.name,
         fetched: jobs.length,
@@ -185,17 +189,31 @@ export const runIngestion = async (options: {
       }
 
       for (const sourceResult of sourceResults) {
-        if (sourceResult.error) {
+        if (sourceResult.error !== undefined) {
           continue;
         }
 
-        const sourceJobIds = uniqueJobs
-          .filter((job) => job.source === sourceResult.name)
-          .map((job) => job.sourceJobId);
-        const deactivatedJobs = await jobsRepository.deactivateMissingBySource(
-          sourceResult.name,
-          sourceJobIds,
+        const sourceJobIds = new Set(
+          uniqueJobs
+            .filter((job) => job.source === sourceResult.name)
+            .map((job) => job.sourceJobId),
         );
+        // Partial feeds can retire observed ineligible jobs and duplicates,
+        // but only complete snapshots can retire jobs that were not observed.
+        const deactivatedJobs = completeSources.has(sourceResult.name)
+          ? await jobsRepository.deactivateMissingBySource(sourceResult.name, [
+              ...sourceJobIds,
+            ])
+          : await jobsRepository.deactivateBySourceJobIds(
+              sourceResult.name,
+              fetchedJobs
+                .filter(
+                  (job) =>
+                    job.source === sourceResult.name &&
+                    !sourceJobIds.has(job.sourceJobId),
+                )
+                .map((job) => job.sourceJobId),
+            );
         for (const job of deactivatedJobs) {
           companyIds.add(job.companyId);
         }

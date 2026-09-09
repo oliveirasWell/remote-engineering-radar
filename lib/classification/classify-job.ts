@@ -65,9 +65,7 @@ const classifyGeography = (
   haystack: string,
 ): JobClassification['geography'] => {
   const geography: JobClassification['geography'] = [];
-  if (
-    /\bbrazil\b|\bbrasil\b|\blatam\b.*brazil|\bs[ãa]o paulo\b/i.test(haystack)
-  ) {
+  if (/\bbrazil\b|\bbrasil\b|\bs[ãa]o paulo\b/i.test(haystack)) {
     geography.push('brazil');
   }
   if (/\blatam\b|\blatin america\b|\bsouth america\b/i.test(haystack)) {

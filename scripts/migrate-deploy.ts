@@ -15,7 +15,7 @@ import {
 
 const BASELINE_GATE_MESSAGE =
   `Existing application tables require the Prisma baseline to be resolved first. ` +
-  `Run: pnpm prisma migrate resolve --applied ${PRISMA_BASELINE}`;
+  `Run pnpm db:baseline-check, then pnpm db:resolve-baseline with the intended migration URL.`;
 
 export const getMigrationUrl = (): string => {
   const dedicatedUrl =
@@ -146,24 +146,65 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
       );
     }
 
-    const defaultResult = await pool.query<{ unsafe: boolean }>(`
-      SELECT EXISTS (
-        SELECT 1
+    const defaultResult = await pool.query<{
+      unsafe: boolean;
+      contexts?: {
+        owner_is_current_role: boolean;
+        owner_owns_radar_tables: boolean;
+        owner_is_postgres: boolean;
+        current_role_can_manage_owner: boolean;
+        namespace: 'global' | 'public';
+      }[];
+    }>(`
+      WITH unsafe_defaults AS (
+        SELECT DISTINCT
+          owner.rolname = current_user AS owner_is_current_role,
+          EXISTS (
+            SELECT 1 FROM pg_class relation
+            WHERE relation.relowner = defaults.defaclrole
+              AND relation.relnamespace = 'public'::regnamespace
+              AND relation.relkind IN ('r', 'p')
+              AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', '_prisma_migrations')
+          ) AS owner_owns_radar_tables,
+          owner.rolname = 'postgres' AS owner_is_postgres,
+          -- USAGE matches the effective role privileges needed to alter default ACLs.
+          pg_has_role(current_user, owner.oid, 'USAGE') AS current_role_can_manage_owner,
+          CASE WHEN defaults.defaclnamespace = 0 THEN 'global' ELSE 'public' END AS namespace
         FROM pg_default_acl defaults
         CROSS JOIN LATERAL aclexplode(defaults.defaclacl) privilege
         JOIN pg_roles grantee ON grantee.oid = privilege.grantee
+        JOIN pg_roles owner ON owner.oid = defaults.defaclrole
         WHERE defaults.defaclobjtype = 'r'
+          -- Unrelated provider defaults do not apply to tables created by Radar's roles.
+          AND (
+            owner.rolname = current_user
+            OR EXISTS (
+              SELECT 1 FROM pg_class relation
+              WHERE relation.relowner = defaults.defaclrole
+                AND relation.relnamespace = 'public'::regnamespace
+                AND relation.relkind IN ('r', 'p')
+                AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', '_prisma_migrations')
+            )
+          )
           AND (
             defaults.defaclnamespace = 0
             OR defaults.defaclnamespace = 'public'::regnamespace
           )
           AND grantee.rolname IN ('anon', 'authenticated')
           AND privilege.privilege_type IN ('SELECT', 'INSERT', 'UPDATE', 'DELETE')
-      ) AS unsafe
+      )
+      SELECT count(*) > 0 AS unsafe,
+        COALESCE(jsonb_agg(unsafe_defaults ORDER BY namespace, owner_is_current_role,
+          owner_owns_radar_tables, owner_is_postgres, current_role_can_manage_owner), '[]'::jsonb) AS contexts
+      FROM unsafe_defaults
     `);
     if (defaultResult.rows[0]?.unsafe) {
+      const contexts = defaultResult.rows[0].contexts;
       throw new Error(
-        'Public Supabase roles retain default privileges for future tables.',
+        'Public Supabase roles retain default privileges for future tables.' +
+          (contexts?.length
+            ? ` Unsafe default grant contexts: ${JSON.stringify(contexts)}`
+            : ''),
       );
     }
   } finally {
@@ -171,10 +212,21 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
   }
 };
 
-export const baselineCheck = async (): Promise<void> => {
-  const connectionString = getMigrationUrl();
+export const baselineCheck = async (
+  connectionString = getMigrationUrl(),
+): Promise<void> => {
   await verifySchemaParity(connectionString);
   await verifyPrivileges(connectionString);
+};
+
+export const prepareBaseline = async (): Promise<void> => {
+  const connectionString = getMigrationUrl();
+  await runPrisma(
+    connectionString,
+    ['db', 'execute', '--file', 'scripts/prepare-prisma-baseline.sql'],
+    'prisma baseline preparation',
+  );
+  await baselineCheck(connectionString);
 };
 
 export const migrateDeploy = async (): Promise<void> => {
@@ -193,9 +245,11 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const operation = process.argv.includes('--check-only')
-    ? baselineCheck
-    : migrateDeploy;
+  const operation = process.argv.includes('--prepare-baseline')
+    ? prepareBaseline
+    : process.argv.includes('--check-only')
+      ? baselineCheck
+      : migrateDeploy;
   operation().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exitCode = 1;

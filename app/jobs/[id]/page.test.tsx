@@ -4,7 +4,6 @@ import { render, screen, within } from '@testing-library/react';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { TEST_REPORT_JOB } from '@/components/report/test-fixtures';
 import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
-import { REPORT_ERROR_MESSAGE } from '@/lib/report/constants';
 import { getJobDetailData } from '@/lib/report/get-jobs-page-data';
 import { TEST_COMPANY, TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import {
@@ -12,8 +11,9 @@ import {
   TEST_REPORT_ERROR_MESSAGE,
 } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
-import { JOBS_PAGE_COPY } from '../constants';
 import JobDetailPage from './page';
+import * as detailRoute from './page';
+import JobNotFound from './not-found';
 
 const detailJob = { ...TEST_REPORT_JOB, id: TEST_JOB_ID };
 
@@ -46,6 +46,21 @@ afterEach(() => {
 });
 
 describe('JobDetailPage translation', () => {
+  it('translates the real not-found boundary and preserves the jobs link', () => {
+    document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
+    const { jobs } = messagesFor('pt-BR');
+    render(
+      <I18nProvider>
+        <JobNotFound />
+      </I18nProvider>,
+    );
+    expect(screen.getByText(jobs.notFound)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: jobs.backToJobs })).toHaveAttribute(
+      'href',
+      '/jobs',
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
   it('translates known generated reasons while preserving technology names and unknown text', async () => {
     document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
     const unchangedReasons = [...detailJob.technologies, ...detailJob.reasons];
@@ -69,22 +84,12 @@ describe('JobDetailPage translation', () => {
     ]);
   });
 
-  it.each([
-    { data: { job: null }, hasError: true },
-    { data: { job: null }, hasError: false },
-    { data: { job: detailJob }, hasError: false },
-  ])(
+  it.each([{ data: { job: detailJob } }])(
     'translates the detail state without altering original content',
-    async ({ data, hasError }) => {
-      const { jobs, report } = messagesFor('pt-BR');
+    async ({ data }) => {
+      const { jobs } = messagesFor('pt-BR');
       document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
-      if (hasError) {
-        vi.mocked(getJobDetailData).mockRejectedValueOnce(
-          new Error(TEST_REPORT_ERROR_MESSAGE),
-        );
-      } else {
-        vi.mocked(getJobDetailData).mockResolvedValue(data);
-      }
+      vi.mocked(getJobDetailData).mockResolvedValue(data);
       const page = JobDetailPage({
         params: Promise.resolve({ id: detailJob.id }),
       });
@@ -92,21 +97,12 @@ describe('JobDetailPage translation', () => {
       expect(
         screen.getByRole('link', { name: jobs.backToJobs }),
       ).toHaveAttribute('href', '/jobs');
-      if (hasError) {
-        expect(screen.getByRole('alert')).toHaveTextContent(report.error);
-        expect(
-          screen.queryByText(TEST_REPORT_ERROR_MESSAGE),
-        ).not.toBeInTheDocument();
-      } else if (!data.job) {
-        expect(screen.getByText(jobs.notFound)).toBeInTheDocument();
-      } else {
-        expect(
-          screen.getByRole('heading', { level: 1, name: data.job.title }),
-        ).toBeInTheDocument();
-        expect(screen.getByText(jobs.whyRelevant)).toBeInTheDocument();
-        for (const reason of data.job.reasons) {
-          expect(screen.getByText(reason)).toBeInTheDocument();
-        }
+      expect(
+        screen.getByRole('heading', { level: 1, name: data.job.title }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(jobs.whyRelevant)).toBeInTheDocument();
+      for (const reason of data.job.reasons) {
+        expect(screen.getByText(reason)).toBeInTheDocument();
       }
       expect(getJobDetailData).toHaveBeenLastCalledWith(detailJob.id);
     },
@@ -130,16 +126,11 @@ describe('JobDetailPage cache boundary', () => {
   });
 
   it.each(MALFORMED_IDS)(
-    'renders not found without calling the reader for malformed id %j',
+    'throws notFound without calling the reader for malformed id %j',
     async (id) => {
-      render(
-        await resolvePageSection(
-          JobDetailPage({ params: Promise.resolve({ id }) }),
-        ),
-      );
-
-      expect(screen.getByText(JOBS_PAGE_COPY.notFound)).toBeInTheDocument();
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      await expect(
+        resolvePageSection(JobDetailPage({ params: Promise.resolve({ id }) })),
+      ).rejects.toMatchObject({ digest: 'NEXT_HTTP_ERROR_FALLBACK;404' });
       expect(getJobDetailData).not.toHaveBeenCalled();
     },
   );
@@ -148,18 +139,17 @@ describe('JobDetailPage cache boundary', () => {
     'lowercases valid version %i UUIDs before looking up even unknown jobs',
     async (version) => {
       const id = TEST_JOB_ID.replace('-4789-', `-${version}789-`);
-      render(
-        await resolvePageSection(
+      await expect(
+        resolvePageSection(
           JobDetailPage({ params: Promise.resolve({ id: id.toUpperCase() }) }),
         ),
-      );
+      ).rejects.toMatchObject({ digest: 'NEXT_HTTP_ERROR_FALLBACK;404' });
 
       expect(getJobDetailData).toHaveBeenCalledExactlyOnceWith(id);
-      expect(screen.getByText(JOBS_PAGE_COPY.notFound)).toBeInTheDocument();
     },
   );
 
-  it('shows only a generic alert on failure and recovers on the next invocation', async () => {
+  it('propagates the original failure rather than notFound and recovers on the next request', async () => {
     const props = { params: Promise.resolve({ id: TEST_JOB_ID }) };
     vi.mocked(getJobDetailData)
       .mockRejectedValueOnce(new Error(TEST_REPORT_ERROR_MESSAGE))
@@ -175,15 +165,10 @@ describe('JobDetailPage cache boundary', () => {
         },
       });
 
-    const section = resolvePageSection(JobDetailPage(props));
-    await expect(section).resolves.toBeDefined();
-    const { rerender } = render(await section);
-
-    expect(screen.getByRole('alert').textContent).toBe(REPORT_ERROR_MESSAGE);
-    expect(screen.queryByText(JOBS_PAGE_COPY.notFound)).not.toBeInTheDocument();
-    expect(screen.queryByText(TEST_JOB.title)).not.toBeInTheDocument();
-
-    rerender(await resolvePageSection(JobDetailPage(props)));
+    await expect(resolvePageSection(JobDetailPage(props))).rejects.toThrow(
+      TEST_REPORT_ERROR_MESSAGE,
+    );
+    render(await resolvePageSection(JobDetailPage(props)));
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     expect(
@@ -193,5 +178,52 @@ describe('JobDetailPage cache boundary', () => {
       [TEST_JOB_ID],
       [TEST_JOB_ID],
     ]);
+  });
+
+  it.each(MALFORMED_IDS)(
+    'rejects malformed metadata id %j before any database read',
+    async (id) => {
+      expect(detailRoute).toHaveProperty(
+        'generateMetadata',
+        expect.any(Function),
+      );
+      await expect(
+        detailRoute.generateMetadata({ params: Promise.resolve({ id }) }),
+      ).rejects.toMatchObject({ digest: 'NEXT_HTTP_ERROR_FALLBACK;404' });
+      expect(getJobDetailData).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects unavailable job metadata but preserves database failures', async () => {
+    expect(detailRoute).toHaveProperty(
+      'generateMetadata',
+      expect.any(Function),
+    );
+    const props = { params: Promise.resolve({ id: TEST_JOB_ID }) };
+    await expect(detailRoute.generateMetadata(props)).rejects.toMatchObject({
+      digest: 'NEXT_HTTP_ERROR_FALLBACK;404',
+    });
+    const error = new Error(TEST_REPORT_ERROR_MESSAGE);
+    vi.mocked(getJobDetailData).mockRejectedValueOnce(error);
+    await expect(detailRoute.generateMetadata(props)).rejects.toBe(error);
+  });
+
+  it('uses the full detail read for factual job metadata and a normalized self canonical', async () => {
+    expect(detailRoute).toHaveProperty(
+      'generateMetadata',
+      expect.any(Function),
+    );
+    vi.mocked(getJobDetailData).mockResolvedValueOnce({ job: detailJob });
+    const metadata = await detailRoute.generateMetadata({
+      params: Promise.resolve({ id: TEST_JOB_ID.toUpperCase() }),
+    });
+    expect(metadata).toMatchObject({
+      title: `${detailJob.title} at ${detailJob.companyName}`,
+      alternates: { canonical: `/jobs/${TEST_JOB_ID}` },
+      robots: { index: true, follow: true },
+    });
+    expect(metadata.description).toContain(detailJob.title);
+    expect(metadata.description).toContain(detailJob.companyName);
+    expect(getJobDetailData).toHaveBeenCalledExactlyOnceWith(TEST_JOB_ID);
   });
 });

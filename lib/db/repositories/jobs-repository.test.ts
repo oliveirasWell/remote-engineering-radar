@@ -164,6 +164,60 @@ describe('createJobsRepository', () => {
       jobsRepository.findBySourceJobId(TEST_JOB.source, 'present-job'),
     ).resolves.toMatchObject({ isActive: true });
   });
+
+  it('batch retires only active requested IDs in the specified source', async () => {
+    const db = await createTestDb();
+    const jobsRepository = createJobsRepository(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobs = await Promise.all(
+      [true, true, false, true].map((isActive, index) =>
+        jobsRepository.create({
+          ...TEST_JOB,
+          companyId: company.id,
+          sourceJobId: `${TEST_JOB.sourceJobId}-${index}`,
+          technologies: [...TEST_JOB.technologies],
+          isActive,
+        }),
+      ),
+    );
+    const otherSource = await jobsRepository.create({
+      ...TEST_JOB,
+      source: `${TEST_JOB.source}-other`,
+      sourceJobId: jobs[0]!.sourceJobId,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const updateManyAndReturn = vi.spyOn(db.job, 'updateManyAndReturn');
+
+    await expect(
+      jobsRepository.deactivateBySourceJobIds(TEST_JOB.source, []),
+    ).resolves.toEqual([]);
+    expect(updateManyAndReturn).not.toHaveBeenCalled();
+
+    const sourceJobIds = [
+      ...jobs.slice(0, 3).map((job) => job.sourceJobId),
+      ...Array.from(
+        { length: 1_000 },
+        (_, index) => `${TEST_JOB.sourceJobId}-missing-${index}`,
+      ),
+    ];
+    await expect(
+      jobsRepository.deactivateBySourceJobIds(TEST_JOB.source, sourceJobIds),
+    ).resolves.toEqual([{ companyId: company.id }, { companyId: company.id }]);
+    expect(updateManyAndReturn).toHaveBeenCalledTimes(1);
+    for (const job of jobs.slice(0, 2)) {
+      await expect(jobsRepository.findById(job.id)).resolves.toMatchObject({
+        isActive: false,
+      });
+    }
+    for (const job of [...jobs.slice(2), otherSource]) {
+      await expect(jobsRepository.findById(job.id)).resolves.toEqual(job);
+    }
+    await expect(
+      jobsRepository.deactivateBySourceJobIds(TEST_JOB.source, sourceJobIds),
+    ).resolves.toEqual([]);
+  });
+
   it('lists recent card rows for many companies without shipping descriptions', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);
