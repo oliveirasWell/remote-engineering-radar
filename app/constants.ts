@@ -1,4 +1,6 @@
-export const APP_NAME = 'Remote Engineering Radar';
+import { EN_MESSAGES } from '@/lib/i18n/messages';
+
+export const APP_NAME = EN_MESSAGES.app.name;
 
 export const FOCUS_TECHNOLOGIES = [
   'React',
@@ -8,9 +10,4 @@ export const FOCUS_TECHNOLOGIES = [
   'React Native',
 ] as const;
 
-const lastFocusTechnology =
-  FOCUS_TECHNOLOGIES[FOCUS_TECHNOLOGIES.length - 1] ?? '';
-
-export const FOCUS_STACK_LABEL = `${FOCUS_TECHNOLOGIES.slice(0, -1).join(', ')}, and ${lastFocusTechnology}`;
-
-export const APP_DESCRIPTION = `Automated job intelligence for remote senior frontend and fullstack roles in ${FOCUS_STACK_LABEL}.`;
+export const APP_DESCRIPTION = EN_MESSAGES.app.description;

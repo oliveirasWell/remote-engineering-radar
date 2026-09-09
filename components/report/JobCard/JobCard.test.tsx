@@ -3,28 +3,115 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { JobCard } from './JobCard';
 import { HIDDEN_JOBS_STORAGE_KEY, JOB_CARD_COPY } from '../constants';
+import { TEST_REPORT_JOB } from '../test-fixtures';
+import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
+import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
+import { formatRelativeTime } from '@/lib/report/format';
 
-const job = {
-  id: 'job-1',
-  title: 'Senior Frontend Engineer',
-  companyName: 'Acme Robotics',
-  companyId: 'company-1',
-  technologies: ['React', 'TypeScript', 'GraphQL'],
-  location: 'LATAM',
-  remotePolicy: 'remote',
-  score: 94,
-  reasons: ['React', 'TypeScript', 'GraphQL', 'Senior', 'Remote'],
-  postedAt: new Date('2026-08-26T06:00:00Z'),
-  url: 'https://example.com/jobs/1',
+const job = TEST_REPORT_JOB;
+const UNKNOWN_REMOTE_POLICY = 'Remote within selected time zones';
+const COMPANY_NAME_FALLBACK = {
+  en: 'Unknown company',
+  'pt-BR': 'Empresa desconhecida',
 };
 
+afterEach(() => {
+  document.cookie = `${LOCALE_COOKIE}=; path=/; max-age=0`;
+});
+
 describe('JobCard', () => {
+  it('translates actions, confirmation, and relative time without translating job data', () => {
+    const locale = 'pt-BR';
+    const { jobCard, remote } = messagesFor(locale);
+    document.cookie = `${LOCALE_COOKIE}=${locale}; path=/`;
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(
+      <I18nProvider>
+        <JobCard job={job} />
+      </I18nProvider>,
+    );
+    expect(
+      screen.getByRole('link', { name: jobCard.viewOriginal }),
+    ).toHaveAttribute('href', job.url);
+    expect(
+      screen.getByText(
+        `${jobCard.postedLabel}: ${formatRelativeTime(job.postedAt, new Date(), locale)}`,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText(job.title)).toBeInTheDocument();
+    expect(screen.getByText(job.companyName)).toBeInTheDocument();
+    expect(
+      screen.getByText([remote.remote, job.location].join(' · ')),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: jobCard.hideAction }));
+    expect(window.confirm).toHaveBeenCalledWith(jobCard.hideConfirmation);
+    expect(screen.getByText(job.title)).toBeInTheDocument();
+  });
+
   beforeEach(() => {
     localStorage.clear();
     vi.restoreAllMocks();
   });
 
-  it('renders reasons and original job link without exposing the score', () => {
+  it.each(Object.entries(messagesFor('pt-BR').remote))(
+    'translates the recognized remote policy %s without changing location',
+    (policy, label) => {
+      document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
+      render(
+        <I18nProvider>
+          <JobCard job={{ ...job, remotePolicy: policy }} />
+        </I18nProvider>,
+      );
+      expect(
+        screen.getByText([label, job.location].join(' · ')),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it.each([UNKNOWN_REMOTE_POLICY, null])(
+    'preserves unknown remote policy %s and the original location',
+    (policy) => {
+      document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
+      render(
+        <I18nProvider>
+          <JobCard job={{ ...job, remotePolicy: policy }} />
+        </I18nProvider>,
+      );
+      expect(
+        screen.getByText([policy, job.location].filter(Boolean).join(' · ')),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it.each(['en', 'pt-BR'] as const)(
+    'renders the missing-company fallback in %s',
+    (locale) => {
+      document.cookie = `${LOCALE_COOKIE}=${locale}; path=/`;
+      render(
+        <I18nProvider>
+          <JobCard job={{ ...job, companyName: null }} />
+        </I18nProvider>,
+      );
+      expect(
+        screen.getByText(COMPANY_NAME_FALLBACK[locale]),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it('preserves an actual company named like the English fallback', () => {
+    document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
+    render(
+      <I18nProvider>
+        <JobCard job={{ ...job, companyName: COMPANY_NAME_FALLBACK.en }} />
+      </I18nProvider>,
+    );
+    expect(screen.getByText(COMPANY_NAME_FALLBACK.en)).toBeInTheDocument();
+    expect(
+      screen.queryByText(COMPANY_NAME_FALLBACK['pt-BR']),
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders the original job link without exposing the score', () => {
     render(<JobCard job={job} />);
 
     expect(
@@ -34,8 +121,6 @@ describe('JobCard', () => {
     expect(
       screen.queryByText((content) => content.includes(String(job.score))),
     ).not.toBeInTheDocument();
-    expect(screen.getByText(JOB_CARD_COPY.whyRelevant)).toBeInTheDocument();
-    expect(screen.getByText('React')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: JOB_CARD_COPY.viewOriginal }),
     ).toHaveAttribute('href', job.url);

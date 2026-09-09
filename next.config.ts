@@ -1,6 +1,11 @@
 import type { NextConfig } from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
+  cacheComponents: true,
+  // Gate UA document responses on metadata reads for real 404/500s, not a 200 PPR shell.
+  // Data caching is unchanged; Next bypasses this gate for missing/empty User-Agent.
+  htmlLimitedBots: /.*/,
   reactCompiler: true,
   poweredByHeader: false,
   headers: async () => [
@@ -26,4 +31,12 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: 'wellington-oliveira',
+  project: 'remote-engineering-radar',
+  silent: !process.env.CI,
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+});

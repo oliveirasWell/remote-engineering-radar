@@ -1,0 +1,56 @@
+{
+  "data": [
+    {
+      "id": "senior-react-engineer-acme-remote",
+      "type": "job",
+      "attributes": {
+        "title": "Senior React Engineer",
+        "description_headline": "Build with React",
+        "description": "React and TypeScript required.",
+        "functions": "Ship frontend features.",
+        "remote": true,
+        "remote_modality": "remote_local",
+        "countries": ["Brazil"],
+        "published_at": 1788204027,
+        "company": {
+          "data": {
+            "attributes": {
+              "name": "Acme Latam",
+              "web": "https://acme.example"
+            }
+          }
+        }
+      },
+      "links": {
+        "public_url": "https://www.getonbrd.com/jobs/senior-react-engineer-acme-remote"
+      }
+    },
+    {
+      "id": "hybrid-role-acme",
+      "type": "job",
+      "attributes": {
+        "title": "Hybrid Engineer",
+        "description": "Onsite required.",
+        "remote": true,
+        "remote_modality": "hybrid",
+        "countries": ["Chile"],
+        "published_at": 1788204027,
+        "company": {
+          "data": {
+            "attributes": {
+              "name": "Acme Latam"
+            }
+          }
+        }
+      },
+      "links": {
+        "public_url": "https://www.getonbrd.com/jobs/hybrid-role-acme"
+      }
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "per_page": 100,
+    "total_pages": 1
+  }
+}

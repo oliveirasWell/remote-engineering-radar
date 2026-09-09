@@ -1,6 +1,7 @@
 import {
   RELEVANT_TECHNOLOGY_NAMES,
   TECHNOLOGY_PATTERNS,
+  UNRELATED_ROLE_PATTERNS,
   UNRELATED_STACK_PATTERNS,
 } from './constants';
 import type { JobClassification } from './types';
@@ -64,9 +65,7 @@ const classifyGeography = (
   haystack: string,
 ): JobClassification['geography'] => {
   const geography: JobClassification['geography'] = [];
-  if (
-    /\bbrazil\b|\bbrasil\b|\blatam\b.*brazil|\bs[ãa]o paulo\b/i.test(haystack)
-  ) {
+  if (/\bbrazil\b|\bbrasil\b|\bs[ãa]o paulo\b/i.test(haystack)) {
     geography.push('brazil');
   }
   if (/\blatam\b|\blatin america\b|\bsouth america\b/i.test(haystack)) {
@@ -138,6 +137,14 @@ const isUnrelatedStack = (
   return UNRELATED_STACK_PATTERNS.some((pattern) => pattern.test(haystack));
 };
 
+const isUnrelatedRole = (title: string): boolean =>
+  UNRELATED_ROLE_PATTERNS.some((pattern) => pattern.test(title));
+
+export const shouldPersistClassifiedJob = (
+  classification: JobClassification,
+): boolean =>
+  !classification.isUnrelatedRole && !classification.isUnrelatedStack;
+
 export const classifyJob = (input: ClassifyJobInput): JobClassification => {
   const haystack = buildHaystack(input);
   const technologies = extractTechnologies(input, haystack);
@@ -149,6 +156,7 @@ export const classifyJob = (input: ClassifyJobInput): JobClassification => {
     geography: classifyGeography(haystack),
     roleFocus: classifyRoleFocus(haystack),
     isUnrelatedStack: isUnrelatedStack(technologies, haystack),
+    isUnrelatedRole: isUnrelatedRole(input.title),
     requiresRelocation: /\brelocati(on|e)\b/i.test(haystack),
   };
 };

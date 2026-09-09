@@ -3,7 +3,7 @@
 Eval-driven build, executed **one spec at a time**. All code, comments, test names,
 commit messages, and documentation are in **English**.
 
-Execution order: `001` → `002` → `003` → … → `013` (see project brief).
+Execution order: `001` → `002` → `003` → … → `014` (see project brief).
 
 Completed:
 
@@ -20,6 +20,7 @@ Completed:
 - [SPEC-011](011-jobs-page.md) — jobs page
 - [SPEC-012](012-company-page.md) — companies page
 - [SPEC-013](013-automated-ingestion.md) — automated ingestion
+- [SPEC-014](014-observability.md) — observability (GA4, Sentry, UptimeRobot)
 
 ---
 

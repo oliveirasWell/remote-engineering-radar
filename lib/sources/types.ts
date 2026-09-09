@@ -11,11 +11,16 @@ export type NormalizedJob = {
   remotePolicy?: string;
   description?: string;
   technologies: string[];
+  countries?: string[];
   seniority?: string;
   postedAt?: Date;
 };
 
 export type JobSource = {
   name: string;
-  fetchJobs: () => Promise<NormalizedJob[]>;
+  fetchJobs: () => Promise<{
+    jobs: NormalizedJob[];
+    /** Only exhaustive snapshots may retire jobs absent from this fetch. */
+    complete: boolean;
+  }>;
 };

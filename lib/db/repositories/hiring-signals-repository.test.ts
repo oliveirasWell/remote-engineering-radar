@@ -36,6 +36,9 @@ describe('createHiringSignalsRepository', () => {
     await expect(
       hiringSignalsRepository.findById(created.id),
     ).resolves.toBeNull();
+    await expect(hiringSignalsRepository.deleteById(created.id)).resolves.toBe(
+      false,
+    );
   });
 
   it('replaces signals and hiring score atomically', async () => {
@@ -71,5 +74,25 @@ describe('createHiringSignalsRepository', () => {
     ).resolves.toMatchObject({
       hiringScore: 20,
     });
+  });
+
+  it('supports an empty replacement and updates the company score', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const hiringSignalsRepository = createHiringSignalsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+    await hiringSignalsRepository.create({
+      ...TEST_HIRING_SIGNAL,
+      companyId: company.id,
+    });
+
+    await hiringSignalsRepository.replaceForCompany(company.id, [], 0);
+
+    await expect(
+      hiringSignalsRepository.listByCompanyId(company.id),
+    ).resolves.toEqual([]);
+    await expect(
+      companiesRepository.findById(company.id),
+    ).resolves.toMatchObject({ hiringScore: 0 });
   });
 });

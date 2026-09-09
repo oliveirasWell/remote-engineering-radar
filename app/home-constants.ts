@@ -1,7 +1,3 @@
-import { FOCUS_STACK_LABEL } from './constants';
+import { EN_MESSAGES } from '@/lib/i18n/messages';
 
-export const HOME_SECTIONS = {
-  subtitle: `Senior frontend and fullstack jobs in ${FOCUS_STACK_LABEL}.`,
-  newOpportunities: 'New opportunities',
-  companiesToWatch: 'Companies to watch',
-} as const;
+export const HOME_SECTIONS = EN_MESSAGES.home;

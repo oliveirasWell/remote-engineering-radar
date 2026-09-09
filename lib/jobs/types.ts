@@ -1,3 +1,5 @@
+import type { JobGeography } from '@/lib/classification/types';
+
 export type Job = {
   id: string;
   companyId: string;
@@ -9,6 +11,8 @@ export type Job = {
   remotePolicy: string | null;
   description: string | null;
   technologies: string[];
+  geographies: JobGeography[];
+  countries: string[];
   seniority: string | null;
   score: number;
   postedAt: Date | null;
@@ -18,6 +22,15 @@ export type Job = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+/**
+ * Projection used by every list read. Excludes `description`, by far the
+ * largest column, which no list view renders.
+ */
+export type JobCard = Omit<
+  Job,
+  'description' | 'lastSeenAt' | 'createdAt' | 'updatedAt'
+>;
 
 export type NewJob = {
   companyId: string;
@@ -29,6 +42,8 @@ export type NewJob = {
   remotePolicy?: string | null;
   description?: string | null;
   technologies?: string[];
+  geographies?: JobGeography[];
+  countries?: string[];
   seniority?: string | null;
   score?: number;
   postedAt?: Date | null;
