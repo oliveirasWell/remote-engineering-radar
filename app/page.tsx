@@ -3,9 +3,16 @@ import { CompanySummary } from '@/components/report/CompanySummary/CompanySummar
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
-import { EMPTY_COMPANIES_MESSAGE } from '@/lib/report/constants';
+import {
+  EMPTY_COMPANIES_MESSAGE,
+  REPORT_ERROR_MESSAGE,
+} from '@/lib/report/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
-import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import {
+  getCompaniesPageData,
+  type CompaniesPageData,
+} from '@/lib/report/get-companies-page-data';
+import { parseCountryFilter } from '@/lib/report/parse-country-filter';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import Link from 'next/link';
 import { Suspense } from 'react';
@@ -28,7 +35,16 @@ const CompaniesSection = async ({
   searchParams: HomeProps['searchParams'];
 }) => {
   const params = await searchParams;
-  const data = await getCompaniesPageData({ country: params.country });
+  const country = parseCountryFilter(params.country);
+  let data: CompaniesPageData;
+  let errorMessage: string | undefined;
+
+  try {
+    data = await getCompaniesPageData({ country });
+  } catch {
+    data = { companies: [], country, updatedAt: null };
+    errorMessage = REPORT_ERROR_MESSAGE;
+  }
 
   return (
     <>
@@ -63,9 +79,9 @@ const CompaniesSection = async ({
           </Link>
         ))}
       </nav>
-      {data.errorMessage ? (
+      {errorMessage ? (
         <p className="text-sm text-destructive" role="alert">
-          {data.errorMessage}
+          {errorMessage}
         </p>
       ) : null}
 

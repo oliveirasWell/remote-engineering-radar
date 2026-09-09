@@ -4,14 +4,9 @@ import { createCompaniesRepository } from '@/lib/db/repositories/companies-repos
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
-import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
-import {
-  COMPANIES_PAGE_LIMIT,
-  REPORT_CACHE_LIFE,
-  REPORT_ERROR_MESSAGE,
-} from './constants';
+import { JOB_MAX_AGE_MS, type JobCountrySlug } from '@/lib/jobs/constants';
+import { COMPANIES_PAGE_LIMIT, REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
-import { parseCountryFilter } from './parse-country-filter';
 import type { ReportCompanyCard, ReportJobCard } from './types';
 
 export type CompaniesPageItem = ReportCompanyCard & {
@@ -21,13 +16,12 @@ export type CompaniesPageItem = ReportCompanyCard & {
 
 export type CompaniesPageData = {
   companies: CompaniesPageItem[];
-  country?: string;
+  country?: JobCountrySlug;
   updatedAt: Date | null;
-  errorMessage?: string;
 };
 
 export type CompaniesPageOptions = {
-  country?: string | string[];
+  country?: JobCountrySlug;
 };
 
 const groupByCompanyId = <T extends { companyId: string }>(
@@ -53,7 +47,7 @@ export const getCompaniesPageData = async (
   'use cache';
   cacheLife(REPORT_CACHE_LIFE);
 
-  const country = parseCountryFilter(options.country);
+  const { country } = options;
 
   try {
     const db = getDb();
@@ -126,11 +120,6 @@ export const getCompaniesPageData = async (
     return { companies: items, country, updatedAt };
   } catch (error) {
     logReportError('companies', error);
-    return {
-      companies: [],
-      country,
-      updatedAt: null,
-      errorMessage: REPORT_ERROR_MESSAGE,
-    };
+    throw error;
   }
 };
