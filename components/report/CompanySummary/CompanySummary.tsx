@@ -1,7 +1,8 @@
-import { HOME_SECTIONS } from '@/app/home-constants';
+'use client';
+
+import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { COMPANY_KINDS } from '@/lib/companies/constants';
 import type { ReportCompanyCard } from '@/lib/report/types';
-import { COMPANY_CARD_COPY } from '../constants';
 
 type CompanySummaryProps = {
   company: ReportCompanyCard;
@@ -12,9 +13,10 @@ type CompanySummaryProps = {
  * scannable when a single company has dozens of open roles.
  */
 export const CompanySummary = ({ company }: CompanySummaryProps) => {
+  const { messages } = useI18n();
   const kindLabel =
     company.kind !== COMPANY_KINDS.product
-      ? COMPANY_CARD_COPY.kindLabels[company.kind]
+      ? messages.companyCard.kindLabels[company.kind]
       : null;
 
   return (
@@ -26,7 +28,7 @@ export const CompanySummary = ({ company }: CompanySummaryProps) => {
         <span className="text-sm text-muted-foreground">{kindLabel}</span>
       ) : null}
       <span className="text-sm text-muted-foreground">
-        {HOME_SECTIONS.openRoles(company.openEngineeringJobs)}
+        {messages.home.openRoles(company.openEngineeringJobs)}
       </span>
     </div>
   );

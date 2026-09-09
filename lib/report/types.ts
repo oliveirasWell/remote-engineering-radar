@@ -3,7 +3,7 @@ import type { CompanyKind } from '@/lib/companies/constants';
 export type ReportJobCard = {
   id: string;
   title: string;
-  companyName: string;
+  companyName: string | null;
   companyId: string;
   technologies: string[];
   location: string | null;

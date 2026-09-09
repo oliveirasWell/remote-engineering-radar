@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { useSyncExternalStore } from 'react';
+import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import type { ReportJobCard } from '@/lib/report/types';
 import { formatRelativeTime } from '@/lib/report/format';
-import { JOB_CARD_COPY } from '../constants';
 import { hiddenJobsStore } from './hidden-jobs-store';
 
 type JobCardProps = {
@@ -13,15 +13,22 @@ type JobCardProps = {
 };
 
 export const JobCard = ({ job }: JobCardProps) => {
+  const {
+    locale,
+    messages: { jobCard, remote },
+  } = useI18n();
   const isHidden = useSyncExternalStore(
     hiddenJobsStore.subscribe,
     () => hiddenJobsStore.has(job.id),
     () => false,
   );
-  const meta = [job.remotePolicy, job.location].filter(Boolean).join(' · ');
+  const remotePolicy =
+    new Map(Object.entries(remote)).get(job.remotePolicy ?? '') ??
+    job.remotePolicy;
+  const meta = [remotePolicy, job.location].filter(Boolean).join(' · ');
 
   const handleHide = () => {
-    if (window.confirm(JOB_CARD_COPY.hideConfirmation)) {
+    if (window.confirm(jobCard.hideConfirmation)) {
       hiddenJobsStore.hide(job.id);
     }
   };
@@ -40,7 +47,9 @@ export const JobCard = ({ job }: JobCardProps) => {
           {job.title}
         </Link>
       </h3>
-      <p className="mt-1 text-sm text-muted-foreground">{job.companyName}</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {job.companyName ?? jobCard.unknownCompany}
+      </p>
       {job.technologies.length > 0 ? (
         <p className="mt-2 text-sm">{job.technologies.join(' · ')}</p>
       ) : null}
@@ -48,7 +57,8 @@ export const JobCard = ({ job }: JobCardProps) => {
         <p className="mt-1 text-sm text-muted-foreground">{meta}</p>
       ) : null}
       <p className="mt-1 text-sm text-muted-foreground">
-        {JOB_CARD_COPY.postedLabel}: {formatRelativeTime(job.postedAt)}
+        {jobCard.postedLabel}:{' '}
+        {formatRelativeTime(job.postedAt, undefined, locale)}
       </p>
       <div className="mt-3 flex items-center gap-4">
         {isSafeExternalUrl(job.url) ? (
@@ -58,7 +68,7 @@ export const JobCard = ({ job }: JobCardProps) => {
             rel="noreferrer"
             className="text-sm text-muted-foreground underline underline-offset-2"
           >
-            {JOB_CARD_COPY.viewOriginal}
+            {jobCard.viewOriginal}
           </a>
         ) : null}
         <button
@@ -66,7 +76,7 @@ export const JobCard = ({ job }: JobCardProps) => {
           className="text-sm text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
           onClick={handleHide}
         >
-          {JOB_CARD_COPY.hideAction}
+          {jobCard.hideAction}
         </button>
       </div>
     </article>
