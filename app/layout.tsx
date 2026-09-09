@@ -5,6 +5,7 @@ import { GoogleAnalytics } from '@/components/observability/GoogleAnalytics/Goog
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { SiteHeader } from '@/components/site/SiteHeader/SiteHeader';
 import { SiteFooter } from '@/components/site/SiteFooter/SiteFooter';
+import { siteOrigin } from '@/lib/seo/site-origin/site-origin';
 import { APP_DESCRIPTION, APP_NAME } from './constants';
 import './globals.css';
 
@@ -14,6 +15,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: siteOrigin(),
   title: {
     default: APP_NAME,
     template: `%s | ${APP_NAME}`,

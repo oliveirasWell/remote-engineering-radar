@@ -60,8 +60,9 @@ describe('createHimalayasAdapter', () => {
     );
     const adapter = createHimalayasAdapter({ fetch: asFetch(fetchMock) });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(false);
     expect(adapter.name).toBe(HIMALAYAS_SOURCE_NAME);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
@@ -74,24 +75,28 @@ describe('createHimalayasAdapter', () => {
     ]);
   });
 
-  it('stops at the page cap', async () => {
+  it('marks a capped cursor feed incomplete', async () => {
     const fetchMock = vi.fn(async () => jsonResponse(page1));
     const adapter = createHimalayasAdapter({
       fetch: asFetch(fetchMock),
       maxPages: 1,
     });
 
-    const jobs = await adapter.fetchJobs();
+    const result = await adapter.fetchJobs();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    expect(jobs).toHaveLength(page1.jobs.length);
+    expect(result).toMatchObject({ complete: false });
+    expect(result.jobs).toHaveLength(page1.jobs.length);
   });
 
   it('drops malformed records without failing the run', async () => {
     const fetchMock = vi.fn(async () => jsonResponse(malformedPage));
     const adapter = createHimalayasAdapter({ fetch: asFetch(fetchMock) });
 
-    await expect(adapter.fetchJobs()).resolves.toEqual([]);
+    await expect(adapter.fetchJobs()).resolves.toEqual({
+      jobs: [],
+      complete: false,
+    });
   });
 
   it('throws when the response is not ok', async () => {

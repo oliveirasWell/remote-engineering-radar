@@ -11,6 +11,7 @@ import {
 import { renderToString } from 'react-dom/server';
 import { hydrateRoot } from 'react-dom/client';
 import { CompanySummary } from '@/components/report/CompanySummary/CompanySummary';
+import { LANGUAGE_OPTIONS } from '@/components/i18n/LanguagePicker/constants';
 import { TEST_REPORT_COMPANY } from '@/components/report/test-fixtures';
 import { HOME_SECTIONS } from './home-constants';
 import { I18N_TEST } from './i18n-fixtures';
@@ -19,6 +20,7 @@ import GlobalError from './global-error';
 import { messagesFor } from '@/lib/i18n/messages';
 
 vi.mock('next/font/google', () => ({ Geist: () => ({ variable: '' }) }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/' }));
 vi.mock('@/components/observability/GoogleAnalytics/GoogleAnalytics', () => ({
   GoogleAnalytics: () => null,
 }));
@@ -34,7 +36,7 @@ afterEach(() => {
 });
 
 describe('site language and navigation', () => {
-  it('shares an About button, language picker, and safe repository footer', () => {
+  it('shares navigation, PT/EN toggle buttons, and a safe repository footer', () => {
     render(<RootLayout>{content}</RootLayout>, { container: document });
 
     const header = within(screen.getByRole('banner'));
@@ -42,9 +44,20 @@ describe('site language and navigation', () => {
       'href',
       '/about',
     );
-    expect(
-      header.getByRole('combobox', { name: I18N_TEST.language }),
-    ).toHaveValue(I18N_TEST.english);
+    const languages = within(
+      header.getByRole('group', { name: I18N_TEST.language }),
+    );
+    expect(languages.getAllByRole('button')).toHaveLength(2);
+    expect(header.queryByRole('combobox')).not.toBeInTheDocument();
+    for (const { value, label } of LANGUAGE_OPTIONS) {
+      const button = languages.getByRole('button', {
+        name: messagesFor().navigation.languages[value],
+        pressed: value === I18N_TEST.english,
+      });
+      expect(button).toHaveTextContent(label);
+      expect(button).toHaveAttribute('lang', value);
+      expect(button).toHaveClass('min-h-[44px]', 'min-w-[44px]');
+    }
     const github = within(screen.getByRole('contentinfo')).getByRole('link', {
       name: I18N_TEST.github,
     });
@@ -56,30 +69,48 @@ describe('site language and navigation', () => {
   it('switches copy and html language and persists exactly the requested cookie attributes', () => {
     render(<RootLayout>{content}</RootLayout>, { container: document });
     const cookie = vi.spyOn(document, 'cookie', 'set');
-    fireEvent.change(
-      screen.getByRole('combobox', { name: I18N_TEST.language }),
-      {
-        target: { value: I18N_TEST.portuguese },
-      },
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: messagesFor().navigation.languages[I18N_TEST.portuguese],
+      }),
     );
 
     expect(cookie).toHaveBeenCalledWith(
       `${I18N_TEST.cookieName}=${I18N_TEST.portuguese}; path=/; max-age=31536000; SameSite=Lax`,
     );
     expect(document.documentElement.lang).toBe(I18N_TEST.portuguese);
+    expect(screen.getByRole('button', { pressed: true })).toHaveClass(
+      'bg-primary',
+      'text-primary-foreground',
+      'font-semibold',
+    );
+    expect(screen.getByRole('button', { pressed: false })).not.toHaveClass(
+      'bg-primary',
+    );
     expect(screen.getByText(I18N_TEST.portugueseOpenRoles)).toBeInTheDocument();
     expect(screen.getByText(TEST_REPORT_COMPANY.name)).toBeInTheDocument();
 
     cleanup();
     render(<RootLayout>{content}</RootLayout>, { container: document });
     expect(screen.getByText(I18N_TEST.portugueseOpenRoles)).toBeInTheDocument();
-    fireEvent.change(
-      screen.getByRole('combobox', { name: I18N_TEST.portugueseLanguage }),
-      {
-        target: { value: I18N_TEST.english },
-      },
+    expect(
+      screen.getByRole('button', {
+        name: messagesFor().navigation.languages[I18N_TEST.portuguese],
+        pressed: true,
+      }),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', {
+        name: messagesFor().navigation.languages[I18N_TEST.english],
+      }),
     );
     expect(document.documentElement.lang).toBe(I18N_TEST.english);
+    expect(
+      screen.getByRole('button', {
+        name: messagesFor().navigation.languages[I18N_TEST.english],
+        pressed: true,
+      }),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         HOME_SECTIONS.openRoles(TEST_REPORT_COMPANY.openEngineeringJobs),
@@ -144,8 +175,8 @@ describe('site language and navigation', () => {
 
   it('restores translation independently when the global error replaces the layout', () => {
     document.cookie = `${I18N_TEST.cookieName}=${I18N_TEST.portuguese}; path=/`;
-    const reset = vi.fn();
-    render(<GlobalError error={I18N_TEST.error} reset={reset} />, {
+    const retry = vi.fn();
+    render(<GlobalError error={I18N_TEST.error} retry={retry} />, {
       container: document,
     });
     expect(
@@ -160,6 +191,6 @@ describe('site language and navigation', () => {
         name: messagesFor(I18N_TEST.portuguese).globalError.retry,
       }),
     );
-    expect(reset).toHaveBeenCalledOnce();
+    expect(retry).toHaveBeenCalledOnce();
   });
 });

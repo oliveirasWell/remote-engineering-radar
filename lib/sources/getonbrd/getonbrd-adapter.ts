@@ -69,16 +69,12 @@ const fetchAllJobs = async (
   jobsPerPage: number,
   maxPages: number,
   fetchImpl: typeof fetch,
-): Promise<NormalizedJob[]> => {
+): ReturnType<JobSource['fetchJobs']> => {
   const normalized: NormalizedJob[] = [];
 
   for (let page = 1; page <= maxPages; page += 1) {
     const payload = await fetchJobsPage(page, jobsPerPage, fetchImpl);
     const records = payload.data.filter(isJobRecord);
-
-    if (records.length === 0) {
-      break;
-    }
 
     for (const record of records) {
       const job = normalizeGetOnBrdJob(record);
@@ -92,15 +88,18 @@ const fetchAllJobs = async (
         ? payload.meta.total_pages
         : undefined;
     if (totalPages !== undefined && page >= totalPages) {
-      break;
+      return { jobs: normalized, complete: true };
     }
 
-    if (records.length < jobsPerPage) {
-      break;
+    if (payload.data.length < jobsPerPage && totalPages === undefined) {
+      return { jobs: normalized, complete: true };
+    }
+    if (payload.data.length === 0) {
+      return { jobs: normalized, complete: false };
     }
   }
 
-  return normalized;
+  return { jobs: normalized, complete: false };
 };
 
 export const createGetOnBrdAdapter = (

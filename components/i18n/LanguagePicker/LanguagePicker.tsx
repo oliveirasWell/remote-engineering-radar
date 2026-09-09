@@ -1,29 +1,34 @@
 'use client';
 
-import { isLocale, LOCALES } from '@/lib/i18n/messages';
 import { useI18n } from '../I18nProvider/I18nProvider';
+import { LANGUAGE_OPTIONS } from './constants';
 
 export const LanguagePicker = () => {
   const { locale, messages, setLocale } = useI18n();
 
   return (
-    <label className="flex items-center gap-2 text-sm text-muted-foreground">
-      <span>{messages.navigation.language}</span>
-      <select
-        value={locale}
-        className="min-h-[44px] rounded border border-border bg-card px-2 py-2 text-foreground"
-        onChange={({ target: { value } }) => {
-          if (isLocale(value)) {
-            setLocale(value);
-          }
-        }}
-      >
-        {LOCALES.map((value) => (
-          <option key={value} value={value} lang={value}>
-            {messages.navigation.languages[value]}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div
+      role="group"
+      aria-label={messages.navigation.language}
+      className="inline-flex border border-border p-1 text-sm"
+    >
+      {LANGUAGE_OPTIONS.map(({ value, label }) => (
+        <button
+          key={value}
+          type="button"
+          lang={value}
+          aria-label={messages.navigation.languages[value]}
+          aria-pressed={locale === value}
+          onClick={() => setLocale(value)}
+          className={`min-h-[44px] min-w-[44px] cursor-pointer px-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
+            locale === value
+              ? 'bg-primary font-semibold text-primary-foreground'
+              : 'text-muted-foreground hover:bg-muted/40 hover:text-foreground'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
   );
 };

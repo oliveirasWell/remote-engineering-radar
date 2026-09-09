@@ -18,5 +18,9 @@ export type NormalizedJob = {
 
 export type JobSource = {
   name: string;
-  fetchJobs: () => Promise<NormalizedJob[]>;
+  fetchJobs: () => Promise<{
+    jobs: NormalizedJob[];
+    /** Only exhaustive snapshots may retire jobs absent from this fetch. */
+    complete: boolean;
+  }>;
 };
