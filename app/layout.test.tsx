@@ -118,8 +118,12 @@ describe('site language and navigation', () => {
       'text/html',
     );
     document.body.innerHTML = html.body.innerHTML;
+    document.body.className = html.body.className;
     document.documentElement.className = html.documentElement.className;
     const onRecoverableError = vi.fn();
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
     let root: ReturnType<typeof hydrateRoot>;
     await act(async () => {
       root = hydrateRoot(document, <RootLayout>{content}</RootLayout>, {
@@ -128,6 +132,7 @@ describe('site language and navigation', () => {
     });
     try {
       expect(onRecoverableError).not.toHaveBeenCalled();
+      expect(consoleError).not.toHaveBeenCalled();
       expect(
         screen.getByText(I18N_TEST.portugueseOpenRoles),
       ).toBeInTheDocument();
