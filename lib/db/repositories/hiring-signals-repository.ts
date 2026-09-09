@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { HiringSignal, NewHiringSignal } from '@/lib/hiring-signals/types';
 import type { Db } from '../client';
 import { companies } from '../schema/companies';
@@ -51,6 +51,18 @@ export const createHiringSignalsRepository = (db: Db) => ({
       .select()
       .from(hiringSignals)
       .where(eq(hiringSignals.companyId, companyId));
+    return rows.map(toHiringSignal);
+  },
+
+  listByCompanyIds: async (companyIds: string[]): Promise<HiringSignal[]> => {
+    if (companyIds.length === 0) {
+      return [];
+    }
+
+    const rows = await db
+      .select()
+      .from(hiringSignals)
+      .where(inArray(hiringSignals.companyId, companyIds));
     return rows.map(toHiringSignal);
   },
 

@@ -25,9 +25,3 @@ export type ReportCompanyCard = {
   websiteUrl: string | null;
   openEngineeringJobs: number;
 };
-
-export type HomeReport = {
-  updatedAt: Date | null;
-  companies: ReportCompanyCard[];
-  errorMessage?: string;
-};

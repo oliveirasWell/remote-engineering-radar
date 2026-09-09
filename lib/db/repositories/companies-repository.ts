@@ -82,37 +82,40 @@ export const createCompaniesRepository = (db: Db) => {
     }): Promise<Company[]> => {
       const minimum = options?.minimumHiringScore ?? 0;
       const filters = [gt(companies.hiringScore, minimum)];
+      const now = options?.now ?? new Date();
+      const cutoff =
+        options?.maxJobAgeMs === undefined
+          ? undefined
+          : new Date(now.getTime() - options.maxJobAgeMs);
 
-      if (options?.market === 'brazil') {
-        const now = options.now ?? new Date();
-        const cutoff =
-          options.maxJobAgeMs === undefined
-            ? undefined
-            : new Date(now.getTime() - options.maxJobAgeMs);
-
-        filters.push(
-          exists(
-            db
-              .select({ id: jobs.id })
-              .from(jobs)
-              .where(
-                and(
-                  eq(jobs.companyId, companies.id),
-                  eq(jobs.isActive, true),
-                  ...(cutoff
-                    ? [
-                        sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
-                      ]
-                    : []),
-                  sql`(
+      // Recency applies to every market: without it a company with only stale
+      // jobs still renders as "actively expanding" next to an empty job list.
+      filters.push(
+        exists(
+          db
+            .select({ id: jobs.id })
+            .from(jobs)
+            .where(
+              and(
+                eq(jobs.companyId, companies.id),
+                eq(jobs.isActive, true),
+                ...(cutoff
+                  ? [
+                      sql`coalesce(${jobs.postedAt}, ${jobs.firstSeenAt}) >= ${cutoff}`,
+                    ]
+                  : []),
+                ...(options?.market === 'brazil'
+                  ? [
+                      sql`(
                     ${jobs.geographies} @> ${JSON.stringify(['brazil'])}::jsonb
                     OR ${jobs.geographies} @> ${JSON.stringify(['latam'])}::jsonb
                   )`,
-                ),
+                    ]
+                  : []),
               ),
-          ),
-        );
-      }
+            ),
+        ),
+      );
 
       const query = db
         .select()

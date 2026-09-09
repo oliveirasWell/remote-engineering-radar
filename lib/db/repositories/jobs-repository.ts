@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, notInArray, sql } from 'drizzle-orm';
 import type { JobGeography } from '@/lib/classification/types';
 import type { Job, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
@@ -89,6 +89,18 @@ export const createJobsRepository = (db: Db) => {
         .select()
         .from(jobs)
         .where(eq(jobs.companyId, companyId));
+      return rows.map(toJob);
+    },
+
+    listByCompanyIds: async (companyIds: string[]): Promise<Job[]> => {
+      if (companyIds.length === 0) {
+        return [];
+      }
+
+      const rows = await db
+        .select()
+        .from(jobs)
+        .where(inArray(jobs.companyId, companyIds));
       return rows.map(toJob);
     },
 

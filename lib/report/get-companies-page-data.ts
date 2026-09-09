@@ -45,6 +45,21 @@ const isRecentJob = (
   return now.getTime() - timestamp.getTime() <= JOB_MAX_AGE_MS;
 };
 
+const groupByCompanyId = <T extends { companyId: string }>(
+  rows: T[],
+): Map<string, T[]> => {
+  const grouped = new Map<string, T[]>();
+  for (const row of rows) {
+    const existing = grouped.get(row.companyId);
+    if (existing) {
+      existing.push(row);
+    } else {
+      grouped.set(row.companyId, [row]);
+    }
+  }
+  return grouped;
+};
+
 export const getCompaniesPageData = async (
   options: CompaniesPageOptions = {},
 ): Promise<CompaniesPageData> => {
@@ -66,13 +81,22 @@ export const getCompaniesPageData = async (
       now,
     });
 
+    const companyIds = companies.map((company) => company.id);
+
+    // Two batched reads instead of one pair per company: at the page limit of
+    // 100 the per-company loop cost 201 sequential round-trips per request.
+    const [allSignals, allJobs] = await Promise.all([
+      hiringSignalsRepository.listByCompanyIds(companyIds),
+      jobsRepository.listByCompanyIds(companyIds),
+    ]);
+    const signalsByCompany = groupByCompanyId(allSignals);
+    const jobsByCompany = groupByCompanyId(allJobs);
+
     const items: CompaniesPageItem[] = [];
 
     for (const company of companies) {
-      const [signals, jobs] = await Promise.all([
-        hiringSignalsRepository.listByCompanyId(company.id),
-        jobsRepository.listByCompanyId(company.id),
-      ]);
+      const signals = signalsByCompany.get(company.id) ?? [];
+      const jobs = jobsByCompany.get(company.id) ?? [];
 
       const recentJobs = jobs.filter((job) => isRecentJob(job, now));
       const jobCards = recentJobs.map((job) => {
