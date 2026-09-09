@@ -32,7 +32,7 @@ const JobsResults = async ({
   return (
     <>
       {data.errorMessage ? (
-        <p className="text-sm text-accent" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {data.errorMessage}
         </p>
       ) : null}
@@ -48,7 +48,7 @@ const JobsResults = async ({
               <select
                 name={field.name}
                 defaultValue={filters[field.name] ?? ''}
-                className="rounded border border-border bg-surface px-3 py-2"
+                className="rounded border border-border bg-card px-3 py-2 disabled:opacity-50"
               >
                 <option value="">{JOBS_PAGE_COPY.anyOption}</option>
                 {field.options.map((option) => (
@@ -71,13 +71,13 @@ const JobsResults = async ({
                   ? String(filters.minimumScore)
                   : ''
               }
-              className="rounded border border-border bg-surface px-3 py-2"
+              className="rounded border border-border bg-card px-3 py-2 disabled:opacity-50"
             />
           </label>
           <div className="flex items-end">
             <button
               type="submit"
-              className="rounded bg-accent px-4 py-2 text-sm font-medium text-accent-foreground"
+              className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
               {JOBS_PAGE_COPY.apply}
             </button>
@@ -87,7 +87,9 @@ const JobsResults = async ({
 
       <section>
         {data.jobs.length === 0 ? (
-          <p className="text-sm text-muted">{JOBS_PAGE_COPY.empty}</p>
+          <p className="text-sm text-muted-foreground">
+            {JOBS_PAGE_COPY.empty}
+          </p>
         ) : (
           data.jobs.map((job) => <JobCard key={job.id} job={job} />)
         )}
@@ -99,16 +101,23 @@ const JobsResults = async ({
 const JobsPage = ({ searchParams }: JobsPageProps) => (
   <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-8 px-6 py-16">
     <header className="flex flex-col gap-2">
-      <p className="text-sm text-muted">
-        <Link href="/" className="hover:text-accent">
+      <p className="text-sm text-muted-foreground">
+        <Link
+          href="/"
+          className="text-muted-foreground underline underline-offset-2"
+        >
           Remote Engineering Radar
         </Link>
       </p>
       <PageTitle as="h1">{JOBS_PAGE_COPY.title}</PageTitle>
-      <p className="text-lg text-muted">{JOBS_PAGE_COPY.subtitle}</p>
+      <p className="text-lg text-muted-foreground">{JOBS_PAGE_COPY.subtitle}</p>
     </header>
     <Suspense
-      fallback={<p className="text-sm text-muted">{JOBS_PAGE_COPY.loading}</p>}
+      fallback={
+        <p className="text-sm text-muted-foreground">
+          {JOBS_PAGE_COPY.loading}
+        </p>
+      }
     >
       <JobsResults searchParams={searchParams} />
     </Suspense>

@@ -16,14 +16,16 @@ const JobDetail = async ({ params }: JobDetailPageProps) => {
 
   if (data.errorMessage) {
     return (
-      <p className="text-sm text-accent" role="alert">
+      <p className="text-sm text-destructive" role="alert">
         {data.errorMessage}
       </p>
     );
   }
 
   if (!data.job) {
-    return <p className="text-sm text-muted">{JOBS_PAGE_COPY.notFound}</p>;
+    return (
+      <p className="text-sm text-muted-foreground">{JOBS_PAGE_COPY.notFound}</p>
+    );
   }
 
   return (
@@ -33,7 +35,7 @@ const JobDetail = async ({ params }: JobDetailPageProps) => {
       {data.job.reasons.length > 0 ? (
         <div>
           <p className="text-sm font-medium">{JOBS_PAGE_COPY.whyRelevant}</p>
-          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted">
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
             {data.job.reasons.map((reason) => (
               <li key={reason}>{reason}</li>
             ))}
@@ -46,13 +48,20 @@ const JobDetail = async ({ params }: JobDetailPageProps) => {
 
 const JobDetailPage = ({ params }: JobDetailPageProps) => (
   <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-6 px-6 py-16">
-    <p className="text-sm text-muted">
-      <Link href="/jobs" className="hover:text-accent">
+    <p className="text-sm text-muted-foreground">
+      <Link
+        href="/jobs"
+        className="text-muted-foreground underline underline-offset-2"
+      >
         {JOBS_PAGE_COPY.backToJobs}
       </Link>
     </p>
     <Suspense
-      fallback={<p className="text-sm text-muted">{JOBS_PAGE_COPY.loading}</p>}
+      fallback={
+        <p className="text-sm text-muted-foreground">
+          {JOBS_PAGE_COPY.loading}
+        </p>
+      }
     >
       <JobDetail params={params} />
     </Suspense>

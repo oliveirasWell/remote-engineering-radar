@@ -23,9 +23,9 @@ export const CompanySummary = ({ company }: CompanySummaryProps) => {
         {company.name}
       </span>
       {kindLabel ? (
-        <span className="text-sm text-accent">{kindLabel}</span>
+        <span className="text-sm text-muted-foreground">{kindLabel}</span>
       ) : null}
-      <span className="text-sm text-muted">
+      <span className="text-sm text-muted-foreground">
         {HOME_SECTIONS.openRoles(company.openEngineeringJobs)}
       </span>
     </div>

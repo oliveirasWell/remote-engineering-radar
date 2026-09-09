@@ -22,11 +22,13 @@ const GlobalError = ({
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col items-start gap-4 px-6 py-16">
           <h1 className="text-2xl font-semibold">{GLOBAL_ERROR_COPY.title}</h1>
-          <p className="text-muted">{GLOBAL_ERROR_COPY.description}</p>
+          <p className="text-muted-foreground">
+            {GLOBAL_ERROR_COPY.description}
+          </p>
           <button
             type="button"
             onClick={reset}
-            className="rounded bg-accent px-4 py-2 text-sm font-medium text-accent-foreground"
+            className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
             {GLOBAL_ERROR_COPY.retry}
           </button>
