@@ -10,9 +10,11 @@ import { TECHNOLOGY_NAMES } from '@/lib/classification/constants';
 export const JobsReport = ({
   data,
   filters,
+  hasError,
 }: {
   data: JobsPageData;
   filters: JobFilters;
+  hasError?: boolean;
 }) => {
   const { messages } = useI18n();
   const fields = [
@@ -27,7 +29,7 @@ export const JobsReport = ({
 
   return (
     <>
-      {data.errorMessage ? (
+      {hasError ? (
         <p className="text-sm text-destructive" role="alert">
           {messages.report.error}
         </p>

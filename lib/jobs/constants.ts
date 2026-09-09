@@ -23,3 +23,6 @@ export const JOB_COUNTRY_FILTER_OPTIONS = [
   { slug: 'united-states', label: 'United States' },
   { slug: 'worldwide', label: 'Worldwide' },
 ] as const;
+
+export type JobCountrySlug =
+  (typeof JOB_COUNTRY_FILTER_OPTIONS)[number]['slug'];

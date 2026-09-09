@@ -5,7 +5,7 @@ import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import type { JobCard } from '@/lib/jobs/types';
 import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
-import { REPORT_CACHE_LIFE, REPORT_ERROR_MESSAGE } from './constants';
+import { REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
 import type { ReportJobCard, ReportJobDetail } from './types';
 
@@ -20,12 +20,10 @@ export type JobFilters = {
 
 export type JobsPageData = {
   jobs: ReportJobCard[];
-  errorMessage?: string;
 };
 
 export type JobDetailData = {
   job: ReportJobDetail | null;
-  errorMessage?: string;
 };
 
 const toJobCard = (
@@ -79,7 +77,7 @@ export const getJobsPageData = async (
     };
   } catch (error) {
     logReportError('jobs', error);
-    return { jobs: [], errorMessage: REPORT_ERROR_MESSAGE };
+    throw error;
   }
 };
 
@@ -88,14 +86,6 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
   cacheLife(REPORT_CACHE_LIFE);
 
   try {
-    if (
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        id,
-      )
-    ) {
-      return { job: null };
-    }
-
     const db = getDb();
     const jobsRepository = createJobsRepository(db);
     const companiesRepository = createCompaniesRepository(db);
@@ -131,6 +121,6 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
     };
   } catch (error) {
     logReportError('job detail', error);
-    return { job: null, errorMessage: REPORT_ERROR_MESSAGE };
+    throw error;
   }
 };
