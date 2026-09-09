@@ -32,7 +32,7 @@ const matchOption = <T extends string>(
     : undefined;
 };
 
-export const readMinimumScore = (
+const readMinimumScore = (
   value: string | string[] | undefined,
 ): number | undefined => {
   const raw = typeof value === 'string' ? value.trim() : undefined;
