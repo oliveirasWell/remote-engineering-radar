@@ -167,6 +167,25 @@ describe('legacy Prisma baseline preparation SQL', () => {
     ).toEqual([{ retained: true }]);
   });
 
+  it('removes migration-owner default grants before the Prisma ledger is created', async () => {
+    await db.exec(`
+      CREATE ROLE anon;
+      CREATE ROLE authenticated;
+      ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT ALL ON TABLES TO anon, authenticated;
+      ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
+    `);
+    await db.exec(preparationSql);
+    await db.exec('CREATE TABLE future_migration_metadata (id integer)');
+    const privileges = await db.query(`
+      SELECT role.rolname, privilege
+      FROM pg_roles role
+      CROSS JOIN unnest(ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE']) AS privilege
+      WHERE role.rolname IN ('anon', 'authenticated')
+        AND has_table_privilege(role.rolname, 'future_migration_metadata', privilege)
+    `);
+    expect(privileges.rows).toEqual([]);
+  });
+
   it('rolls back earlier additions on SQL failure and bounds lock acquisition', async () => {
     await db.exec('DROP TABLE jobs');
     await expect(db.exec(preparationSql)).rejects.toThrow('jobs');

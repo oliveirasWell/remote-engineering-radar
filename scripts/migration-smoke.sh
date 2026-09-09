@@ -6,7 +6,8 @@ unbaselined_database_name='radar_prisma_unbaselined'
 legacy_database_name='radar_prisma_legacy'
 
 # All databases and cluster-wide test roles live in this disposable container.
-container_id="$(docker run --detach --rm --publish 127.0.0.1::5432 --env POSTGRES_PASSWORD=postgres postgres:17-alpine)"
+database_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("hex"))')"
+container_id="$(docker run --detach --rm --publish 127.0.0.1::5432 --env POSTGRES_PASSWORD="$database_password" postgres:17-alpine)"
 trap 'docker rm --force --volumes "$container_id"' EXIT
 for attempt in {1..30}; do
   if docker exec "$container_id" pg_isready --username postgres; then
@@ -16,7 +17,7 @@ for attempt in {1..30}; do
 done
 docker exec "$container_id" pg_isready --username postgres
 database_address="$(docker port "$container_id" 5432/tcp)"
-database_url="postgresql://postgres:postgres@${database_address}/${database_name}"
+database_url="postgresql://postgres:${database_password}@${database_address}/${database_name}"
 
 docker exec "$container_id" createdb --username postgres "$database_name"
 docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --command \
@@ -40,14 +41,14 @@ test "$public_privilege_count" = '0'
 
 docker exec "$container_id" createdb --username postgres "$unbaselined_database_name"
 docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$unbaselined_database_name" --command 'CREATE TABLE companies (id uuid PRIMARY KEY)'
-unbaselined_url="postgresql://postgres:postgres@${database_address}/${unbaselined_database_name}"
+unbaselined_url="postgresql://postgres:${database_password}@${database_address}/${unbaselined_database_name}"
 if DATABASE_MIGRATION_URL="$unbaselined_url" pnpm db:deploy; then
   echo 'Unbaselined existing tables were not blocked.' >&2
   exit 1
 fi
 
 docker exec "$container_id" createdb --username postgres "$legacy_database_name"
-legacy_url="postgresql://postgres:postgres@${database_address}/${legacy_database_name}"
+legacy_url="postgresql://postgres:${database_password}@${database_address}/${legacy_database_name}"
 # Reproduce the full legacy schema without changing migration files or registering Prisma.
 node --input-type=module -e '
   import { readFileSync } from "node:fs";
@@ -63,6 +64,8 @@ docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbn
   INSERT INTO hiring_signals (company_id, type, description) VALUES ('00000000-0000-4000-8000-000000000001', 'smoke', 'Keep this signal');
   INSERT INTO ingestion_runs (persisted_jobs, companies_updated) VALUES (1, 1);
   GRANT ALL ON companies, jobs TO anon, authenticated;
+  ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT ALL ON TABLES TO anon, authenticated;
+  ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
 "
 snapshot_query="SELECT jsonb_build_object(
   'companies', (SELECT jsonb_agg(to_jsonb(c) - 'kind' ORDER BY id) FROM companies c),

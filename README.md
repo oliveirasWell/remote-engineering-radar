@@ -111,9 +111,11 @@ This explicit operation runs `scripts/prepare-prisma-baseline.sql` in one transa
 a five-second lock timeout. It adds only those three columns if absent, using the legacy
 `NOT NULL` defaults (`'product'` for `kind`, `'[]'::jsonb` for both location arrays), and
 revokes all table privileges on `companies` and `jobs` from `anon` and `authenticated` if
-those roles exist. Rows and existing column values are preserved. Incompatible existing
-columns are not repaired. Neither Drizzle migration history nor the Prisma baseline SQL
-is changed.
+those roles exist. When the migration user can act as `postgres`, it also removes that
+role's global and `public`-schema default table grants to those public roles, so the
+Prisma ledger is never created with public access. Rows and existing column values are
+preserved. Incompatible existing columns are not repaired. Neither Drizzle migration
+history nor the Prisma baseline SQL is changed.
 
 The command then runs the full schema parity and public-role/default-privilege checks
 against the same trusted migration URL. It does **not** register the baseline, deploy
