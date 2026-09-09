@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
-import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
+import { REPORT_ERROR_MESSAGE } from '@/lib/report/constants';
+import {
+  getJobsPageData,
+  type JobsPageData,
+} from '@/lib/report/get-jobs-page-data';
 import { JOB_FILTER_FIELDS, JOBS_PAGE_COPY } from './constants';
 import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
 
@@ -27,13 +31,21 @@ const JobsResults = async ({
 }) => {
   const params = await searchParams;
   const filters = parseJobFilters(params);
-  const data = await getJobsPageData(filters);
+  let data: JobsPageData;
+  let errorMessage: string | undefined;
+
+  try {
+    data = await getJobsPageData(filters);
+  } catch {
+    data = { jobs: [] };
+    errorMessage = REPORT_ERROR_MESSAGE;
+  }
 
   return (
     <>
-      {data.errorMessage ? (
+      {errorMessage ? (
         <p className="text-sm text-accent" role="alert">
-          {data.errorMessage}
+          {errorMessage}
         </p>
       ) : null}
 

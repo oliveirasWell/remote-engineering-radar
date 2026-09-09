@@ -2,8 +2,13 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
-import { getJobDetailData } from '@/lib/report/get-jobs-page-data';
+import { REPORT_ERROR_MESSAGE } from '@/lib/report/constants';
+import {
+  getJobDetailData,
+  type JobDetailData,
+} from '@/lib/report/get-jobs-page-data';
 import { JOBS_PAGE_COPY } from '../constants';
+import { parseJobId } from './parse-job-id';
 
 type JobDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -12,12 +17,15 @@ type JobDetailPageProps = {
 /** Reads the route param, so it streams in behind the static shell. */
 const JobDetail = async ({ params }: JobDetailPageProps) => {
   const { id } = await params;
-  const data = await getJobDetailData(id);
+  const jobId = parseJobId(id);
+  let data: JobDetailData;
 
-  if (data.errorMessage) {
+  try {
+    data = jobId ? await getJobDetailData(jobId) : { job: null };
+  } catch {
     return (
       <p className="text-sm text-accent" role="alert">
-        {data.errorMessage}
+        {REPORT_ERROR_MESSAGE}
       </p>
     );
   }
