@@ -14,3 +14,9 @@ const lastFocusTechnology =
 export const FOCUS_STACK_LABEL = `${FOCUS_TECHNOLOGIES.slice(0, -1).join(', ')}, and ${lastFocusTechnology}`;
 
 export const APP_DESCRIPTION = `Automated job intelligence for remote senior frontend and fullstack roles in ${FOCUS_STACK_LABEL}.`;
+
+export const GLOBAL_ERROR_COPY = {
+  title: 'Something went wrong',
+  description: 'The page could not be rendered. Trying again may be enough.',
+  retry: 'Try again',
+} as const;

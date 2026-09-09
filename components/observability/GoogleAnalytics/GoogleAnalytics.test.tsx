@@ -23,6 +23,7 @@ vi.mock('next/script', () => ({
 
 describe('GoogleAnalytics', () => {
   it('loads gtag scripts with the measurement id constant', () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
     const { container } = render(<GoogleAnalytics />);
 
     expect(
@@ -34,4 +35,14 @@ describe('GoogleAnalytics', () => {
       GA_MEASUREMENT_ID,
     );
   });
+
+  it.each(['preview', 'development', undefined])(
+    'sends no traffic to the production property from %s',
+    (environment) => {
+      vi.stubEnv('VERCEL_ENV', environment);
+      const { container } = render(<GoogleAnalytics />);
+
+      expect(container.innerHTML).toBe('');
+    },
+  );
 });
