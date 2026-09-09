@@ -8,21 +8,21 @@ import { getCompaniesPageData } from './get-companies-page-data';
 
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
 
-/** Counts query builders created, so an N+1 shows up as growth. */
+/** Counts read operations issued, so an N+1 shows up as growth. */
 const countingDb = (db: Awaited<ReturnType<typeof createTestDb>>) => {
   const counter = { selects: 0 };
-  const proxy = new Proxy(db, {
-    get(target, property, receiver) {
-      const value = Reflect.get(target, property, receiver);
-      if (property === 'select' && typeof value === 'function') {
-        return (...args: unknown[]) => {
-          counter.selects += 1;
-          return value.apply(target, args);
-        };
-      }
-      return value;
+  const proxy = db.$extends({
+    query: {
+      $allModels: {
+        $allOperations: ({ operation, args, query }) => {
+          if (operation.startsWith('find')) {
+            counter.selects += 1;
+          }
+          return query(args);
+        },
+      },
     },
-  });
+  }) as unknown as typeof db;
   return { proxy, counter };
 };
 

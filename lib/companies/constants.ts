@@ -25,4 +25,6 @@ const COMPANY_KIND_BY_SLUG: Readonly<Record<string, CompanyKind>> = {
 };
 
 export const resolveCompanyKind = (slug: string): CompanyKind =>
-  COMPANY_KIND_BY_SLUG[slug] ?? DEFAULT_COMPANY_KIND;
+  Object.hasOwn(COMPANY_KIND_BY_SLUG, slug)
+    ? COMPANY_KIND_BY_SLUG[slug]
+    : DEFAULT_COMPANY_KIND;

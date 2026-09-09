@@ -71,8 +71,9 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(true);
     expect(adapter.name).toBe(ASHBY_SOURCE_NAME);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(jobs.map((job) => job.sourceJobId)).toEqual([
@@ -90,7 +91,7 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(async () => jsonResponse(malformed)),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs } = await adapter.fetchJobs();
 
     expect(jobs.map((job) => job.sourceJobId)).toEqual(['valid-1', 'valid-2']);
     expect(jobs[1]?.url).toBe(
@@ -104,7 +105,10 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ jobs: [] })),
     });
 
-    await expect(adapter.fetchJobs()).resolves.toEqual([]);
+    await expect(adapter.fetchJobs()).resolves.toEqual({
+      jobs: [],
+      complete: true,
+    });
   });
 
   it('rejects a successful response with an unexpected shape', async () => {
@@ -136,5 +140,47 @@ describe('createAshbyAdapter', () => {
     });
 
     await expect(adapter.fetchJobs()).rejects.toThrow(/Ashby request failed/);
+  });
+
+  it('rejects a repeated cursor instead of declaring a complete snapshot', async () => {
+    const fetchMock = vi.fn(async () => jsonResponse(page1));
+    const adapter = createAshbyAdapter({
+      boardNames: [BOARD_NAME],
+      fetch: asFetch(fetchMock),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination limit/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('fails rather than treating the cursor cap as exhaustion', async () => {
+    let page = 0;
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({
+        ...page1,
+        nextCursor: `${page1.nextCursor}-${++page}`,
+      }),
+    );
+    const adapter = createAshbyAdapter({
+      boardNames: [BOARD_NAME],
+      fetch: asFetch(fetchMock),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination limit/);
+    expect(fetchMock).toHaveBeenCalledTimes(50);
+  });
+
+  it('fails the snapshot when a later configured board fails', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse(page2))
+      .mockResolvedValueOnce(jsonResponse({}, 400));
+    const adapter = createAshbyAdapter({
+      boardNames: [BOARD_NAME, `${BOARD_NAME}-other`],
+      fetch: asFetch(fetchMock),
+    });
+
+    await expect(adapter.fetchJobs()).rejects.toThrow(/Ashby request failed/);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

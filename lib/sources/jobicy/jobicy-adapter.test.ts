@@ -60,8 +60,9 @@ describe('createJobicyAdapter', () => {
     });
     const adapter = createJobicyAdapter({ fetch: asFetch(fetchMock) });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(false);
     expect(adapter.name).toBe(JOBICY_SOURCE_NAME);
     expect(requestedUrls).toHaveLength(1);
     expect(requestedUrls[0]).toContain(`industry=${JOBICY_INDUSTRY}`);
@@ -76,7 +77,10 @@ describe('createJobicyAdapter', () => {
     const fetchMock = vi.fn(async () => jsonResponse(malformedPage));
     const adapter = createJobicyAdapter({ fetch: asFetch(fetchMock) });
 
-    await expect(adapter.fetchJobs()).resolves.toEqual([]);
+    await expect(adapter.fetchJobs()).resolves.toEqual({
+      jobs: [],
+      complete: false,
+    });
   });
 
   it('throws when the response is not ok', async () => {
