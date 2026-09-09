@@ -1,8 +1,15 @@
-export const HOME_JOBS_LIMIT = 12;
-export const HOME_COMPANIES_LIMIT = 8;
+import { EN_MESSAGES } from '@/lib/i18n/messages';
+
 export const COMPANIES_PAGE_LIMIT = 100;
-export const MINIMUM_JOB_SCORE_FOR_REPORT = 40;
-export const EMPTY_JOBS_MESSAGE = 'No relevant opportunities yet.';
-export const EMPTY_COMPANIES_MESSAGE = 'No companies to watch yet.';
-export const REPORT_ERROR_MESSAGE =
-  'The report could not be loaded from the database.';
+
+/**
+ * Ingest writes once a day from GitHub Actions, which cannot reach the Next
+ * runtime to revalidate, so this window is what bounds staleness.
+ */
+export const REPORT_CACHE_LIFE = {
+  stale: 300,
+  revalidate: 3600,
+  expire: 86_400,
+} as const;
+export const EMPTY_COMPANIES_MESSAGE = EN_MESSAGES.report.emptyCompanies;
+export const REPORT_ERROR_MESSAGE = EN_MESSAGES.report.error;

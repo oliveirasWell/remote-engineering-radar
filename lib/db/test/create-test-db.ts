@@ -1,13 +1,39 @@
-import { PGlite } from '@electric-sql/pglite';
-import { drizzle } from 'drizzle-orm/pglite';
-import { migrate } from 'drizzle-orm/pglite/migrator';
-import type { Db } from '../client';
+import { PrismaClient } from '@prisma/client';
+import { afterEach } from 'vitest';
+import { PGliteBridge, pushMigrations } from 'prisma-pglite-bridge';
+import type { RootDb } from '../client';
 import { MIGRATIONS_FOLDER } from '../constants';
-import * as schema from '../schema';
 
-export const createTestDb = async (): Promise<Db> => {
-  const client = new PGlite();
-  const db = drizzle(client, { schema });
-  await migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
-  return db;
+const openDatabases = new Map<RootDb, PGliteBridge>();
+
+export const createTestDb = async (): Promise<RootDb> => {
+  const bridge = new PGliteBridge({
+    max: 1,
+    connectionTimeoutMillis: 10_000,
+    query_timeout: 30_000,
+  });
+
+  try {
+    await pushMigrations(bridge.pglite, { migrationsPath: MIGRATIONS_FOLDER });
+    const db = new PrismaClient({
+      adapter: bridge.adapter,
+      transactionOptions: { maxWait: 10_000, timeout: 120_000 },
+    });
+    openDatabases.set(db, bridge);
+    return db;
+  } catch (error) {
+    await bridge.close();
+    throw error;
+  }
 };
+
+export const disconnectTestDb = async (db: RootDb): Promise<void> => {
+  const bridge = openDatabases.get(db);
+  openDatabases.delete(db);
+  await db.$disconnect();
+  await bridge?.close();
+};
+
+afterEach(async () => {
+  await Promise.all([...openDatabases.keys()].map(disconnectTestDb));
+});

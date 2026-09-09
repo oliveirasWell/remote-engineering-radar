@@ -1,15 +1,21 @@
+import type { CompanyKind } from '@/lib/companies/constants';
+
 export type ReportJobCard = {
   id: string;
   title: string;
-  companyName: string;
+  companyName: string | null;
   companyId: string;
   technologies: string[];
   location: string | null;
   remotePolicy: string | null;
   score: number;
-  reasons: string[];
   postedAt: Date | null;
   url: string;
+};
+
+/** The detail page is the only view that explains why a job scored. */
+export type ReportJobDetail = ReportJobCard & {
+  reasons: string[];
 };
 
 export type ReportCompanyCard = {
@@ -17,15 +23,9 @@ export type ReportCompanyCard = {
   name: string;
   slug: string;
   hiringScore: number;
+  kind: CompanyKind;
   summary: string;
   signalDescriptions: string[];
   websiteUrl: string | null;
   openEngineeringJobs: number;
-};
-
-export type HomeReport = {
-  updatedAt: Date | null;
-  jobs: ReportJobCard[];
-  companies: ReportCompanyCard[];
-  errorMessage?: string;
 };

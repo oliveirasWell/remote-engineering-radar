@@ -1,6 +1,31 @@
-import { classifyJob } from './classify-job';
+import { classifyJob, shouldPersistClassifiedJob } from './classify-job';
+
+const GEOGRAPHY_JOB_TITLE = 'Senior React Engineer';
+const BRAZIL_LOCATIONS = ['Brazil', 'Brasil', 'Sao Paulo', 'LATAM - Brazil'];
+const BRAZIL_GEOGRAPHY = 'brazil';
+const LATAM_GEOGRAPHY = 'latam';
+const ADVERSARIAL_LATAM_TEXT = 'LATAM '.repeat(40_000);
+const CLASSIFICATION_BUDGET_MS = 500;
 
 describe('classifyJob', () => {
+  it.each(BRAZIL_LOCATIONS)('recognizes Brazil in %s', (location) => {
+    expect(
+      classifyJob({ title: GEOGRAPHY_JOB_TITLE, location }).geography,
+    ).toContain(BRAZIL_GEOGRAPHY);
+  });
+
+  it('classifies repeated LATAM mentions without quadratic work or inventing Brazil', () => {
+    const start = performance.now();
+    const result = classifyJob({
+      title: GEOGRAPHY_JOB_TITLE,
+      description: ADVERSARIAL_LATAM_TEXT,
+    });
+    const elapsedMs = performance.now() - start;
+
+    expect(result.geography).toEqual([LATAM_GEOGRAPHY]);
+    expect(elapsedMs).toBeLessThan(CLASSIFICATION_BUDGET_MS);
+  });
+
   it('classifies Senior React + TypeScript', () => {
     const result = classifyJob({
       title: 'Senior Software Engineer, Frontend',
@@ -65,6 +90,60 @@ describe('classifyJob', () => {
 
     expect(result.seniority).toBe('senior');
     expect(result.isUnrelatedStack).toBe(true);
+  });
+
+  it('flags Sales Representative as an unrelated role', () => {
+    const result = classifyJob({
+      title: 'Sales Representative',
+      description: 'Close deals with React product customers',
+    });
+
+    expect(result.isUnrelatedRole).toBe(true);
+  });
+
+  it('flags Account Executive and recruiter titles as unrelated roles', () => {
+    expect(classifyJob({ title: 'Account Executive' }).isUnrelatedRole).toBe(
+      true,
+    );
+    expect(classifyJob({ title: 'Technical Recruiter' }).isUnrelatedRole).toBe(
+      true,
+    );
+    expect(
+      classifyJob({ title: 'Customer Success Manager' }).isUnrelatedRole,
+    ).toBe(true);
+  });
+
+  it('does not flag engineering titles as unrelated roles', () => {
+    const result = classifyJob({
+      title: 'Senior Frontend Engineer',
+      description: 'React and TypeScript',
+    });
+
+    expect(result.isUnrelatedRole).toBe(false);
+  });
+
+  it('exposes shouldPersistClassifiedJob for ingest gating', () => {
+    expect(
+      shouldPersistClassifiedJob(
+        classifyJob({ title: 'Sales Representative' }),
+      ),
+    ).toBe(false);
+    expect(
+      shouldPersistClassifiedJob(
+        classifyJob({
+          title: 'Senior Data Engineer',
+          description: 'Spark and Airflow',
+        }),
+      ),
+    ).toBe(false);
+    expect(
+      shouldPersistClassifiedJob(
+        classifyJob({
+          title: 'Senior Frontend Engineer',
+          description: 'React and TypeScript',
+        }),
+      ),
+    ).toBe(true);
   });
 
   it('classifies Remote React LATAM', () => {

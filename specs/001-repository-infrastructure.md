@@ -11,7 +11,7 @@ Create the basic Remote Engineering Radar repository shell. No business logic.
 - Test framework configured (Vitest)
 - Linting configured
 - Environment variables documented
-- Database connection abstraction exists (Drizzle + postgres.js; no schema yet)
+- Database connection abstraction exists (the current implementation is documented separately)
 - GitHub Actions workflows exist (CI + scheduled ingest stub)
 - Application runs locally
 

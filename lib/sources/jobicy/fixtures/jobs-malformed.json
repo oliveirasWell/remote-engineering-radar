@@ -1,0 +1,46 @@
+{
+  "success": true,
+  "statusCode": 200,
+  "apiVersion": "2.0",
+  "jobCount": 3,
+  "appliedFilters": {
+    "count": 50,
+    "industry": "engineering"
+  },
+  "jobs": [
+    {
+      "url": "https://jobicy.com/jobs/152400-platform-engineer",
+      "jobSlug": "152400-platform-engineer",
+      "jobTitle": "Platform Engineer",
+      "companyName": "Northwind Labs",
+      "jobIndustry": ["Software Engineering"],
+      "jobGeo": "Brazil",
+      "jobLevel": "Senior",
+      "jobDescription": "<p>Missing the id.</p>",
+      "pubDate": "2026-09-03T18:00:00+00:00"
+    },
+    {
+      "id": 152401,
+      "url": "https://jobicy.com/jobs/152401-frontend-engineer",
+      "jobSlug": "152401-frontend-engineer",
+      "jobTitle": "Frontend Engineer",
+      "jobIndustry": ["Software Engineering"],
+      "jobGeo": "Chile",
+      "jobLevel": "Any",
+      "jobDescription": "<p>Missing the company name.</p>",
+      "pubDate": "2026-09-03T17:30:00+00:00"
+    },
+    {
+      "id": 152402,
+      "url": "http://jobicy.com/jobs/152402-data-engineer",
+      "jobSlug": "152402-data-engineer",
+      "jobTitle": "Data Engineer",
+      "companyName": "Fabrikam",
+      "jobIndustry": ["Software Engineering"],
+      "jobGeo": "Mexico",
+      "jobLevel": "Any",
+      "jobDescription": "<p>Insecure job url.</p>",
+      "pubDate": "2026-09-03T17:00:00+00:00"
+    }
+  ]
+}

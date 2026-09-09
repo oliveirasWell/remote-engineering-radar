@@ -1,216 +1,317 @@
-import { and, desc, eq, gte, notInArray, sql } from 'drizzle-orm';
-import type { Job, NewJob } from '@/lib/jobs/types';
+import { Prisma, type Job as PrismaJob } from '@prisma/client';
+import type { JobGeography } from '@/lib/classification/types';
+import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
-import { jobs } from '../schema/jobs';
+import { coalescedPostedAtFilter } from './posted-at-filter';
 
-const toJob = (row: typeof jobs.$inferSelect): Job => ({
-  id: row.id,
-  companyId: row.companyId,
-  source: row.source,
-  sourceJobId: row.sourceJobId,
-  title: row.title,
-  url: row.url,
-  location: row.location,
-  remotePolicy: row.remotePolicy,
+const toStringArray = (column: string, value: Prisma.JsonValue): string[] => {
+  if (
+    !Array.isArray(value) ||
+    !value.every((item) => typeof item === 'string')
+  ) {
+    throw new Error(
+      `Invalid jobs.${column} JSON: expected an array of strings`,
+    );
+  }
+
+  return [...value];
+};
+
+const toGeographies = (value: Prisma.JsonValue): JobGeography[] =>
+  toStringArray('geographies', value).filter(
+    (entry): entry is JobGeography =>
+      entry === 'brazil' ||
+      entry === 'latam' ||
+      entry === 'americas' ||
+      entry === 'worldwide',
+  );
+
+/** Every column a list view renders — notably not `description`. */
+const jobCardColumns = {
+  id: true,
+  companyId: true,
+  source: true,
+  sourceJobId: true,
+  title: true,
+  url: true,
+  location: true,
+  remotePolicy: true,
+  technologies: true,
+  geographies: true,
+  countries: true,
+  seniority: true,
+  score: true,
+  postedAt: true,
+  firstSeenAt: true,
+  isActive: true,
+} as const;
+
+type JobCardRow = Prisma.JobGetPayload<{ select: typeof jobCardColumns }>;
+
+const toJobCard = (row: JobCardRow): JobCard => ({
+  ...row,
+  technologies: toStringArray('technologies', row.technologies),
+  geographies: toGeographies(row.geographies),
+  countries: toStringArray('countries', row.countries),
+});
+
+const toJob = (row: PrismaJob): Job => ({
+  ...toJobCard(row),
   description: row.description,
-  technologies: row.technologies,
-  seniority: row.seniority,
-  score: row.score,
-  postedAt: row.postedAt,
-  firstSeenAt: row.firstSeenAt,
   lastSeenAt: row.lastSeenAt,
-  isActive: row.isActive,
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
 });
 
-export const createJobsRepository = (db: Db) => {
-  const repository = {
-    create: async (input: NewJob): Promise<Job> => {
-      const now = new Date();
-      const [row] = await db
-        .insert(jobs)
-        .values({
-          companyId: input.companyId,
+const escapeLikePattern = (value: string): string =>
+  value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+
+const createData = (
+  input: NewJob,
+  now: Date,
+): Prisma.JobUncheckedCreateInput => ({
+  companyId: input.companyId,
+  source: input.source,
+  sourceJobId: input.sourceJobId,
+  title: input.title,
+  url: input.url,
+  location: input.location ?? null,
+  remotePolicy: input.remotePolicy ?? null,
+  description: input.description ?? null,
+  technologies: input.technologies ?? [],
+  geographies: input.geographies ?? [],
+  countries: input.countries ?? [],
+  seniority: input.seniority ?? null,
+  score: input.score ?? 0,
+  postedAt: input.postedAt ?? null,
+  firstSeenAt: input.firstSeenAt ?? now,
+  lastSeenAt: input.lastSeenAt ?? now,
+  isActive: input.isActive ?? true,
+});
+
+export const createJobsRepository = (db: Db) => ({
+  create: async (input: NewJob): Promise<Job> =>
+    toJob(await db.job.create({ data: createData(input, new Date()) })),
+
+  findById: async (id: string): Promise<Job | null> => {
+    const row = await db.job.findUnique({ where: { id } });
+    return row ? toJob(row) : null;
+  },
+
+  listSitemapJobs: async (now: Date = new Date()): Promise<{ id: string }[]> =>
+    db.job.findMany({
+      where: {
+        isActive: true,
+        remotePolicy: REMOTE_POLICY_REMOTE,
+        ...coalescedPostedAtFilter(
+          'gte',
+          new Date(now.getTime() - JOB_MAX_AGE_MS),
+        ),
+      },
+      select: { id: true },
+      orderBy: { id: 'asc' },
+    }),
+
+  findBySourceJobId: async (
+    source: string,
+    sourceJobId: string,
+  ): Promise<Job | null> => {
+    const row = await db.job.findUnique({
+      where: { source_sourceJobId: { source, sourceJobId } },
+    });
+    return row ? toJob(row) : null;
+  },
+
+  listByCompanyId: async (companyId: string): Promise<Job[]> =>
+    (await db.job.findMany({ where: { companyId } })).map(toJob),
+
+  listCardsByCompanyIds: async (
+    companyIds: string[],
+    options?: { maxAgeMs?: number; now?: Date; activeOnly?: boolean },
+  ): Promise<JobCard[]> => {
+    if (companyIds.length === 0) {
+      return [];
+    }
+
+    const freshnessFilter = (): Prisma.JobWhereInput => {
+      if (options?.maxAgeMs !== undefined) {
+        const now = options.now ?? new Date();
+        return {
+          isActive: true,
+          remotePolicy: REMOTE_POLICY_REMOTE,
+          ...coalescedPostedAtFilter(
+            'gte',
+            new Date(now.getTime() - options.maxAgeMs),
+          ),
+        };
+      }
+      return options?.activeOnly ? { isActive: true } : {};
+    };
+
+    const rows = await db.job.findMany({
+      where: { companyId: { in: companyIds }, ...freshnessFilter() },
+      select: jobCardColumns,
+      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
+    });
+    return rows.map(toJobCard);
+  },
+
+  listActiveByScore: async (options?: {
+    limit?: number;
+    minimumScore?: number;
+    technology?: string;
+    seniority?: string;
+    remotePolicy?: string;
+    country?: string;
+    location?: string;
+    maxAgeMs?: number;
+    now?: Date;
+  }): Promise<JobCard[]> => {
+    const now = options?.now ?? new Date();
+    const rows = await db.job.findMany({
+      where: {
+        isActive: true,
+        remotePolicy: options?.remotePolicy ?? REMOTE_POLICY_REMOTE,
+        ...(options?.minimumScore === undefined
+          ? {}
+          : { score: { gte: options.minimumScore } }),
+        ...(options?.seniority ? { seniority: options.seniority } : {}),
+        ...(options?.country
+          ? { countries: { array_contains: [options.country] } }
+          : {}),
+        ...(options?.location
+          ? {
+              location: {
+                contains: escapeLikePattern(options.location),
+                mode: 'insensitive' as const,
+              },
+            }
+          : {}),
+        ...(options?.technology
+          ? { technologies: { array_contains: [options.technology] } }
+          : {}),
+        ...(options?.maxAgeMs === undefined
+          ? {}
+          : coalescedPostedAtFilter(
+              'gte',
+              new Date(now.getTime() - options.maxAgeMs),
+            )),
+      },
+      select: jobCardColumns,
+      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
+      ...(options?.limit === undefined ? {} : { take: options.limit }),
+    });
+    return rows.map(toJobCard);
+  },
+
+  updateScore: async (id: string, score: number): Promise<Job | null> => {
+    const [row] = await db.job.updateManyAndReturn({
+      where: { id },
+      data: { score, updatedAt: new Date() },
+    });
+    return row ? toJob(row) : null;
+  },
+
+  upsertBySourceJobId: async (input: NewJob): Promise<{ id: string }> => {
+    const now = new Date();
+    return db.job.upsert({
+      where: {
+        source_sourceJobId: {
           source: input.source,
           sourceJobId: input.sourceJobId,
-          title: input.title,
-          url: input.url,
-          location: input.location ?? null,
-          remotePolicy: input.remotePolicy ?? null,
-          description: input.description ?? null,
-          technologies: input.technologies ?? [],
-          seniority: input.seniority ?? null,
-          score: input.score ?? 0,
-          postedAt: input.postedAt ?? null,
-          firstSeenAt: input.firstSeenAt ?? now,
-          lastSeenAt: input.lastSeenAt ?? now,
-          isActive: input.isActive ?? true,
-        })
-        .returning();
+        },
+      },
+      create: createData(input, now),
+      update: {
+        companyId: input.companyId,
+        title: input.title,
+        url: input.url,
+        location: input.location ?? null,
+        remotePolicy: input.remotePolicy ?? null,
+        description: input.description ?? null,
+        technologies: input.technologies ?? [],
+        geographies: input.geographies ?? [],
+        countries: input.countries ?? [],
+        seniority: input.seniority ?? null,
+        ...(input.score === undefined ? {} : { score: input.score }),
+        ...(input.postedAt === undefined ? {} : { postedAt: input.postedAt }),
+        lastSeenAt: now,
+        isActive: input.isActive ?? true,
+        updatedAt: now,
+      },
+      select: { id: true },
+    });
+  },
 
-      if (!row) {
-        throw new Error('Failed to create job');
-      }
+  deactivateMissingBySource: async (
+    source: string,
+    sourceJobIds: string[],
+  ): Promise<{ companyId: string }[]> =>
+    db.job.updateManyAndReturn({
+      where: {
+        source,
+        isActive: true,
+        ...(sourceJobIds.length === 0
+          ? {}
+          : { sourceJobId: { notIn: sourceJobIds } }),
+      },
+      data: { isActive: false, updatedAt: new Date() },
+      select: { companyId: true },
+    }),
 
-      return toJob(row);
-    },
+  deactivateBySourceJobIds: async (
+    source: string,
+    sourceJobIds: string[],
+  ): Promise<{ companyId: string }[]> => {
+    if (sourceJobIds.length === 0) {
+      return [];
+    }
+    return db.job.updateManyAndReturn({
+      where: { source, sourceJobId: { in: sourceJobIds }, isActive: true },
+      data: { isActive: false, updatedAt: new Date() },
+      select: { companyId: true },
+    });
+  },
 
-    findById: async (id: string): Promise<Job | null> => {
-      const [row] = await db.select().from(jobs).where(eq(jobs.id, id));
-      return row ? toJob(row) : null;
-    },
+  deactivateOlderThan: async (
+    maxAgeMs: number,
+    now: Date = new Date(),
+  ): Promise<{ companyId: string }[]> =>
+    db.job.updateManyAndReturn({
+      where: {
+        isActive: true,
+        ...coalescedPostedAtFilter('lt', new Date(now.getTime() - maxAgeMs)),
+      },
+      data: { isActive: false, updatedAt: now },
+      select: { companyId: true },
+    }),
 
-    findBySourceJobId: async (
-      source: string,
-      sourceJobId: string,
-    ): Promise<Job | null> => {
-      const [row] = await db
-        .select()
-        .from(jobs)
-        .where(and(eq(jobs.source, source), eq(jobs.sourceJobId, sourceJobId)));
-      return row ? toJob(row) : null;
-    },
+  /** Rows are only ever deactivated, so without this the table grows forever. */
+  deleteInactiveOlderThan: async (
+    retentionMs: number,
+    now: Date = new Date(),
+  ): Promise<number> =>
+    (
+      await db.job.deleteMany({
+        where: {
+          isActive: false,
+          ...coalescedPostedAtFilter(
+            'lt',
+            new Date(now.getTime() - retentionMs),
+          ),
+        },
+      })
+    ).count,
 
-    listByCompanyId: async (companyId: string): Promise<Job[]> => {
-      const rows = await db
-        .select()
-        .from(jobs)
-        .where(eq(jobs.companyId, companyId));
-      return rows.map(toJob);
-    },
+  deactivate: async (id: string): Promise<Job | null> => {
+    const [row] = await db.job.updateManyAndReturn({
+      where: { id },
+      data: { isActive: false, updatedAt: new Date() },
+    });
+    return row ? toJob(row) : null;
+  },
 
-    listActiveByScore: async (options?: {
-      limit?: number;
-      minimumScore?: number;
-      technology?: string;
-      seniority?: string;
-      remotePolicy?: string;
-      location?: string;
-    }): Promise<Job[]> => {
-      const filters = [eq(jobs.isActive, true)];
-
-      if (options?.minimumScore !== undefined) {
-        filters.push(gte(jobs.score, options.minimumScore));
-      }
-      if (options?.seniority) {
-        filters.push(eq(jobs.seniority, options.seniority));
-      }
-      if (options?.remotePolicy) {
-        filters.push(eq(jobs.remotePolicy, options.remotePolicy));
-      }
-      if (options?.location) {
-        filters.push(sql`${jobs.location} ilike ${`%${options.location}%`}`);
-      }
-      if (options?.technology) {
-        filters.push(
-          sql`${jobs.technologies} @> ${JSON.stringify([options.technology])}::jsonb`,
-        );
-      }
-
-      const query = db
-        .select()
-        .from(jobs)
-        .where(and(...filters))
-        .orderBy(desc(jobs.score), desc(jobs.postedAt));
-
-      const rows =
-        options?.limit !== undefined
-          ? await query.limit(options.limit)
-          : await query;
-      return rows.map(toJob);
-    },
-
-    updateScore: async (id: string, score: number): Promise<Job | null> => {
-      const [row] = await db
-        .update(jobs)
-        .set({ score, updatedAt: new Date() })
-        .where(eq(jobs.id, id))
-        .returning();
-      return row ? toJob(row) : null;
-    },
-
-    upsertBySourceJobId: async (input: NewJob): Promise<Job> => {
-      const now = new Date();
-      const [row] = await db
-        .insert(jobs)
-        .values({
-          companyId: input.companyId,
-          source: input.source,
-          sourceJobId: input.sourceJobId,
-          title: input.title,
-          url: input.url,
-          location: input.location ?? null,
-          remotePolicy: input.remotePolicy ?? null,
-          description: input.description ?? null,
-          technologies: input.technologies ?? [],
-          seniority: input.seniority ?? null,
-          score: input.score ?? 0,
-          postedAt: input.postedAt ?? null,
-          firstSeenAt: input.firstSeenAt ?? now,
-          lastSeenAt: input.lastSeenAt ?? now,
-          isActive: input.isActive ?? true,
-        })
-        .onConflictDoUpdate({
-          target: [jobs.source, jobs.sourceJobId],
-          set: {
-            companyId: input.companyId,
-            title: input.title,
-            url: input.url,
-            location: input.location ?? null,
-            remotePolicy: input.remotePolicy ?? null,
-            description: input.description ?? null,
-            technologies: input.technologies ?? [],
-            seniority: input.seniority ?? null,
-            ...(input.score === undefined ? {} : { score: input.score }),
-            ...(input.postedAt === undefined
-              ? {}
-              : { postedAt: input.postedAt }),
-            lastSeenAt: now,
-            isActive: input.isActive ?? true,
-            updatedAt: now,
-          },
-        })
-        .returning();
-
-      if (!row) {
-        throw new Error('Failed to upsert job');
-      }
-
-      return toJob(row);
-    },
-
-    deactivateMissingBySource: async (
-      source: string,
-      sourceJobIds: string[],
-    ): Promise<Job[]> => {
-      const conditions = [eq(jobs.source, source), eq(jobs.isActive, true)];
-      if (sourceJobIds.length > 0) {
-        conditions.push(notInArray(jobs.sourceJobId, sourceJobIds));
-      }
-
-      const rows = await db
-        .update(jobs)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(and(...conditions))
-        .returning();
-      return rows.map(toJob);
-    },
-
-    deactivate: async (id: string): Promise<Job | null> => {
-      const [row] = await db
-        .update(jobs)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(jobs.id, id))
-        .returning();
-      return row ? toJob(row) : null;
-    },
-
-    deleteById: async (id: string): Promise<boolean> => {
-      const deleted = await db.delete(jobs).where(eq(jobs.id, id)).returning();
-      return deleted.length > 0;
-    },
-  };
-
-  return repository;
-};
+  deleteById: async (id: string): Promise<boolean> =>
+    (await db.job.deleteMany({ where: { id } })).count > 0,
+});

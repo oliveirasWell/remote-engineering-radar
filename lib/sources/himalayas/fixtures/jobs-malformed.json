@@ -1,0 +1,38 @@
+{
+  "updatedAt": 1788497872,
+  "offset": 0,
+  "limit": 20,
+  "totalCount": 101888,
+  "jobs": [
+    {
+      "title": "Staff Platform Engineer",
+      "companyName": "Northwind Labs",
+      "companySlug": "northwind-labs",
+      "seniority": ["Senior"],
+      "locationRestrictions": ["Brazil"],
+      "description": "<p>Missing the guid and application link.</p>",
+      "pubDate": 1788497300
+    },
+    {
+      "title": "Backend Engineer",
+      "companySlug": "contoso-remote",
+      "seniority": [],
+      "locationRestrictions": ["Chile"],
+      "description": "<p>Missing the company name.</p>",
+      "pubDate": 1788497280,
+      "applicationLink": "https://himalayas.app/companies/contoso-remote/jobs/backend-engineer",
+      "guid": "https://himalayas.app/companies/contoso-remote/jobs/backend-engineer"
+    },
+    {
+      "title": "Data Engineer",
+      "companyName": "Fabrikam",
+      "companySlug": "fabrikam",
+      "seniority": ["Mid-level"],
+      "locationRestrictions": ["Mexico"],
+      "description": "<p>Insecure application link.</p>",
+      "pubDate": 1788497260,
+      "applicationLink": "http://himalayas.app/companies/fabrikam/jobs/data-engineer",
+      "guid": "http://himalayas.app/companies/fabrikam/jobs/data-engineer"
+    }
+  ]
+}

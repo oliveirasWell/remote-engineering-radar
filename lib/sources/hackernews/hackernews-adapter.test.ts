@@ -63,8 +63,9 @@ describe('createHackerNewsAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs, complete } = await adapter.fetchJobs();
 
+    expect(complete).toBe(false);
     expect(adapter.name).toBe(HACKER_NEWS_SOURCE_NAME);
     expect(jobs.map((job) => job.sourceJobId)).toEqual([
       '49336502',
@@ -88,7 +89,7 @@ describe('createHackerNewsAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    const jobs = await adapter.fetchJobs();
+    const { jobs } = await adapter.fetchJobs();
     expect(jobs.map((job) => job.sourceJobId)).toEqual(['2']);
     expect(jobs[0]?.company.name).toBe('GoodCo');
   });
@@ -102,7 +103,10 @@ describe('createHackerNewsAdapter', () => {
     });
     const adapter = createHackerNewsAdapter({ fetch: asFetch(fetchMock) });
 
-    await expect(adapter.fetchJobs()).resolves.toEqual([]);
+    await expect(adapter.fetchJobs()).resolves.toEqual({
+      jobs: [],
+      complete: false,
+    });
   });
 
   it('rejects a successful response with an unexpected shape', async () => {
