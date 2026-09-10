@@ -74,15 +74,16 @@ describe('CompanyCard', () => {
     ).toHaveAttribute('href', company.websiteUrl);
   });
 
-  it('does not render an unsafe company URL', () => {
-    render(
-      <CompanyCard
-        company={{ ...company, websiteUrl: 'javascript:alert(1)' }}
-      />,
-    );
+  // Without a usable website there is nowhere to send the reader: 98% of
+  // ingested companies have no URL, so a fallback link is a dead end.
+  it.each([
+    { scenario: 'an unsafe URL', websiteUrl: 'javascript:alert(1)' },
+    { scenario: 'no URL', websiteUrl: null },
+  ])('renders no company link for $scenario', ({ websiteUrl }) => {
+    render(<CompanyCard company={{ ...company, websiteUrl }} />);
 
     expect(
-      screen.getByRole('link', { name: COMPANY_CARD_COPY.viewCompany }),
-    ).toHaveAttribute('href', '/');
+      screen.queryByRole('link', { name: COMPANY_CARD_COPY.viewCompany }),
+    ).not.toBeInTheDocument();
   });
 });

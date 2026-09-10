@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import type { ReportCompanyCard } from '@/lib/report/types';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
@@ -36,8 +35,8 @@ export const CompanyCard = ({ company }: CompanyCardProps) => {
           </ul>
         </div>
       ) : null}
-      <p className="mt-3">
-        {isSafeExternalUrl(company.websiteUrl) ? (
+      {isSafeExternalUrl(company.websiteUrl) ? (
+        <p className="mt-3">
           <a
             href={company.websiteUrl}
             target="_blank"
@@ -46,15 +45,8 @@ export const CompanyCard = ({ company }: CompanyCardProps) => {
           >
             {companyCard.viewCompany}
           </a>
-        ) : (
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground underline underline-offset-2"
-          >
-            {companyCard.viewCompany}
-          </Link>
-        )}
-      </p>
+        </p>
+      ) : null}
     </article>
   );
 };
