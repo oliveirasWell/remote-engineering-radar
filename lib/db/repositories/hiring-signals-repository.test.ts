@@ -41,58 +41,105 @@ describe('createHiringSignalsRepository', () => {
     );
   });
 
-  it('replaces signals and hiring score atomically', async () => {
+  it('replaces signals and hiring scores for many companies at once', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);
     const hiringSignalsRepository = createHiringSignalsRepository(db);
-    const company = await companiesRepository.create(TEST_COMPANY);
-
-    await hiringSignalsRepository.create({
-      ...TEST_HIRING_SIGNAL,
-      companyId: company.id,
+    const first = await companiesRepository.create(TEST_COMPANY);
+    const second = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'globex',
+      hiringScore: 3,
     });
-    await hiringSignalsRepository.replaceForCompany(
-      company.id,
-      [
-        {
-          companyId: company.id,
-          type: 'RECENT_ENGINEERING_HIRING',
-          description: 'Recent engineering hiring detected.',
-          score: 20,
-        },
-      ],
-      20,
-    );
+    const untouched = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'initech',
+      hiringScore: 7,
+    });
+
+    for (const company of [first, second, untouched]) {
+      await hiringSignalsRepository.create({
+        ...TEST_HIRING_SIGNAL,
+        companyId: company.id,
+      });
+    }
+
+    await hiringSignalsRepository.replaceForCompanies([
+      {
+        companyId: first.id,
+        hiringScore: 40,
+        signals: [
+          {
+            companyId: first.id,
+            type: 'RECENT_ENGINEERING_HIRING',
+            description: 'Recent engineering hiring detected.',
+            sourceUrl: null,
+            score: 20,
+          },
+        ],
+      },
+      { companyId: second.id, hiringScore: 0, signals: [] },
+    ]);
 
     await expect(
-      hiringSignalsRepository.listByCompanyId(company.id),
+      hiringSignalsRepository.listByCompanyId(first.id),
     ).resolves.toMatchObject([
-      expect.objectContaining({ type: 'RECENT_ENGINEERING_HIRING', score: 20 }),
+      { type: 'RECENT_ENGINEERING_HIRING', score: 20, sourceUrl: null },
     ]);
     await expect(
-      companiesRepository.findById(company.id),
-    ).resolves.toMatchObject({
-      hiringScore: 20,
-    });
+      hiringSignalsRepository.listByCompanyId(second.id),
+    ).resolves.toEqual([]);
+    await expect(companiesRepository.findById(first.id)).resolves.toMatchObject(
+      {
+        hiringScore: 40,
+      },
+    );
+    await expect(
+      companiesRepository.findById(second.id),
+    ).resolves.toMatchObject({ hiringScore: 0 });
+
+    // Companies outside the batch keep their signals and score.
+    await expect(
+      hiringSignalsRepository.listByCompanyId(untouched.id),
+    ).resolves.toHaveLength(1);
+    await expect(
+      companiesRepository.findById(untouched.id),
+    ).resolves.toMatchObject({ hiringScore: 7 });
   });
 
-  it('supports an empty replacement and updates the company score', async () => {
+  it('keeps the last entry when a company appears twice in one batch', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);
     const hiringSignalsRepository = createHiringSignalsRepository(db);
     const company = await companiesRepository.create(TEST_COMPANY);
-    await hiringSignalsRepository.create({
-      ...TEST_HIRING_SIGNAL,
-      companyId: company.id,
-    });
 
-    await hiringSignalsRepository.replaceForCompany(company.id, [], 0);
+    await hiringSignalsRepository.replaceForCompanies([
+      {
+        companyId: company.id,
+        hiringScore: 10,
+        signals: [{ ...TEST_HIRING_SIGNAL, companyId: company.id, score: 10 }],
+      },
+      {
+        companyId: company.id,
+        hiringScore: 30,
+        signals: [{ ...TEST_HIRING_SIGNAL, companyId: company.id, score: 30 }],
+      },
+    ]);
 
     await expect(
       hiringSignalsRepository.listByCompanyId(company.id),
-    ).resolves.toEqual([]);
+    ).resolves.toMatchObject([{ score: 30 }]);
     await expect(
       companiesRepository.findById(company.id),
-    ).resolves.toMatchObject({ hiringScore: 0 });
+    ).resolves.toMatchObject({ hiringScore: 30 });
+  });
+
+  it('replaces nothing for an empty batch', async () => {
+    const db = await createTestDb();
+    const hiringSignalsRepository = createHiringSignalsRepository(db);
+
+    await expect(
+      hiringSignalsRepository.replaceForCompanies([]),
+    ).resolves.toBeUndefined();
   });
 });

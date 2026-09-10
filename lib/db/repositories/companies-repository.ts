@@ -1,4 +1,4 @@
-import type { Prisma, Company as PrismaCompany } from '@prisma/client';
+import { Prisma, type Company as PrismaCompany } from '@prisma/client';
 import {
   DEFAULT_COMPANY_KIND,
   resolveCompanyKind,
@@ -108,6 +108,45 @@ export const createCompaniesRepository = (db: Db) => ({
     return rows.map(toCompany);
   },
 
+  /**
+   * One statement for the whole ingestion batch. Unlike `upsertBySlug` it
+   * cannot clear a field: an absent `websiteUrl`/`logoUrl` is preserved rather
+   * than distinguished from an explicit `null`, and `hiringScore` is left alone
+   * entirely because the hiring-signal pass owns it.
+   */
+  upsertManyBySlug: async (
+    inputs: NewCompany[],
+  ): Promise<{ id: string; slug: string }[]> => {
+    // ON CONFLICT DO UPDATE errors when one statement hits a slug twice.
+    const rows = [
+      ...new Map(inputs.map((input) => [input.slug, input])).values(),
+    ];
+    if (rows.length === 0) {
+      return [];
+    }
+
+    return db.$queryRaw<{ id: string; slug: string }[]>(Prisma.sql`
+      INSERT INTO companies (name, slug, website_url, logo_url, source, kind, hiring_score)
+      SELECT * FROM unnest(
+        ${rows.map((row) => row.name)}::text[],
+        ${rows.map((row) => row.slug)}::text[],
+        ${rows.map((row) => row.websiteUrl ?? null)}::text[],
+        ${rows.map((row) => row.logoUrl ?? null)}::text[],
+        ${rows.map((row) => row.source)}::text[],
+        ${rows.map(resolveKindForInput)}::text[],
+        ${rows.map((row) => row.hiringScore ?? 0)}::int[]
+      )
+      ON CONFLICT (slug) DO UPDATE SET
+        name = EXCLUDED.name,
+        source = EXCLUDED.source,
+        kind = EXCLUDED.kind,
+        website_url = COALESCE(EXCLUDED.website_url, companies.website_url),
+        logo_url = COALESCE(EXCLUDED.logo_url, companies.logo_url),
+        updated_at = ${new Date()}
+      RETURNING id, slug
+    `);
+  },
+
   updateHiringScore: async (
     id: string,
     hiringScore: number,
@@ -117,37 +156,6 @@ export const createCompaniesRepository = (db: Db) => ({
       data: { hiringScore, updatedAt: new Date() },
     });
     return row ? toCompany(row) : null;
-  },
-
-  upsertBySlug: async (input: NewCompany): Promise<Company> => {
-    const kind = resolveKindForInput(input);
-    return toCompany(
-      await db.company.upsert({
-        where: { slug: input.slug },
-        create: {
-          name: input.name,
-          slug: input.slug,
-          websiteUrl: input.websiteUrl ?? null,
-          logoUrl: input.logoUrl ?? null,
-          source: input.source,
-          kind,
-          hiringScore: input.hiringScore ?? 0,
-        },
-        update: {
-          name: input.name,
-          source: input.source,
-          kind,
-          ...(input.websiteUrl === undefined
-            ? {}
-            : { websiteUrl: input.websiteUrl }),
-          ...(input.logoUrl === undefined ? {} : { logoUrl: input.logoUrl }),
-          ...(input.hiringScore === undefined
-            ? {}
-            : { hiringScore: input.hiringScore }),
-          updatedAt: new Date(),
-        },
-      }),
-    );
   },
 
   deleteById: async (id: string): Promise<boolean> =>

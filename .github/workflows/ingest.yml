@@ -77,7 +77,7 @@ jobs:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
       - run: pnpm ingest
-        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'ingest'
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'ingest')
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}

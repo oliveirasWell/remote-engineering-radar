@@ -42,59 +42,6 @@ describe('createCompaniesRepository', () => {
     );
   });
 
-  it('upserts the same slug without creating a duplicate', async () => {
-    const db = await createTestDb();
-    const companiesRepository = createCompaniesRepository(db);
-
-    const first = await companiesRepository.upsertBySlug(TEST_COMPANY);
-    const second = await companiesRepository.upsertBySlug({
-      ...TEST_COMPANY,
-      name: 'Acme Robotics Updated',
-      websiteUrl: undefined,
-    });
-
-    expect(second.id).toBe(first.id);
-    await expect(
-      companiesRepository.findBySlug(TEST_COMPANY.slug),
-    ).resolves.toMatchObject({
-      name: 'Acme Robotics Updated',
-      websiteUrl: TEST_COMPANY.websiteUrl,
-    });
-  });
-
-  it('preserves every omitted optional field and applies explicit nulls', async () => {
-    const db = await createTestDb();
-    const companiesRepository = createCompaniesRepository(db);
-
-    const first = await companiesRepository.upsertBySlug(TEST_COMPANY);
-    const preserved = await companiesRepository.upsertBySlug({
-      name: 'Renamed Company',
-      slug: TEST_COMPANY.slug,
-      source: 'ashby',
-    });
-
-    expect(preserved).toMatchObject({
-      id: first.id,
-      websiteUrl: TEST_COMPANY.websiteUrl,
-      logoUrl: TEST_COMPANY.logoUrl,
-      hiringScore: TEST_COMPANY.hiringScore,
-    });
-
-    const cleared = await companiesRepository.upsertBySlug({
-      name: 'Renamed Company',
-      slug: TEST_COMPANY.slug,
-      source: 'ashby',
-      websiteUrl: null,
-      logoUrl: null,
-      hiringScore: 0,
-    });
-    expect(cleared).toMatchObject({
-      websiteUrl: null,
-      logoUrl: null,
-      hiringScore: 0,
-    });
-  });
-
   it('uses a strict minimum hiring score', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);
@@ -122,5 +69,58 @@ describe('createCompaniesRepository', () => {
     await expect(
       companiesRepository.listByHiringScore({ minimumHiringScore: 12 }),
     ).resolves.toMatchObject([{ slug: 'higher-score' }]);
+  });
+
+  it('upserts many slugs in one statement, preserving omitted optional fields', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+
+    const existing = await companiesRepository.create(TEST_COMPANY);
+
+    const upserted = await companiesRepository.upsertManyBySlug([
+      {
+        name: 'Acme Robotics Renamed',
+        slug: TEST_COMPANY.slug,
+        source: 'ashby',
+      },
+      {
+        name: 'Globex',
+        slug: 'globex',
+        source: 'greenhouse',
+        websiteUrl: 'https://globex.example',
+      },
+    ]);
+
+    expect(new Map(upserted.map(({ slug, id }) => [slug, id]))).toEqual(
+      new Map([
+        [TEST_COMPANY.slug, existing.id],
+        ['globex', expect.any(String)],
+      ]),
+    );
+
+    // The bulk path must not clobber fields the ingestion input omits.
+    await expect(
+      companiesRepository.findBySlug(TEST_COMPANY.slug),
+    ).resolves.toMatchObject({
+      name: 'Acme Robotics Renamed',
+      source: 'ashby',
+      websiteUrl: TEST_COMPANY.websiteUrl,
+      logoUrl: TEST_COMPANY.logoUrl,
+      hiringScore: TEST_COMPANY.hiringScore,
+    });
+    await expect(
+      companiesRepository.findBySlug('globex'),
+    ).resolves.toMatchObject({
+      name: 'Globex',
+      websiteUrl: 'https://globex.example',
+      hiringScore: 0,
+    });
+  });
+
+  it('upserts no companies without touching the database', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+
+    await expect(companiesRepository.upsertManyBySlug([])).resolves.toEqual([]);
   });
 });

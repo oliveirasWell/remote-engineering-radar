@@ -32,7 +32,7 @@ vi.mock(
           const repository = original.createCompaniesRepository(db);
           return {
             ...repository,
-            upsertBySlug: vi.fn(repository.upsertBySlug),
+            upsertManyBySlug: vi.fn(repository.upsertManyBySlug),
           };
         },
       ),
@@ -178,7 +178,13 @@ describe('runIngestion', () => {
       );
       const transactionRepository = vi.mocked(createCompaniesRepository).mock
         .results[0]!.value;
-      expect.soft(transactionRepository.upsertBySlug).toHaveBeenCalledTimes(2);
+      // One statement for the batch, carrying one entry per distinct slug.
+      expect
+        .soft(transactionRepository.upsertManyBySlug)
+        .toHaveBeenCalledOnce();
+      expect
+        .soft(transactionRepository.upsertManyBySlug.mock.calls[0]![0])
+        .toHaveLength(2);
       expect(result).toMatchObject({
         persistedJobs: jobs.length,
         companiesUpdated: 2,
