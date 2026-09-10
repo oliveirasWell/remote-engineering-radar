@@ -260,7 +260,8 @@ describe('production workflow operation isolation', () => {
     ['workflow_dispatch', 'deploy-migrations', ['deploy']],
     ['workflow_dispatch', 'ingest', ['deploy', 'ingest']],
     ['schedule', 'prepare-baseline', ['deploy', 'ingest']],
-    ['push', 'prepare-baseline', ['deploy', 'ingest']],
+    // A merge deploys its migrations but does not re-ingest; the schedule does.
+    ['push', 'prepare-baseline', ['deploy']],
   ])(
     'runs only intended database operations for %s / %s',
     (event, operation, expected) => {
