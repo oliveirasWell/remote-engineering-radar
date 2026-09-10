@@ -32,13 +32,18 @@ const replaceMany = async (
   tx: Db,
   entries: CompanyHiringSignals[],
 ): Promise<void> => {
-  const companyIds = entries.map((entry) => entry.companyId);
+  // A repeated companyId would duplicate signals and leave the score to
+  // whichever unnest row the join happened to match.
+  const deduped = [
+    ...new Map(entries.map((entry) => [entry.companyId, entry])).values(),
+  ];
+  const companyIds = deduped.map((entry) => entry.companyId);
   await tx.hiringSignal.deleteMany({
     where: { companyId: { in: companyIds } },
   });
 
   const now = new Date();
-  const signals = entries.flatMap((entry) =>
+  const signals = deduped.flatMap((entry) =>
     entry.signals.map((input) => ({
       companyId: input.companyId,
       type: input.type,
@@ -56,7 +61,7 @@ const replaceMany = async (
     UPDATE companies SET hiring_score = scored.hiring_score, updated_at = ${now}
     FROM unnest(
       ${companyIds}::uuid[],
-      ${entries.map((entry) => entry.hiringScore)}::int[]
+      ${deduped.map((entry) => entry.hiringScore)}::int[]
     ) AS scored(id, hiring_score)
     WHERE companies.id = scored.id
   `);

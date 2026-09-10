@@ -107,6 +107,33 @@ describe('createHiringSignalsRepository', () => {
     ).resolves.toMatchObject({ hiringScore: 7 });
   });
 
+  it('keeps the last entry when a company appears twice in one batch', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const hiringSignalsRepository = createHiringSignalsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    await hiringSignalsRepository.replaceForCompanies([
+      {
+        companyId: company.id,
+        hiringScore: 10,
+        signals: [{ ...TEST_HIRING_SIGNAL, companyId: company.id, score: 10 }],
+      },
+      {
+        companyId: company.id,
+        hiringScore: 30,
+        signals: [{ ...TEST_HIRING_SIGNAL, companyId: company.id, score: 30 }],
+      },
+    ]);
+
+    await expect(
+      hiringSignalsRepository.listByCompanyId(company.id),
+    ).resolves.toMatchObject([{ score: 30 }]);
+    await expect(
+      companiesRepository.findById(company.id),
+    ).resolves.toMatchObject({ hiringScore: 30 });
+  });
+
   it('replaces nothing for an empty batch', async () => {
     const db = await createTestDb();
     const hiringSignalsRepository = createHiringSignalsRepository(db);

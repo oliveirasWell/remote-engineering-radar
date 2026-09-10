@@ -214,8 +214,10 @@ export const createJobsRepository = (db: Db) => ({
   },
 
   /**
-   * One statement for the whole ingestion batch. It always writes `score` and `postedAt` rather than preserving them when
-   * absent; `firstSeenAt` still survives a conflict.
+   * One statement for the whole ingestion batch. A conflict keeps the stored
+   * `firstSeenAt`, and keeps the stored `postedAt` when the batch has none:
+   * feeds routinely drop that date, and wiping it both stops the job ageing
+   * out and sorts it NULLS FIRST. `score` is always written.
    */
   upsertManyBySourceJobId: async (inputs: NewJob[]): Promise<number> => {
     // ON CONFLICT DO UPDATE errors when one statement hits a key twice.
@@ -279,7 +281,7 @@ export const createJobsRepository = (db: Db) => ({
         countries = EXCLUDED.countries,
         seniority = EXCLUDED.seniority,
         score = EXCLUDED.score,
-        posted_at = EXCLUDED.posted_at,
+        posted_at = COALESCE(EXCLUDED.posted_at, jobs.posted_at),
         last_seen_at = EXCLUDED.last_seen_at,
         is_active = EXCLUDED.is_active,
         updated_at = ${now}

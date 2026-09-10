@@ -380,9 +380,7 @@ describe('createJobsRepository', () => {
       isActive: true,
     });
     // A conflicting row keeps its original first_seen_at.
-    expect(updated?.firstSeenAt).toEqual(
-      (await jobsRepository.findById(existing.id))?.firstSeenAt,
-    );
+    expect(updated?.firstSeenAt).toEqual(existing.firstSeenAt);
 
     await expect(
       jobsRepository.findBySourceJobId(TEST_JOB.source, 'gh-1002'),
@@ -396,6 +394,37 @@ describe('createJobsRepository', () => {
       geographies: [],
       countries: [],
     });
+  });
+
+  it('keeps a stored posted_at when a later poll omits it', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const postedAt = new Date('2026-08-01T00:00:00.000Z');
+
+    await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        technologies: [...TEST_JOB.technologies],
+        postedAt,
+      },
+    ]);
+    // Adapters return undefined for a missing or unparseable date, and a
+    // wiped posted_at both stops the job aging out and sorts it NULLS FIRST.
+    await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        technologies: [...TEST_JOB.technologies],
+        postedAt: undefined,
+      },
+    ]);
+
+    await expect(
+      jobsRepository.findBySourceJobId(TEST_JOB.source, TEST_JOB.sourceJobId),
+    ).resolves.toMatchObject({ postedAt });
   });
 
   it('upserts no jobs without touching the database', async () => {
