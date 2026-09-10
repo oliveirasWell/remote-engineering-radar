@@ -167,34 +167,37 @@ export const runIngestion = async (options: {
       const ingestionRunsRepository = createIngestionRunsRepository(tx);
       const companyIds = new Set<string>();
       const companyIdsBySlug = new Map<string, string>();
-      let persistedJobs = 0;
 
-      for (const input of companyInputsBySlug.values()) {
-        const company = await companiesRepository.upsertBySlug(input);
-        companyIdsBySlug.set(input.slug, company.id);
-        companyIds.add(company.id);
+      for (const { id, slug } of await companiesRepository.upsertManyBySlug([
+        ...companyInputsBySlug.values(),
+      ])) {
+        companyIdsBySlug.set(slug, id);
+        companyIds.add(id);
       }
 
+      const persistedJobs = await jobsRepository.upsertManyBySourceJobId(
+        uniqueJobs.map((job) => {
+          const scoredJob = job as EnrichedJob;
+          return {
+            companyId: companyIdsBySlug.get(toSlug(job.company.name))!,
+            source: job.source,
+            sourceJobId: job.sourceJobId,
+            title: job.title,
+            url: job.url,
+            location: job.location,
+            remotePolicy: job.remotePolicy,
+            description: job.description,
+            technologies: job.technologies,
+            geographies: scoredJob.geographies,
+            countries: scoredJob.countries,
+            seniority: job.seniority,
+            score: scoredJob.score,
+            postedAt: job.postedAt,
+            isActive: true,
+          };
+        }),
+      );
       for (const job of uniqueJobs) {
-        const scoredJob = job as EnrichedJob;
-        await jobsRepository.upsertBySourceJobId({
-          companyId: companyIdsBySlug.get(toSlug(job.company.name))!,
-          source: job.source,
-          sourceJobId: job.sourceJobId,
-          title: job.title,
-          url: job.url,
-          location: job.location,
-          remotePolicy: job.remotePolicy,
-          description: job.description,
-          technologies: job.technologies,
-          geographies: scoredJob.geographies,
-          countries: scoredJob.countries,
-          seniority: job.seniority,
-          score: scoredJob.score,
-          postedAt: job.postedAt,
-          isActive: true,
-        });
-        persistedJobs += 1;
         persistedBySource.set(
           job.source,
           (persistedBySource.get(job.source) ?? 0) + 1,
@@ -256,8 +259,7 @@ export const runIngestion = async (options: {
         }
       }
 
-      let companiesUpdated = 0;
-      for (const companyId of companyIds) {
+      const detected = [...companyIds].map((companyId) => {
         const companyJobs = jobsByCompany.get(companyId) ?? [];
         const detection = detectHiringSignals({
           companyName: companyId,
@@ -272,19 +274,21 @@ export const runIngestion = async (options: {
           now,
         });
 
-        await hiringSignalsRepository.replaceForCompany(
+        return {
           companyId,
-          detection.signals.map((signal) => ({
+          hiringScore: detection.hiringScore,
+          signals: detection.signals.map((signal) => ({
             companyId,
             type: signal.type,
             description: signal.description,
             sourceUrl: signal.sourceUrl,
             score: signal.score,
           })),
-          detection.hiringScore,
-        );
-        companiesUpdated += 1;
-      }
+        };
+      });
+
+      await hiringSignalsRepository.replaceForCompanies(detected);
+      const companiesUpdated = detected.length;
 
       await ingestionRunsRepository.record({
         completedAt: options.completedAt?.(),

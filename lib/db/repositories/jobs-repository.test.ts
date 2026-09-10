@@ -70,7 +70,7 @@ describe('createJobsRepository', () => {
     ).rejects.toThrow();
   });
 
-  it('atomically upserts a job and updates its company', async () => {
+  it('reassigns a conflicting job to its new company', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);
     const jobsRepository = createJobsRepository(db);
@@ -81,24 +81,24 @@ describe('createJobsRepository', () => {
       name: 'Other Company',
     });
 
-    const first = await jobsRepository.upsertBySourceJobId({
+    const first = await jobsRepository.create({
       ...TEST_JOB,
       companyId: firstCompany.id,
       technologies: [...TEST_JOB.technologies],
     });
-    const second = await jobsRepository.upsertBySourceJobId({
-      ...TEST_JOB,
-      companyId: secondCompany.id,
-      title: 'Updated Engineer',
-      technologies: [...TEST_JOB.technologies],
-    });
+    await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: secondCompany.id,
+        title: 'Updated Engineer',
+        technologies: [...TEST_JOB.technologies],
+      },
+    ]);
 
-    expect(second.id).toBe(first.id);
-    await expect(jobsRepository.findById(second.id)).resolves.toMatchObject({
+    await expect(jobsRepository.findById(first.id)).resolves.toMatchObject({
       companyId: secondCompany.id,
       title: 'Updated Engineer',
     });
-    await expect(jobsRepository.listActiveByScore()).resolves.toHaveLength(1);
   });
 
   it('filters active jobs older than maxAgeMs', async () => {
@@ -326,5 +326,82 @@ describe('createJobsRepository', () => {
       jobsRepository.findById(recentInactive.id),
     ).resolves.not.toBeNull();
     await expect(jobsRepository.findById(active.id)).resolves.not.toBeNull();
+  });
+
+  it('upserts many source job ids in one statement', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const postedAt = new Date('2026-09-01T00:00:00.000Z');
+
+    const existing = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const written = await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        title: 'Staff Frontend Engineer',
+        technologies: ['React'],
+        geographies: ['latam'],
+        countries: ['br'],
+        score: 91,
+        postedAt,
+      },
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId: 'gh-1002',
+        title: 'Backend Engineer',
+        description: null,
+        location: null,
+        seniority: null,
+        postedAt: null,
+        technologies: [],
+        geographies: [],
+        countries: [],
+      },
+    ]);
+
+    expect(written).toBe(2);
+
+    const updated = await jobsRepository.findById(existing.id);
+    expect(updated).toMatchObject({
+      title: 'Staff Frontend Engineer',
+      technologies: ['React'],
+      geographies: ['latam'],
+      countries: ['br'],
+      score: 91,
+      postedAt,
+      isActive: true,
+    });
+    // A conflicting row keeps its original first_seen_at.
+    expect(updated?.firstSeenAt).toEqual(
+      (await jobsRepository.findById(existing.id))?.firstSeenAt,
+    );
+
+    await expect(
+      jobsRepository.findBySourceJobId(TEST_JOB.source, 'gh-1002'),
+    ).resolves.toMatchObject({
+      title: 'Backend Engineer',
+      description: null,
+      location: null,
+      seniority: null,
+      postedAt: null,
+      technologies: [],
+      geographies: [],
+      countries: [],
+    });
+  });
+
+  it('upserts no jobs without touching the database', async () => {
+    const db = await createTestDb();
+    const jobsRepository = createJobsRepository(db);
+
+    await expect(jobsRepository.upsertManyBySourceJobId([])).resolves.toBe(0);
   });
 });

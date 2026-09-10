@@ -213,35 +213,77 @@ export const createJobsRepository = (db: Db) => ({
     return row ? toJob(row) : null;
   },
 
-  upsertBySourceJobId: async (input: NewJob): Promise<{ id: string }> => {
+  /**
+   * One statement for the whole ingestion batch. It always writes `score` and `postedAt` rather than preserving them when
+   * absent; `firstSeenAt` still survives a conflict.
+   */
+  upsertManyBySourceJobId: async (inputs: NewJob[]): Promise<number> => {
+    // ON CONFLICT DO UPDATE errors when one statement hits a key twice.
+    const rows = [
+      ...new Map(
+        inputs.map((input) => [
+          `${input.source}\u0000${input.sourceJobId}`,
+          input,
+        ]),
+      ).values(),
+    ];
+    if (rows.length === 0) {
+      return 0;
+    }
+
     const now = new Date();
-    return db.job.upsert({
-      where: {
-        source_sourceJobId: {
-          source: input.source,
-          sourceJobId: input.sourceJobId,
-        },
-      },
-      create: createData(input, now),
-      update: {
-        companyId: input.companyId,
-        title: input.title,
-        url: input.url,
-        location: input.location ?? null,
-        remotePolicy: input.remotePolicy ?? null,
-        description: input.description ?? null,
-        technologies: input.technologies ?? [],
-        geographies: input.geographies ?? [],
-        countries: input.countries ?? [],
-        seniority: input.seniority ?? null,
-        ...(input.score === undefined ? {} : { score: input.score }),
-        ...(input.postedAt === undefined ? {} : { postedAt: input.postedAt }),
-        lastSeenAt: now,
-        isActive: input.isActive ?? true,
-        updatedAt: now,
-      },
-      select: { id: true },
-    });
+    const column = <T>(select: (input: NewJob) => T): T[] => rows.map(select);
+
+    return db.$executeRaw(Prisma.sql`
+      INSERT INTO jobs (
+        company_id, source, source_job_id, title, url, location, remote_policy,
+        description, technologies, geographies, countries, seniority, score,
+        posted_at, first_seen_at, last_seen_at, is_active
+      )
+      SELECT
+        company_id, source, source_job_id, title, url, location, remote_policy,
+        description, technologies::jsonb, geographies::jsonb, countries::jsonb,
+        seniority, score, posted_at, first_seen_at, last_seen_at, is_active
+      FROM unnest(
+        ${column((row) => row.companyId)}::uuid[],
+        ${column((row) => row.source)}::text[],
+        ${column((row) => row.sourceJobId)}::text[],
+        ${column((row) => row.title)}::text[],
+        ${column((row) => row.url)}::text[],
+        ${column((row) => row.location ?? null)}::text[],
+        ${column((row) => row.remotePolicy ?? null)}::text[],
+        ${column((row) => row.description ?? null)}::text[],
+        ${column((row) => JSON.stringify(row.technologies ?? []))}::text[],
+        ${column((row) => JSON.stringify(row.geographies ?? []))}::text[],
+        ${column((row) => JSON.stringify(row.countries ?? []))}::text[],
+        ${column((row) => row.seniority ?? null)}::text[],
+        ${column((row) => row.score ?? 0)}::int[],
+        ${column((row) => row.postedAt ?? null)}::timestamptz[],
+        ${column((row) => row.firstSeenAt ?? now)}::timestamptz[],
+        ${column((row) => row.lastSeenAt ?? now)}::timestamptz[],
+        ${column((row) => row.isActive ?? true)}::boolean[]
+      ) AS t(
+        company_id, source, source_job_id, title, url, location, remote_policy,
+        description, technologies, geographies, countries, seniority, score,
+        posted_at, first_seen_at, last_seen_at, is_active
+      )
+      ON CONFLICT (source, source_job_id) DO UPDATE SET
+        company_id = EXCLUDED.company_id,
+        title = EXCLUDED.title,
+        url = EXCLUDED.url,
+        location = EXCLUDED.location,
+        remote_policy = EXCLUDED.remote_policy,
+        description = EXCLUDED.description,
+        technologies = EXCLUDED.technologies,
+        geographies = EXCLUDED.geographies,
+        countries = EXCLUDED.countries,
+        seniority = EXCLUDED.seniority,
+        score = EXCLUDED.score,
+        posted_at = EXCLUDED.posted_at,
+        last_seen_at = EXCLUDED.last_seen_at,
+        is_active = EXCLUDED.is_active,
+        updated_at = ${now}
+    `);
   },
 
   deactivateMissingBySource: async (
