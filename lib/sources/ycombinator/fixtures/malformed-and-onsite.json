@@ -1,0 +1,59 @@
+[
+  {
+    "id": null,
+    "title": "No id",
+    "url": "/companies/x/jobs/y",
+    "companyName": "X",
+    "location": "Remote",
+    "role": "eng",
+    "skills": []
+  },
+  {
+    "id": 2,
+    "title": "",
+    "url": "/companies/x/jobs/y",
+    "companyName": "X",
+    "location": "Remote",
+    "role": "eng",
+    "skills": []
+  },
+  {
+    "id": 3,
+    "title": "Bad url",
+    "url": "javascript:alert(1)",
+    "companyName": "X",
+    "location": "Remote",
+    "role": "eng",
+    "skills": []
+  },
+  {
+    "id": 4,
+    "title": "No company",
+    "url": "/companies/x/jobs/y",
+    "companyName": "",
+    "location": "Remote",
+    "role": "eng",
+    "skills": []
+  },
+  {
+    "id": 108650,
+    "title": "Lead AI Engineer",
+    "url": "/companies/vahan/jobs/onsite-lead-ai-engineer",
+    "companyName": "Vahan",
+    "location": "Bengaluru, KA, IN / Bengaluru, Karnataka, IN",
+    "role": "eng",
+    "roleSpecificType": "Data science",
+    "skills": ["Python"],
+    "companyUrl": "/companies/vahan",
+    "companyBatchName": "S19"
+  },
+  {
+    "id": 5,
+    "title": "Sales Lead",
+    "url": "/companies/x/jobs/sales",
+    "companyName": "X",
+    "location": "Remote",
+    "role": "sales",
+    "skills": []
+  }
+]

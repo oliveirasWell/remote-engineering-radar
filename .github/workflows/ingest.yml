@@ -84,4 +84,5 @@ jobs:
           GREENHOUSE_BOARD_TOKENS: ${{ secrets.GREENHOUSE_BOARD_TOKENS }}
           ASHBY_BOARD_NAMES: ${{ secrets.ASHBY_BOARD_NAMES }}
           LEVER_BOARD_SLUGS: ${{ secrets.LEVER_BOARD_SLUGS }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           NODE_ENV: production

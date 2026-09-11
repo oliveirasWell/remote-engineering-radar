@@ -2,13 +2,13 @@
 
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
-import { REPOSITORY_URL } from '../constants';
+import { CONTACT_EMAIL, PERSONAL_SITE_URL, REPOSITORY_URL } from '../constants';
 
 export const SiteFooter = () => {
   const { messages } = useI18n();
 
   return (
-    <footer className="mx-auto w-full max-w-3xl border-t border-border px-6 py-6 text-sm">
+    <footer className="mx-auto flex w-full max-w-3xl flex-wrap gap-x-4 gap-y-2 border-t border-border px-6 py-6 text-sm">
       {isSafeExternalUrl(REPOSITORY_URL) ? (
         <a
           href={REPOSITORY_URL}
@@ -17,6 +17,22 @@ export const SiteFooter = () => {
           className="text-muted-foreground underline underline-offset-2"
         >
           {messages.navigation.github}
+        </a>
+      ) : null}
+      <a
+        href={`mailto:${CONTACT_EMAIL}`}
+        className="text-muted-foreground underline underline-offset-2"
+      >
+        {messages.about.contactEmailLabel}
+      </a>
+      {isSafeExternalUrl(PERSONAL_SITE_URL) ? (
+        <a
+          href={PERSONAL_SITE_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="text-muted-foreground underline underline-offset-2"
+        >
+          {messages.about.contactSiteLabel}
         </a>
       ) : null}
     </footer>

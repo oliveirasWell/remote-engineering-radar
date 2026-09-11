@@ -97,6 +97,7 @@ const readChunk = async (
 export const fetchWithRetry = async (
   input: RequestInfo | URL,
   fetchImpl: typeof fetch,
+  init?: RequestInit,
 ): Promise<Response> => {
   for (let attempt = 0; attempt < SOURCE_MAX_ATTEMPTS; attempt += 1) {
     const controller = new AbortController();
@@ -107,7 +108,10 @@ export const fetchWithRetry = async (
     let keepTimeout = false;
 
     try {
-      const response = await fetchImpl(input, { signal: controller.signal });
+      const response = await fetchImpl(input, {
+        ...init,
+        signal: controller.signal,
+      });
       if (
         !isRetryableResponse(response) ||
         attempt === SOURCE_MAX_ATTEMPTS - 1
@@ -151,7 +155,7 @@ export const discardResponse = async (response: Response): Promise<void> => {
   await response.body?.cancel().catch(() => undefined);
 };
 
-export const readJsonResponse = async <T>(response: Response): Promise<T> => {
+export const readTextResponse = async (response: Response): Promise<string> => {
   const deadline = responseDeadlines.get(response);
   const reader = response.body?.getReader();
 
@@ -186,7 +190,7 @@ export const readJsonResponse = async <T>(response: Response): Promise<T> => {
     }
 
     body += decoder.decode();
-    return JSON.parse(body) as T;
+    return body;
   } finally {
     if (deadline) {
       clearTimeout(deadline.timeout);
@@ -195,3 +199,6 @@ export const readJsonResponse = async <T>(response: Response): Promise<T> => {
     void reader?.cancel().catch(() => undefined);
   }
 };
+
+export const readJsonResponse = async <T>(response: Response): Promise<T> =>
+  JSON.parse(await readTextResponse(response)) as T;

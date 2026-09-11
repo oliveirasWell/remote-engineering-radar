@@ -4,7 +4,11 @@ import { render, screen } from '@testing-library/react';
 import { renderToString } from 'react-dom/server';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { LOCALES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
-import { REPOSITORY_URL } from '@/components/site/constants';
+import {
+  CONTACT_EMAIL,
+  PERSONAL_SITE_URL,
+  REPOSITORY_URL,
+} from '@/components/site/constants';
 import AboutPage from './page';
 
 vi.mock('@/lib/db/client', () => {
@@ -17,13 +21,13 @@ afterEach(() => {
 
 describe('AboutPage', () => {
   it('prerenders its content in English without accessing the database', () => {
-    expect(renderToString(<AboutPage />)).toContain(
-      messagesFor().about.sources,
-    );
+    const html = renderToString(<AboutPage />);
+    expect(html).toContain(messagesFor().about.sourcesIntro);
+    expect(html).toContain(CONTACT_EMAIL);
   });
 
   it.each(LOCALES)(
-    'explains sources, freshness, scope, scoring, and applications in %s',
+    'explains sources, heuristics, contact, and repository in %s',
     (locale) => {
       document.cookie = `${LOCALE_COOKIE}=${locale}; path=/`;
       const { about, navigation } = messagesFor(locale);
@@ -37,19 +41,33 @@ describe('AboutPage', () => {
       ).toBeInTheDocument();
       for (const copy of [
         about.introduction,
-        about.sources,
+        about.sourcesIntro,
         about.freshness,
         about.scope,
         about.scoring,
+        about.scoringJob,
+        about.scoringCompany,
         about.applications,
+        about.contact,
         about.repository,
       ]) {
         expect(screen.getByText(copy)).toBeInTheDocument();
       }
-      const link = screen.getByRole('link', { name: navigation.github });
-      expect(link).toHaveAttribute('href', REPOSITORY_URL);
-      expect(link).toHaveAttribute('target', '_blank');
-      expect(link).toHaveAttribute('rel', 'noreferrer');
+      for (const source of about.sources) {
+        expect(screen.getByText(source.name)).toBeInTheDocument();
+        expect(screen.getByText(`— ${source.description}`)).toBeInTheDocument();
+      }
+      expect(screen.getByRole('link', { name: CONTACT_EMAIL })).toHaveAttribute(
+        'href',
+        `mailto:${CONTACT_EMAIL}`,
+      );
+      expect(
+        screen.getByRole('link', { name: PERSONAL_SITE_URL }),
+      ).toHaveAttribute('href', PERSONAL_SITE_URL);
+      const github = screen.getByRole('link', { name: navigation.github });
+      expect(github).toHaveAttribute('href', REPOSITORY_URL);
+      expect(github).toHaveAttribute('target', '_blank');
+      expect(github).toHaveAttribute('rel', 'noreferrer');
     },
   );
 });
