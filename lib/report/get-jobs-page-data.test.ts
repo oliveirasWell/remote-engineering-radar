@@ -2,6 +2,7 @@ import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { createTestDb } from '@/lib/db/test/create-test-db';
+import type { Job } from '@/lib/jobs/types';
 import { getJobDetailData, getJobsPageData } from './get-jobs-page-data';
 
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
@@ -32,7 +33,44 @@ const FALLBACK_NAMED_COMPANY = {
   source: 'frontendbr',
 };
 
+const SORTING_CASES = [
+  { ageMs: 7 * 24 * 60 * 60 * 1000, score: 95 },
+  { ageMs: 0, score: 20 },
+  { ageMs: null, score: 100 },
+  { ageMs: 0, score: 60 },
+];
+
 describe('getJobsPageData', () => {
+  it('orders by newest publication before limiting results and leaves undated jobs last', async () => {
+    const db = await createTestDb();
+    vi.mocked(getDb).mockReturnValue(db);
+    const company = await createCompaniesRepository(db).create(
+      FALLBACK_NAMED_COMPANY,
+    );
+    const jobsRepository = createJobsRepository(db);
+    const now = Date.now();
+    const savedJobs: Job[] = [];
+    for (const [index, { ageMs, score }] of SORTING_CASES.entries()) {
+      savedJobs.push(
+        await jobsRepository.create({
+          ...MISSING_COMPANY_JOB,
+          sourceJobId: `${MISSING_COMPANY_JOB.sourceJobId}-${index}`,
+          companyId: company.id,
+          score,
+          postedAt: ageMs === null ? undefined : new Date(now - ageMs),
+        }),
+      );
+    }
+
+    const newestIds = [3, 1, 0, 2].map((index) => savedJobs[index].id);
+    expect((await getJobsPageData()).jobs.map((job) => job.id)).toEqual(
+      newestIds,
+    );
+    expect(
+      (await getJobsPageData({ limit: 2 })).jobs.map((job) => job.id),
+    ).toEqual(newestIds.slice(0, 2));
+  });
+
   it('distinguishes missing company names from actual names matching the fallback', async () => {
     const db = await createTestDb();
     vi.mocked(getDb).mockReturnValue(db as ReturnType<typeof getDb>);

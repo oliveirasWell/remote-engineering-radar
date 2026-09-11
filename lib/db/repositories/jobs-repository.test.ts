@@ -282,6 +282,74 @@ describe('createJobsRepository', () => {
     }
   });
 
+  it('filters card rows by country when requested', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'brazil-role',
+      countries: ['brazil'],
+      postedAt: now,
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'guatemala-role',
+      countries: ['guatemala'],
+      postedAt: now,
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const cards = await jobsRepository.listCardsByCompanyIds([company.id], {
+      maxAgeMs: JOB_MAX_AGE_MS,
+      now,
+      country: 'brazil',
+    });
+
+    expect(cards.map((card) => card.sourceJobId)).toEqual(['brazil-role']);
+  });
+
+  it('orders company card rows by most recent posted date first', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'older-high-score',
+      score: 99,
+      postedAt: new Date('2026-09-01T00:00:00Z'),
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'newer-low-score',
+      score: 10,
+      postedAt: new Date('2026-09-07T00:00:00Z'),
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const cards = await jobsRepository.listCardsByCompanyIds([company.id], {
+      maxAgeMs: JOB_MAX_AGE_MS,
+      now,
+    });
+
+    expect(cards.map((card) => card.sourceJobId)).toEqual([
+      'newer-low-score',
+      'older-high-score',
+    ]);
+  });
+
   it('deletes inactive jobs past the retention window and keeps the rest', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);

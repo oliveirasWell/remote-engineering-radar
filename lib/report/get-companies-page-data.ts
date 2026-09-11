@@ -71,6 +71,7 @@ export const getCompaniesPageData = async (
       jobsRepository.listCardsByCompanyIds(companyIds, {
         maxAgeMs: JOB_MAX_AGE_MS,
         now,
+        country,
       }),
       createIngestionRunsRepository(db).getLatestCompletedAt(),
     ]);

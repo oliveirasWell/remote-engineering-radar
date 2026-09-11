@@ -1,9 +1,14 @@
 import { Prisma, type Job as PrismaJob } from '@prisma/client';
 import type { JobGeography } from '@/lib/classification/types';
-import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import {
+  JOB_MAX_AGE_MS,
+  REMOTE_POLICY_REMOTE,
+  type JobSort,
+} from '@/lib/jobs/constants';
 import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
 import { coalescedPostedAtFilter } from './posted-at-filter';
+import { JOB_ORDER_BY } from './constants';
 
 const toStringArray = (column: string, value: Prisma.JsonValue): string[] => {
   if (
@@ -128,7 +133,12 @@ export const createJobsRepository = (db: Db) => ({
 
   listCardsByCompanyIds: async (
     companyIds: string[],
-    options?: { maxAgeMs?: number; now?: Date; activeOnly?: boolean },
+    options?: {
+      maxAgeMs?: number;
+      now?: Date;
+      activeOnly?: boolean;
+      country?: string;
+    },
   ): Promise<JobCard[]> => {
     if (companyIds.length === 0) {
       return [];
@@ -150,15 +160,29 @@ export const createJobsRepository = (db: Db) => ({
     };
 
     const rows = await db.job.findMany({
-      where: { companyId: { in: companyIds }, ...freshnessFilter() },
+      where: {
+        companyId: { in: companyIds },
+        ...freshnessFilter(),
+        ...(options?.country
+          ? { countries: { array_contains: [options.country] } }
+          : {}),
+      },
       select: jobCardColumns,
-      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
     });
-    return rows.map(toJobCard);
+
+    return rows.map(toJobCard).sort((left, right) => {
+      const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
+      const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
+      if (rightMs !== leftMs) {
+        return rightMs - leftMs;
+      }
+      return right.score - left.score;
+    });
   },
 
   listActiveByScore: async (options?: {
     limit?: number;
+    sort?: JobSort;
     minimumScore?: number;
     technology?: string;
     seniority?: string;
@@ -199,7 +223,7 @@ export const createJobsRepository = (db: Db) => ({
             )),
       },
       select: jobCardColumns,
-      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
+      orderBy: JOB_ORDER_BY[options?.sort ?? 'relevance'],
       ...(options?.limit === undefined ? {} : { take: options.limit }),
     });
     return rows.map(toJobCard);

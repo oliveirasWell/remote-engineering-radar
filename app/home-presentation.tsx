@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
 import { CompanySummary } from '@/components/report/CompanySummary/CompanySummary';
-import { JobCard } from '@/components/report/JobCard/JobCard';
+import { CompanyJobs } from '@/components/report/CompanyJobs/CompanyJobs';
 import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import type { CompaniesPageData } from '@/lib/report/get-companies-page-data';
@@ -126,14 +126,7 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
                   </div>
                 ) : null}
                 {company.jobs.length > 0 ? (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium">
-                      {messages.home.relevantJobs}
-                    </p>
-                    {company.jobs.map((job) => (
-                      <JobCard key={job.id} job={job} />
-                    ))}
-                  </div>
+                  <CompanyJobs jobs={company.jobs} />
                 ) : null}
               </details>
             ))}

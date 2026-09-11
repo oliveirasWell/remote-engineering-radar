@@ -35,6 +35,11 @@ Only remote jobs are saved. Optional settings in [`.env.example`](.env.example) 
 you add Greenhouse, Ashby, and Lever boards and raise FrontendBR's GitHub API rate
 limit with `GITHUB_TOKEN`.
 
+[Vagas Remotas](https://vagasremotas.com.br/) is enabled by default through its
+public WordPress API. Ingestion reads up to 500 listings from the programming
+category per run, keeping published, unfilled jobs marked as remote and preserving
+their stated locations. No API key is required.
+
 ## Commands
 
 | Command          | Purpose                                                         |

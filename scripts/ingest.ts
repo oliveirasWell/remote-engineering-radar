@@ -8,6 +8,7 @@ import { createHackerNewsAdapter } from '../lib/sources/hackernews/hackernews-ad
 import { createHimalayasAdapter } from '../lib/sources/himalayas/himalayas-adapter';
 import { createJobicyAdapter } from '../lib/sources/jobicy/jobicy-adapter';
 import { createLeverAdapter } from '../lib/sources/lever/lever-adapter';
+import { createVagasRemotasAdapter } from '../lib/sources/vagasremotas/vagasremotas-adapter';
 
 const splitList = (value: string | undefined): string[] =>
   (value ?? '')
@@ -47,6 +48,7 @@ const main = async () => {
     createHimalayasAdapter(),
     createJobicyAdapter(),
     createFrontendBrAdapter({ token: process.env.GITHUB_TOKEN }),
+    createVagasRemotasAdapter(),
   ];
 
   const db = createDb();

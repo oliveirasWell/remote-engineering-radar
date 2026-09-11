@@ -5,6 +5,7 @@ import { TEST_COMPANY, TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import { createTestDb } from '@/lib/db/test/create-test-db';
 import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
 import { getCompaniesPageData } from './get-companies-page-data';
+import { COUNTRY_FILTER_CASES, COUNTRY_JOBS } from './fixtures/country-jobs';
 
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
 
@@ -50,6 +51,44 @@ const seedCompanies = async (
 };
 
 describe('getCompaniesPageData', () => {
+  it.each(COUNTRY_FILTER_CASES)(
+    'returns only eligible jobs and counts when country is $country',
+    async ({ country, expectedIndexes }) => {
+      const db = await createTestDb();
+      vi.mocked(getDb).mockReturnValue(db);
+      const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+      const jobsRepository = createJobsRepository(db);
+
+      for (const job of COUNTRY_JOBS) {
+        await jobsRepository.create({
+          ...TEST_JOB,
+          ...job,
+          companyId: company.id,
+          technologies: [...TEST_JOB.technologies],
+          postedAt: new Date(),
+        });
+      }
+
+      const data = await getCompaniesPageData({ country });
+      const expectedTitles = expectedIndexes.map(
+        (index) => COUNTRY_JOBS[index].title,
+      );
+
+      expect(data.country).toBe(country);
+      expect(data.companies).toHaveLength(expectedTitles.length > 0 ? 1 : 0);
+      expect(
+        data.companies
+          .flatMap((item) => item.jobs.map((job) => job.title))
+          .sort(),
+      ).toEqual(expectedTitles.sort());
+      if (expectedTitles.length > 0) {
+        expect(data.companies[0].openEngineeringJobs).toBe(
+          expectedTitles.length,
+        );
+      }
+    },
+  );
+
   it('returns only recent remote jobs, grouped under their company', async () => {
     const db = await createTestDb();
     vi.mocked(getDb).mockReturnValue(db);
@@ -105,5 +144,39 @@ describe('getCompaniesPageData', () => {
     // Non-zero guards against a vacuous pass; equality is the N+1 guard.
     expect(few.counter.selects).toBeGreaterThan(0);
     expect(many.counter.selects).toBe(few.counter.selects);
+  });
+
+  it('returns only jobs matching the selected country under each company', async () => {
+    const db = await createTestDb();
+    vi.mocked(getDb).mockReturnValue(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobsRepository = createJobsRepository(db);
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'brazil-role',
+      title: 'Brazil Role',
+      countries: ['brazil'],
+      postedAt: new Date(),
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'guatemala-role',
+      title: 'Guatemala Role',
+      countries: ['guatemala'],
+      postedAt: new Date(),
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const data = await getCompaniesPageData({ country: 'brazil' });
+
+    expect(data.companies).toHaveLength(1);
+    expect(data.companies[0]?.openEngineeringJobs).toBe(1);
+    expect(data.companies[0]?.jobs.map((job) => job.title)).toEqual([
+      'Brazil Role',
+    ]);
   });
 });
