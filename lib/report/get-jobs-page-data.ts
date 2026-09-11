@@ -3,7 +3,11 @@ import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import type { JobCard } from '@/lib/jobs/types';
-import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import {
+  DEFAULT_JOB_SORT,
+  JOB_MAX_AGE_MS,
+  REMOTE_POLICY_REMOTE,
+} from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
@@ -54,6 +58,7 @@ export const getJobsPageData = async (
     const companiesRepository = createCompaniesRepository(db);
 
     const jobs = await jobsRepository.listActiveByScore({
+      sort: DEFAULT_JOB_SORT,
       technology: filters.technology,
       seniority: filters.seniority,
       remotePolicy: filters.remote ?? REMOTE_POLICY_REMOTE,

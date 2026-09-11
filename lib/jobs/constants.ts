@@ -7,6 +7,10 @@ export const JOB_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 export const REMOTE_POLICY_REMOTE = 'remote' as const;
 
+export const JOB_SORT_OPTIONS = ['newest', 'relevance'] as const;
+export type JobSort = (typeof JOB_SORT_OPTIONS)[number];
+export const DEFAULT_JOB_SORT: JobSort = 'newest';
+
 /**
  * How long a deactivated job is kept before it is deleted. Twice the display
  * window, so hiring-signal history stays intact while the table stops growing

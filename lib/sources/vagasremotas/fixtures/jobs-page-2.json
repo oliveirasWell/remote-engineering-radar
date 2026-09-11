@@ -1,0 +1,21 @@
+[
+  {
+    "id": 25773,
+    "date_gmt": "2026-09-08T18:00:00",
+    "status": "publish",
+    "link": "https://vagasremotas.com.br/vagas-home-office-remoto/react-native-engineer/",
+    "title": { "rendered": "React Native Engineer" },
+    "content": {
+      "rendered": "<p>Work from anywhere on mobile applications.</p>",
+      "protected": false
+    },
+    "meta": {
+      "_company_name": "Mobile Example",
+      "_company_website": "http://mobile.example",
+      "_job_location": "Anywhere",
+      "_application": "https://mobile.example/jobs/25773",
+      "_remote_position": true,
+      "_filled": false
+    }
+  }
+]
