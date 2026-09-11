@@ -20,6 +20,10 @@ const COUNTRY_ALIASES: Readonly<Record<string, string>> = {
   usa: 'united-states',
   us: 'united-states',
   canada: 'canada',
+  ukraine: 'ukraine',
+  ua: 'ukraine',
+  ukr: 'ukraine',
+  ucrania: 'ukraine',
   worldwide: 'worldwide',
   global: 'worldwide',
 };

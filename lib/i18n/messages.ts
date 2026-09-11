@@ -67,6 +67,7 @@ export const EN_MESSAGES = {
     mexico: 'Mexico',
     colombia: 'Colombia',
     'united-states': 'United States',
+    ukraine: 'Ukraine',
     worldwide: 'Worldwide',
   },
   seniority: {
@@ -214,6 +215,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     mexico: 'México',
     colombia: 'Colômbia',
     'united-states': 'Estados Unidos',
+    ukraine: 'Ucrânia',
     worldwide: 'Mundo todo',
   },
   seniority: {

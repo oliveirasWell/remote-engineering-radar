@@ -1,6 +1,11 @@
 import { normalizeCountryName, resolveJobCountries } from './countries';
 
 const INHERITED_COUNTRY_NAMES = ['constructor', '__proto__'] as const;
+const UKRAINE_LOCATION = {
+  sourceCountries: ['Ukraine', 'UA', 'UKR'],
+  location: 'Remote - Ucrânia',
+  country: 'ukraine',
+};
 
 describe('normalizeCountryName', () => {
   it.each(INHERITED_COUNTRY_NAMES)(
@@ -21,6 +26,16 @@ describe('normalizeCountryName', () => {
 });
 
 describe('resolveJobCountries', () => {
+  it('combines Ukrainian country codes and localized locations into one country', () => {
+    expect(
+      resolveJobCountries({
+        sourceCountries: UKRAINE_LOCATION.sourceCountries,
+        location: UKRAINE_LOCATION.location,
+        geographies: [],
+      }),
+    ).toEqual([UKRAINE_LOCATION.country]);
+  });
+
   it('keeps inherited property names as country strings from both inputs', () => {
     expect(
       resolveJobCountries({

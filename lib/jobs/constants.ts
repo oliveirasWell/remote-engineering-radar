@@ -25,6 +25,7 @@ export const JOB_COUNTRY_FILTER_OPTIONS = [
   { slug: 'mexico', label: 'Mexico' },
   { slug: 'colombia', label: 'Colombia' },
   { slug: 'united-states', label: 'United States' },
+  { slug: 'ukraine', label: 'Ukraine' },
   { slug: 'worldwide', label: 'Worldwide' },
 ] as const;
 
