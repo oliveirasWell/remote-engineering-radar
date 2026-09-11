@@ -10,6 +10,11 @@ const STRIPPING_CASES = [
     expected: 'Tom & Jerry\'s "team"',
   },
   { input: '  Remote\n\tReact   role  ', expected: 'Remote React role' },
+  {
+    input: '<p>Engineer &#8211; React&nbsp;&amp; Node.js &#x1F680;</p>',
+    expected: 'Engineer – React & Node.js 🚀',
+  },
+  { input: '&#99999999; &#x110000;', expected: '&#99999999; &#x110000;' },
   { input: 'before <<broken> after', expected: 'before after' },
   { input: 'before <> after <b>role</b>', expected: 'before <> after role' },
   { input: 'before <unfinished', expected: 'before <unfinished' },

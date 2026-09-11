@@ -54,6 +54,11 @@ export const EN_MESSAGES = {
     backToJobs: 'Back to jobs',
     loading: 'Loading jobs…',
     whyRelevant: 'Why this is relevant:',
+    sortLabel: 'Sort jobs',
+    sortOptions: {
+      newest: 'Newest first',
+      relevance: 'Most relevant',
+    },
   },
   countries: {
     brazil: 'Brazil',
@@ -129,7 +134,7 @@ export const EN_MESSAGES = {
       'A daily overview of remote engineering opportunities, with links to the original sources.',
     sourcesTitle: 'Sources',
     sources:
-      'We ingest public listings from Greenhouse, Ashby, Hacker News, frontendbr, Himalayas, Jobicy, GetOnBrd, and Lever.',
+      'We ingest public listings from Greenhouse, Ashby, Hacker News, frontendbr, Himalayas, Jobicy, GetOnBrd, Lever, and Vagas Remotas.',
     freshnessTitle: 'Freshness and scope',
     freshness:
       'Ingestion runs once daily through GitHub Actions. Listings can be up to 24 hours out of date.',
@@ -196,6 +201,11 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     backToJobs: 'Voltar para vagas',
     loading: 'Carregando vagas…',
     whyRelevant: 'Por que esta vaga é relevante:',
+    sortLabel: 'Ordenar vagas',
+    sortOptions: {
+      newest: 'Mais recentes',
+      relevance: 'Maior relevância',
+    },
   },
   countries: {
     brazil: 'Brasil',
@@ -272,7 +282,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
       'Um panorama diário de oportunidades remotas de engenharia, com links para as fontes originais.',
     sourcesTitle: 'Fontes',
     sources:
-      'Coletamos vagas públicas de Greenhouse, Ashby, Hacker News, frontendbr, Himalayas, Jobicy, GetOnBrd e Lever.',
+      'Coletamos vagas públicas de Greenhouse, Ashby, Hacker News, frontendbr, Himalayas, Jobicy, GetOnBrd, Lever e Vagas Remotas.',
     freshnessTitle: 'Atualização e escopo',
     freshness:
       'A coleta é executada uma vez por dia pelo GitHub Actions. As vagas podem estar até 24 horas desatualizadas.',

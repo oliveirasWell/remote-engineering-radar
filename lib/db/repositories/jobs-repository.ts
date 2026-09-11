@@ -1,9 +1,14 @@
 import { Prisma, type Job as PrismaJob } from '@prisma/client';
 import type { JobGeography } from '@/lib/classification/types';
-import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import {
+  JOB_MAX_AGE_MS,
+  REMOTE_POLICY_REMOTE,
+  type JobSort,
+} from '@/lib/jobs/constants';
 import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
 import { coalescedPostedAtFilter } from './posted-at-filter';
+import { JOB_ORDER_BY } from './constants';
 
 const toStringArray = (column: string, value: Prisma.JsonValue): string[] => {
   if (
@@ -177,6 +182,7 @@ export const createJobsRepository = (db: Db) => ({
 
   listActiveByScore: async (options?: {
     limit?: number;
+    sort?: JobSort;
     minimumScore?: number;
     technology?: string;
     seniority?: string;
@@ -217,7 +223,7 @@ export const createJobsRepository = (db: Db) => ({
             )),
       },
       select: jobCardColumns,
-      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
+      orderBy: JOB_ORDER_BY[options?.sort ?? 'relevance'],
       ...(options?.limit === undefined ? {} : { take: options.limit }),
     });
     return rows.map(toJobCard);

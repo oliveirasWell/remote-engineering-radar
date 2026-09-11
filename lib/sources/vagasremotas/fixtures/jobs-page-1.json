@@ -1,0 +1,42 @@
+[
+  {
+    "id": 25775,
+    "date_gmt": "2026-09-09T03:48:09",
+    "status": "publish",
+    "link": "https://vagasremotas.com.br/vagas-home-office-remoto/senior-frontend-engineer/",
+    "title": {
+      "rendered": "Senior Frontend Engineer &#8211; React &amp; TypeScript"
+    },
+    "content": {
+      "rendered": "<p>Build <strong>React</strong> applications &amp; APIs.</p><p>Brazil only.</p>",
+      "protected": false
+    },
+    "meta": {
+      "_company_name": "Example &amp; Company",
+      "_company_website": "https://company.example",
+      "_job_location": "Brasil",
+      "_application": "https://company.example/jobs/25775",
+      "_remote_position": 1,
+      "_filled": 0
+    }
+  },
+  {
+    "id": 25774,
+    "date_gmt": "2026-09-08T21:00:00",
+    "status": "publish",
+    "link": "https://vagasremotas.com.br/vagas-home-office-remoto/senior-fullstack-engineer/",
+    "title": { "rendered": "Senior Fullstack Engineer" },
+    "content": {
+      "rendered": "<p>Build React and Node.js services from Chile.</p>",
+      "protected": false
+    },
+    "meta": {
+      "_company_name": "Example &amp; Company",
+      "_company_website": "",
+      "_job_location": "Chile",
+      "_application": "javascript:alert(1)",
+      "_remote_position": "1",
+      "_filled": "0"
+    }
+  }
+]

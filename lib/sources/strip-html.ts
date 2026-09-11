@@ -3,8 +3,14 @@ const decodeBasicEntities = (value: string): string =>
     .replaceAll('&lt;', '<')
     .replaceAll('&gt;', '>')
     .replaceAll('&amp;', '&')
-    .replaceAll('&#39;', "'")
-    .replaceAll('&quot;', '"');
+    .replaceAll('&quot;', '"')
+    .replaceAll('&nbsp;', ' ')
+    .replace(/&#(x[0-9a-f]+|\d+);/gi, (entity, digits: string) => {
+      const codePoint = digits.toLowerCase().startsWith('x')
+        ? Number.parseInt(digits.slice(1), 16)
+        : Number(digits);
+      return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : entity;
+    });
 
 export const stripHtml = (value: string): string => {
   const decoded = decodeBasicEntities(value);

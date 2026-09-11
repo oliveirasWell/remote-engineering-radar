@@ -1,0 +1,60 @@
+[
+  null,
+  false,
+  [],
+  {},
+  { "id": 1, "title": null, "meta": null },
+  {
+    "id": 2,
+    "status": "publish",
+    "title": { "rendered": "Filled Engineer" },
+    "link": "https://vagasremotas.com.br/jobs/2/",
+    "meta": { "_company_name": "Example", "_remote_position": 1, "_filled": 1 }
+  },
+  {
+    "id": 3,
+    "status": "publish",
+    "title": { "rendered": "Onsite Engineer" },
+    "link": "https://vagasremotas.com.br/jobs/3/",
+    "meta": { "_company_name": "Example", "_remote_position": 0, "_filled": 0 }
+  },
+  {
+    "id": 4,
+    "status": "expired",
+    "title": { "rendered": "Expired Engineer" },
+    "link": "https://vagasremotas.com.br/jobs/4/",
+    "meta": { "_company_name": "Example", "_remote_position": 1, "_filled": 0 }
+  },
+  {
+    "id": 5,
+    "status": "publish",
+    "title": { "rendered": "Unsafe Engineer" },
+    "link": "javascript:alert(1)",
+    "meta": { "_company_name": "Example", "_remote_position": 1, "_filled": 0 }
+  },
+  {
+    "id": 6,
+    "status": "publish",
+    "title": { "rendered": "Missing Company Engineer" },
+    "link": "https://vagasremotas.com.br/jobs/6/",
+    "meta": { "_company_name": " ", "_remote_position": 1, "_filled": 0 }
+  },
+  {
+    "id": 7,
+    "status": "publish",
+    "title": { "rendered": "Unconfirmed Remote Engineer" },
+    "link": "https://vagasremotas.com.br/jobs/7/",
+    "meta": { "_company_name": "Example", "_filled": 0 }
+  },
+  {
+    "id": 8,
+    "status": "publish",
+    "title": { "rendered": "Filled Remote Engineer" },
+    "link": "https://vagasremotas.com.br/jobs/8/",
+    "meta": {
+      "_company_name": "Example",
+      "_remote_position": "1",
+      "_filled": "1"
+    }
+  }
+]
