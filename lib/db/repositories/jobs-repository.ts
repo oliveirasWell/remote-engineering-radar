@@ -128,7 +128,12 @@ export const createJobsRepository = (db: Db) => ({
 
   listCardsByCompanyIds: async (
     companyIds: string[],
-    options?: { maxAgeMs?: number; now?: Date; activeOnly?: boolean },
+    options?: {
+      maxAgeMs?: number;
+      now?: Date;
+      activeOnly?: boolean;
+      country?: string;
+    },
   ): Promise<JobCard[]> => {
     if (companyIds.length === 0) {
       return [];
@@ -150,11 +155,24 @@ export const createJobsRepository = (db: Db) => ({
     };
 
     const rows = await db.job.findMany({
-      where: { companyId: { in: companyIds }, ...freshnessFilter() },
+      where: {
+        companyId: { in: companyIds },
+        ...freshnessFilter(),
+        ...(options?.country
+          ? { countries: { array_contains: [options.country] } }
+          : {}),
+      },
       select: jobCardColumns,
-      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
     });
-    return rows.map(toJobCard);
+
+    return rows.map(toJobCard).sort((left, right) => {
+      const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
+      const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
+      if (rightMs !== leftMs) {
+        return rightMs - leftMs;
+      }
+      return right.score - left.score;
+    });
   },
 
   listActiveByScore: async (options?: {
