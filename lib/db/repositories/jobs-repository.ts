@@ -168,9 +168,16 @@ export const createJobsRepository = (db: Db) => ({
           : {}),
       },
       select: jobCardColumns,
-      orderBy: [{ score: 'desc' }, { postedAt: 'desc' }],
     });
-    return rows.map(toJobCard);
+
+    return rows.map(toJobCard).sort((left, right) => {
+      const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
+      const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
+      if (rightMs !== leftMs) {
+        return rightMs - leftMs;
+      }
+      return right.score - left.score;
+    });
   },
 
   listActiveByScore: async (options?: {

@@ -145,4 +145,38 @@ describe('getCompaniesPageData', () => {
     expect(few.counter.selects).toBeGreaterThan(0);
     expect(many.counter.selects).toBe(few.counter.selects);
   });
+
+  it('returns only jobs matching the selected country under each company', async () => {
+    const db = await createTestDb();
+    vi.mocked(getDb).mockReturnValue(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobsRepository = createJobsRepository(db);
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'brazil-role',
+      title: 'Brazil Role',
+      countries: ['brazil'],
+      postedAt: new Date(),
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'guatemala-role',
+      title: 'Guatemala Role',
+      countries: ['guatemala'],
+      postedAt: new Date(),
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const data = await getCompaniesPageData({ country: 'brazil' });
+
+    expect(data.companies).toHaveLength(1);
+    expect(data.companies[0]?.openEngineeringJobs).toBe(1);
+    expect(data.companies[0]?.jobs.map((job) => job.title)).toEqual([
+      'Brazil Role',
+    ]);
+  });
 });
