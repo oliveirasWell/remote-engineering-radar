@@ -18,6 +18,10 @@ export const TEST_JOB = {
   technologies: ['React', 'TypeScript'],
   seniority: 'senior',
   score: 88,
+  salaryMin: null,
+  salaryMax: null,
+  salaryCurrency: null,
+  salaryPeriod: null,
 } as const;
 
 export const TEST_HIRING_SIGNAL = {

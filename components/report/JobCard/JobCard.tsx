@@ -5,7 +5,7 @@ import { useSyncExternalStore } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import type { ReportJobCard } from '@/lib/report/types';
-import { formatRelativeTime } from '@/lib/report/format';
+import { formatRelativeTime, formatSalary } from '@/lib/report/format';
 import { hiddenJobsStore } from './hidden-jobs-store';
 
 type JobCardProps = {
@@ -26,6 +26,7 @@ export const JobCard = ({ job }: JobCardProps) => {
     new Map(Object.entries(remote)).get(job.remotePolicy ?? '') ??
     job.remotePolicy;
   const meta = [remotePolicy, job.location].filter(Boolean).join(' · ');
+  const salary = formatSalary(job, locale);
 
   const handleHide = () => {
     if (window.confirm(jobCard.hideConfirmation)) {
@@ -55,6 +56,11 @@ export const JobCard = ({ job }: JobCardProps) => {
       ) : null}
       {meta ? (
         <p className="mt-1 text-sm text-muted-foreground">{meta}</p>
+      ) : null}
+      {salary ? (
+        <p className="mt-1 text-sm text-muted-foreground">
+          {jobCard.salaryLabel}: {salary}
+        </p>
       ) : null}
       <p className="mt-1 text-sm text-muted-foreground">
         {jobCard.postedLabel}:{' '}

@@ -11,6 +11,10 @@ export type ReportJobCard = {
   score: number;
   postedAt: Date | null;
   url: string;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string | null;
+  salaryPeriod: string | null;
 };
 
 /** The detail page is the only view that explains why a job scored. */

@@ -1,3 +1,4 @@
+import { EMPTY_REPORT_SALARY } from '@/lib/report/constants';
 import type { ReportJobCard } from '@/lib/report/types';
 
 export const SORTING_JOBS: ReportJobCard[] = [
@@ -12,6 +13,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 95,
     postedAt: new Date('2026-09-01T12:00:00Z'),
     url: 'https://example.com/jobs/older',
+    ...EMPTY_REPORT_SALARY,
   },
   {
     id: 'newer-job',
@@ -24,6 +26,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 20,
     postedAt: new Date('2026-09-10T12:00:00Z'),
     url: 'https://example.com/jobs/newer',
+    ...EMPTY_REPORT_SALARY,
   },
   {
     id: 'undated-job',
@@ -36,6 +39,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 100,
     postedAt: null,
     url: 'https://example.com/jobs/undated',
+    ...EMPTY_REPORT_SALARY,
   },
   {
     id: 'same-date-job',
@@ -48,6 +52,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 60,
     postedAt: new Date('2026-09-10T12:00:00Z'),
     url: 'https://example.com/jobs/same-date',
+    ...EMPTY_REPORT_SALARY,
   },
 ];
 

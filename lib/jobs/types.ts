@@ -15,6 +15,10 @@ export type Job = {
   countries: string[];
   seniority: string | null;
   score: number;
+  salaryMin: number | null;
+  salaryMax: number | null;
+  salaryCurrency: string | null;
+  salaryPeriod: string | null;
   postedAt: Date | null;
   firstSeenAt: Date;
   lastSeenAt: Date;
@@ -46,6 +50,10 @@ export type NewJob = {
   countries?: string[];
   seniority?: string | null;
   score?: number;
+  salaryMin?: number | null;
+  salaryMax?: number | null;
+  salaryCurrency?: string | null;
+  salaryPeriod?: string | null;
   postedAt?: Date | null;
   firstSeenAt?: Date;
   lastSeenAt?: Date;

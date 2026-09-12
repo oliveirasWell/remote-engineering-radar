@@ -20,6 +20,7 @@ import {
 } from '@/lib/jobs/constants';
 import { scoreClassifiedJob } from '@/lib/scoring/score-job';
 import type { JobCard } from '@/lib/jobs/types';
+import { toSalaryColumns } from '@/lib/sources/salary/normalize-salary';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 
@@ -194,6 +195,7 @@ export const runIngestion = async (options: {
             score: scoredJob.score,
             postedAt: job.postedAt,
             isActive: true,
+            ...toSalaryColumns(job.salary),
           };
         }),
       );

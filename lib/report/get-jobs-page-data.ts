@@ -44,6 +44,10 @@ const toJobCard = (
   score: job.score,
   postedAt: job.postedAt,
   url: job.url,
+  salaryMin: job.salaryMin,
+  salaryMax: job.salaryMax,
+  salaryCurrency: job.salaryCurrency,
+  salaryPeriod: job.salaryPeriod,
 });
 
 export const getJobsPageData = async (

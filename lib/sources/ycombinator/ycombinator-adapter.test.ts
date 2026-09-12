@@ -43,6 +43,12 @@ describe('normalizeYCombinatorJob', () => {
       remotePolicy: 'remote',
       technologies: firstJob.skills,
       seniority: firstJob.minExperience,
+      salary: {
+        min: 80_000,
+        max: 180_000,
+        currency: 'USD',
+        period: 'year',
+      },
     });
   });
 

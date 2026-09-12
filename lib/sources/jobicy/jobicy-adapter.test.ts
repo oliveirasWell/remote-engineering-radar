@@ -26,7 +26,23 @@ describe('normalizeJobicyJob', () => {
       countries: [monzoJob.jobGeo],
       seniority: undefined,
       postedAt: new Date(monzoJob.pubDate),
+      salary: {
+        min: 85000,
+        max: 110000,
+        currency: 'GBP',
+        period: 'year',
+      },
     });
+  });
+
+  it('keeps a populated Jobicy salary and drops zeroed fields', () => {
+    expect(normalizeJobicyJob(monzoJob)?.salary).toEqual({
+      min: 85000,
+      max: 110000,
+      currency: 'GBP',
+      period: 'year',
+    });
+    expect(normalizeJobicyJob(vonageJob)?.salary).toBeUndefined();
   });
 
   it('splits a multi-country geography', () => {

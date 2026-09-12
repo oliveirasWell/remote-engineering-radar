@@ -28,6 +28,21 @@ describe('normalizeHimalayasJob', () => {
       countries: ['United States'],
       seniority: 'Senior',
       postedAt: new Date(doordashJob.pubDate * 1000),
+      salary: {
+        min: 158900,
+        max: 254100,
+        currency: 'USD',
+        period: 'year',
+      },
+    });
+  });
+
+  it('captures structured Himalayas salary fields', () => {
+    expect(normalizeHimalayasJob(doordashJob)?.salary).toEqual({
+      min: 158900,
+      max: 254100,
+      currency: 'USD',
+      period: 'year',
     });
   });
 

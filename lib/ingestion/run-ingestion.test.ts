@@ -252,6 +252,45 @@ describe('runIngestion', () => {
     },
   );
 
+  it('persists adapter-provided salary columns', async () => {
+    const db = await createTestDb();
+
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'himalayas',
+          fetchJobs: async () => ({
+            complete: false,
+            jobs: [
+              makeJob({
+                source: 'himalayas',
+                sourceJobId: 'salary-job',
+                title: 'Senior Frontend Engineer',
+                url: 'https://example.com/jobs/salary',
+                salary: {
+                  min: 158900,
+                  max: 254100,
+                  currency: 'USD',
+                  period: 'year',
+                },
+              }),
+            ],
+          }),
+        },
+      ],
+    });
+
+    await expect(
+      createJobsRepository(db).findBySourceJobId('himalayas', 'salary-job'),
+    ).resolves.toMatchObject({
+      salaryMin: 158900,
+      salaryMax: 254100,
+      salaryCurrency: 'USD',
+      salaryPeriod: 'year',
+    });
+  });
+
   it('continues when one source fails and persists successful jobs', async () => {
     const db = await createTestDb();
     const logs: string[] = [];

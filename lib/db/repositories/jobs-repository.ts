@@ -47,6 +47,10 @@ const jobCardColumns = {
   countries: true,
   seniority: true,
   score: true,
+  salaryMin: true,
+  salaryMax: true,
+  salaryCurrency: true,
+  salaryPeriod: true,
   postedAt: true,
   firstSeenAt: true,
   isActive: true,
@@ -89,6 +93,10 @@ const createData = (
   countries: input.countries ?? [],
   seniority: input.seniority ?? null,
   score: input.score ?? 0,
+  salaryMin: input.salaryMin ?? null,
+  salaryMax: input.salaryMax ?? null,
+  salaryCurrency: input.salaryCurrency ?? null,
+  salaryPeriod: input.salaryPeriod ?? null,
   postedAt: input.postedAt ?? null,
   firstSeenAt: input.firstSeenAt ?? now,
   lastSeenAt: input.lastSeenAt ?? now,
@@ -264,12 +272,14 @@ export const createJobsRepository = (db: Db) => ({
       INSERT INTO jobs (
         company_id, source, source_job_id, title, url, location, remote_policy,
         description, technologies, geographies, countries, seniority, score,
-        posted_at, first_seen_at, last_seen_at, is_active
+        posted_at, first_seen_at, last_seen_at, is_active, salary_min,
+        salary_max, salary_currency, salary_period
       )
       SELECT
         company_id, source, source_job_id, title, url, location, remote_policy,
         description, technologies::jsonb, geographies::jsonb, countries::jsonb,
-        seniority, score, posted_at, first_seen_at, last_seen_at, is_active
+        seniority, score, posted_at, first_seen_at, last_seen_at, is_active,
+        salary_min, salary_max, salary_currency, salary_period
       FROM unnest(
         ${column((row) => row.companyId)}::uuid[],
         ${column((row) => row.source)}::text[],
@@ -287,11 +297,16 @@ export const createJobsRepository = (db: Db) => ({
         ${column((row) => row.postedAt ?? null)}::timestamptz[],
         ${column((row) => row.firstSeenAt ?? now)}::timestamptz[],
         ${column((row) => row.lastSeenAt ?? now)}::timestamptz[],
-        ${column((row) => row.isActive ?? true)}::boolean[]
+        ${column((row) => row.isActive ?? true)}::boolean[],
+        ${column((row) => row.salaryMin ?? null)}::int[],
+        ${column((row) => row.salaryMax ?? null)}::int[],
+        ${column((row) => row.salaryCurrency ?? null)}::text[],
+        ${column((row) => row.salaryPeriod ?? null)}::text[]
       ) AS t(
         company_id, source, source_job_id, title, url, location, remote_policy,
         description, technologies, geographies, countries, seniority, score,
-        posted_at, first_seen_at, last_seen_at, is_active
+        posted_at, first_seen_at, last_seen_at, is_active, salary_min,
+        salary_max, salary_currency, salary_period
       )
       ON CONFLICT (source, source_job_id) DO UPDATE SET
         company_id = EXCLUDED.company_id,
@@ -308,6 +323,10 @@ export const createJobsRepository = (db: Db) => ({
         posted_at = COALESCE(EXCLUDED.posted_at, jobs.posted_at),
         last_seen_at = EXCLUDED.last_seen_at,
         is_active = EXCLUDED.is_active,
+        salary_min = EXCLUDED.salary_min,
+        salary_max = EXCLUDED.salary_max,
+        salary_currency = EXCLUDED.salary_currency,
+        salary_period = EXCLUDED.salary_period,
         updated_at = ${now}
     `);
   },

@@ -5,6 +5,7 @@ import {
   YCOMBINATOR_SITE_ORIGIN,
   YCOMBINATOR_SOURCE_NAME,
 } from './constants';
+import { parseSalaryRange } from './parse-salary-range';
 
 export type YCombinatorJobRecord = {
   id?: unknown;
@@ -16,6 +17,7 @@ export type YCombinatorJobRecord = {
   companyName?: unknown;
   companyUrl?: unknown;
   minExperience?: unknown;
+  salaryRange?: unknown;
 };
 
 const asString = (value: unknown): string | undefined => {
@@ -78,6 +80,8 @@ export const normalizeYCombinatorJob = (
 
   const companyPath = asString(record.companyUrl);
   const websiteUrl = companyPath ? toAbsoluteUrl(companyPath) : undefined;
+  const salaryRange = asString(record.salaryRange);
+  const salary = salaryRange ? parseSalaryRange(salaryRange) : null;
 
   return {
     source: YCOMBINATOR_SOURCE_NAME,
@@ -92,5 +96,6 @@ export const normalizeYCombinatorJob = (
     remotePolicy: 'remote',
     technologies: readSkills(record.skills),
     seniority: asString(record.minExperience),
+    ...(salary ? { salary } : {}),
   };
 };

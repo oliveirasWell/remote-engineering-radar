@@ -1,6 +1,7 @@
 import type { NormalizedJob } from '../types';
 import { stripHtml } from '../strip-html';
 import { isSafeExternalUrl } from '../../urls/external-url';
+import { normalizeJobSalary } from '../salary/normalize-salary';
 import { HIMALAYAS_SOURCE_NAME } from './constants';
 
 export type HimalayasJobRecord = {
@@ -12,6 +13,10 @@ export type HimalayasJobRecord = {
   locationRestrictions?: unknown;
   seniority?: unknown;
   pubDate?: unknown;
+  minSalary?: unknown;
+  maxSalary?: unknown;
+  salaryPeriod?: unknown;
+  currency?: unknown;
 };
 
 export type HimalayasJobsPage = {
@@ -70,6 +75,12 @@ export const normalizeHimalayasJob = (
   }
 
   const countries = readStrings(record.locationRestrictions);
+  const salary = normalizeJobSalary({
+    min: record.minSalary,
+    max: record.maxSalary,
+    currency: record.currency,
+    period: record.salaryPeriod,
+  });
 
   return {
     source: HIMALAYAS_SOURCE_NAME,
@@ -84,5 +95,6 @@ export const normalizeHimalayasJob = (
     countries,
     seniority: readStrings(record.seniority)[0],
     postedAt: readPostedAt(record.pubDate),
+    ...(salary ? { salary } : {}),
   };
 };

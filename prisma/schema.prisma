@@ -37,10 +37,14 @@ model Job {
   technologies Json      @default("[]") @db.JsonB
   geographies  Json      @default("[]") @db.JsonB
   countries    Json      @default("[]") @db.JsonB
-  seniority    String?   @db.Text
-  score        Int       @default(0)
-  postedAt     DateTime? @map("posted_at") @db.Timestamptz(6)
-  firstSeenAt  DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
+  seniority      String?   @db.Text
+  score          Int       @default(0)
+  salaryMin      Int?      @map("salary_min")
+  salaryMax      Int?      @map("salary_max")
+  salaryCurrency String?   @map("salary_currency") @db.Text
+  salaryPeriod   String?   @map("salary_period") @db.Text
+  postedAt       DateTime? @map("posted_at") @db.Timestamptz(6)
+  firstSeenAt    DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
   lastSeenAt   DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
   isActive     Boolean   @default(true) @map("is_active")
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)

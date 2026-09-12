@@ -13,3 +13,10 @@ export const REPORT_CACHE_LIFE = {
 } as const;
 export const EMPTY_COMPANIES_MESSAGE = EN_MESSAGES.report.emptyCompanies;
 export const REPORT_ERROR_MESSAGE = EN_MESSAGES.report.error;
+export const EMPTY_REPORT_SALARY = {
+  salaryMin: null,
+  salaryMax: null,
+  salaryCurrency: null,
+  salaryPeriod: null,
+} as const;
+export const SALARY_BOUND_SEPARATOR = '–';

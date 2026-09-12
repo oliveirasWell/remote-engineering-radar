@@ -22,6 +22,10 @@ Completed:
 - [SPEC-013](013-automated-ingestion.md) — automated ingestion
 - [SPEC-014](014-observability.md) — observability (GA4, Sentry, UptimeRobot)
 
+Proposed:
+
+- [SPEC-016](016-job-salary.md) — job salary capture and display
+
 ---
 
 ## Working protocol

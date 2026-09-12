@@ -1,6 +1,7 @@
 import type { NormalizedJob } from '../types';
 import { stripHtml } from '../strip-html';
 import { isSafeExternalUrl } from '../../urls/external-url';
+import { normalizeJobSalary } from '../salary/normalize-salary';
 import {
   JOBICY_ANY_LEVEL,
   JOBICY_ANYWHERE_GEO,
@@ -16,6 +17,10 @@ export type JobicyJobRecord = {
   jobGeo?: unknown;
   jobLevel?: unknown;
   pubDate?: unknown;
+  salaryMin?: unknown;
+  salaryMax?: unknown;
+  salaryCurrency?: unknown;
+  salaryPeriod?: unknown;
 };
 
 export type JobicyJobsPage = {
@@ -82,6 +87,12 @@ export const normalizeJobicyJob = (
 
   const geo = asString(record.jobGeo);
   const level = asString(record.jobLevel);
+  const salary = normalizeJobSalary({
+    min: record.salaryMin,
+    max: record.salaryMax,
+    currency: record.salaryCurrency,
+    period: record.salaryPeriod,
+  });
 
   return {
     source: JOBICY_SOURCE_NAME,
@@ -96,5 +107,6 @@ export const normalizeJobicyJob = (
     countries: readCountries(geo),
     seniority: level === JOBICY_ANY_LEVEL ? undefined : level,
     postedAt: readPostedAt(record.pubDate),
+    ...(salary ? { salary } : {}),
   };
 };

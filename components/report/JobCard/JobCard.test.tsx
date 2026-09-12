@@ -126,6 +126,33 @@ describe('JobCard', () => {
     ).toHaveAttribute('href', job.url);
   });
 
+  it('renders a salary line only when the job has a salary', () => {
+    const { jobCard } = messagesFor('en');
+    const { rerender } = render(
+      <JobCard
+        job={{
+          ...job,
+          salaryMin: 80_000,
+          salaryMax: 180_000,
+          salaryCurrency: 'USD',
+          salaryPeriod: 'year',
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByText((content) =>
+        content.startsWith(`${jobCard.salaryLabel}:`),
+      ),
+    ).toBeInTheDocument();
+
+    rerender(<JobCard job={job} />);
+
+    expect(
+      screen.queryByText((content) => content.includes(jobCard.salaryLabel)),
+    ).not.toBeInTheDocument();
+  });
+
   it('does not render an unsafe original job link', () => {
     render(<JobCard job={{ ...job, url: 'javascript:alert(1)' }} />);
 

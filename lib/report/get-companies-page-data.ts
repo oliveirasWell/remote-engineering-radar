@@ -107,6 +107,10 @@ export const getCompaniesPageData = async (
           score: job.score,
           postedAt: job.postedAt,
           url: job.url,
+          salaryMin: job.salaryMin,
+          salaryMax: job.salaryMax,
+          salaryCurrency: job.salaryCurrency,
+          salaryPeriod: job.salaryPeriod,
         })),
         signalSourceUrls: [
           ...new Set(

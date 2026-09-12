@@ -1,3 +1,13 @@
+export type SalaryPeriod = 'year' | 'month' | 'hour';
+
+export type JobSalary = {
+  min: number | null;
+  max: number | null;
+  /** ISO 4217, uppercase. Null when the source does not state one. */
+  currency: string | null;
+  period: SalaryPeriod;
+};
+
 export type NormalizedJob = {
   source: string;
   sourceJobId: string;
@@ -14,6 +24,7 @@ export type NormalizedJob = {
   countries?: string[];
   seniority?: string;
   postedAt?: Date;
+  salary?: JobSalary;
 };
 
 export type JobSource = {

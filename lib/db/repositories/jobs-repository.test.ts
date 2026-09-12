@@ -495,6 +495,55 @@ describe('createJobsRepository', () => {
     ).resolves.toMatchObject({ postedAt });
   });
 
+  it('round-trips salary columns and updates them on a later upsert', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        technologies: [...TEST_JOB.technologies],
+        salaryMin: 80_000,
+        salaryMax: 180_000,
+        salaryCurrency: 'USD',
+        salaryPeriod: 'year',
+      },
+    ]);
+
+    await expect(
+      jobsRepository.findBySourceJobId(TEST_JOB.source, TEST_JOB.sourceJobId),
+    ).resolves.toMatchObject({
+      salaryMin: 80_000,
+      salaryMax: 180_000,
+      salaryCurrency: 'USD',
+      salaryPeriod: 'year',
+    });
+
+    await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        technologies: [...TEST_JOB.technologies],
+        salaryMin: 90_000,
+        salaryMax: 200_000,
+        salaryCurrency: 'CAD',
+        salaryPeriod: 'year',
+      },
+    ]);
+
+    await expect(
+      jobsRepository.findBySourceJobId(TEST_JOB.source, TEST_JOB.sourceJobId),
+    ).resolves.toMatchObject({
+      salaryMin: 90_000,
+      salaryMax: 200_000,
+      salaryCurrency: 'CAD',
+      salaryPeriod: 'year',
+    });
+  });
+
   it('upserts no jobs without touching the database', async () => {
     const db = await createTestDb();
     const jobsRepository = createJobsRepository(db);

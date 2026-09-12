@@ -1,5 +1,6 @@
-import { formatRelativeTime, formatUpdatedLabel } from './format';
+import { formatRelativeTime, formatSalary, formatUpdatedLabel } from './format';
 import { LOCALES, messagesFor } from '@/lib/i18n/messages';
+import { EMPTY_REPORT_SALARY, SALARY_BOUND_SEPARATOR } from './constants';
 
 const NOW = new Date('2026-09-09T12:00:00Z');
 const RELATIVE_CASES = [
@@ -24,6 +25,91 @@ describe.each(LOCALES)('report timestamps in %s', (locale) => {
     expect(formatUpdatedLabel(null, locale)).toBe(report.updated('—'));
     expect(formatUpdatedLabel(NOW, locale)).toBe(
       report.updated('2026-09-09 12:00 UTC'),
+    );
+  });
+});
+
+const USD_80_000 = {
+  en: '$80,000',
+  'pt-BR': 'US$\u00a080.000',
+} as const;
+const USD_180_000 = {
+  en: '$180,000',
+  'pt-BR': 'US$\u00a0180.000',
+} as const;
+const PLAIN_80_000 = {
+  en: '80,000',
+  'pt-BR': '80.000',
+} as const;
+const PLAIN_180_000 = {
+  en: '180,000',
+  'pt-BR': '180.000',
+} as const;
+
+describe.each(LOCALES)('formatSalary in %s', (locale) => {
+  const { jobCard } = messagesFor(locale);
+
+  it('formats a both-bounds range', () => {
+    expect(
+      formatSalary(
+        {
+          salaryMin: 80_000,
+          salaryMax: 180_000,
+          salaryCurrency: 'USD',
+          salaryPeriod: 'year',
+        },
+        locale,
+      ),
+    ).toBe(
+      `${USD_80_000[locale]} ${SALARY_BOUND_SEPARATOR} ${USD_180_000[locale]} ${jobCard.salaryPeriodYear}`,
+    );
+  });
+
+  it('formats a min-only bound', () => {
+    expect(
+      formatSalary(
+        {
+          ...EMPTY_REPORT_SALARY,
+          salaryMin: 80_000,
+          salaryCurrency: 'USD',
+          salaryPeriod: 'year',
+        },
+        locale,
+      ),
+    ).toBe(
+      `${jobCard.salaryFrom(USD_80_000[locale])} ${jobCard.salaryPeriodYear}`,
+    );
+  });
+
+  it('formats a max-only bound', () => {
+    expect(
+      formatSalary(
+        {
+          ...EMPTY_REPORT_SALARY,
+          salaryMax: 180_000,
+          salaryCurrency: 'USD',
+          salaryPeriod: 'year',
+        },
+        locale,
+      ),
+    ).toBe(
+      `${jobCard.salaryUpTo(USD_180_000[locale])} ${jobCard.salaryPeriodYear}`,
+    );
+  });
+
+  it('formats a null-currency range without a symbol', () => {
+    expect(
+      formatSalary(
+        {
+          salaryMin: 80_000,
+          salaryMax: 180_000,
+          salaryCurrency: null,
+          salaryPeriod: 'year',
+        },
+        locale,
+      ),
+    ).toBe(
+      `${PLAIN_80_000[locale]} ${SALARY_BOUND_SEPARATOR} ${PLAIN_180_000[locale]} ${jobCard.salaryPeriodYear}`,
     );
   });
 });

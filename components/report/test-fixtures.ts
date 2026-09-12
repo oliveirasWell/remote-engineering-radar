@@ -1,4 +1,5 @@
 import { COMPANY_KINDS } from '@/lib/companies/constants';
+import { EMPTY_REPORT_SALARY } from '@/lib/report/constants';
 import type { ReportCompanyCard, ReportJobDetail } from '@/lib/report/types';
 
 export const TEST_REPORT_COMPANY: ReportCompanyCard = {
@@ -27,5 +28,6 @@ export const TEST_REPORT_JOB = {
   score: 94,
   postedAt: new Date('2026-08-26T06:00:00Z'),
   url: 'https://example.com/jobs/1',
+  ...EMPTY_REPORT_SALARY,
   reasons: ['Matches the focus stack'],
 } satisfies ReportJobDetail;
