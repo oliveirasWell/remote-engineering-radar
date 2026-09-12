@@ -134,22 +134,78 @@ export const EN_MESSAGES = {
     introduction:
       'A daily overview of remote engineering opportunities, with links to the original sources.',
     sourcesTitle: 'Sources',
-    sources:
-      'We ingest public listings from Greenhouse, Ashby, Hacker News, frontendbr, Himalayas, Jobicy, GetOnBrd, Lever, and Vagas Remotas.',
+    sourcesIntro:
+      'We ingest public listings only. Each source is fetched as JSON or an embedded public payload — no applications are submitted on your behalf.',
+    sources: [
+      {
+        name: 'Greenhouse',
+        description:
+          'Public board API for configured company tokens (GREENHOUSE_BOARD_TOKENS).',
+      },
+      {
+        name: 'Ashby',
+        description:
+          'Public job-board API for configured board names (ASHBY_BOARD_NAMES).',
+      },
+      {
+        name: 'Lever',
+        description:
+          'Public postings API for configured board slugs (LEVER_BOARD_SLUGS).',
+      },
+      {
+        name: 'GetOnBrd',
+        description: 'Public programming-category API (LATAM-focused boards).',
+      },
+      {
+        name: 'Hacker News',
+        description:
+          'Algolia search over the latest “Who is hiring?” thread comments.',
+      },
+      {
+        name: 'Himalayas',
+        description: 'Public remote jobs API (bounded recent pages).',
+      },
+      {
+        name: 'Jobicy',
+        description: 'Public remote engineering feed (count-limited).',
+      },
+      {
+        name: 'frontendbr',
+        description: 'Open issues from the frontendbr/vagas GitHub repository.',
+      },
+      {
+        name: 'Vagas Remotas',
+        description:
+          'WordPress job-listings API filtered to engineering roles.',
+      },
+      {
+        name: 'Y Combinator',
+        description:
+          'Public Work at a Startup listing pages for remote software-engineering roles.',
+      },
+    ],
     freshnessTitle: 'Freshness and scope',
     freshness:
       'Ingestion runs once daily through GitHub Actions. Listings can be up to 24 hours out of date.',
     scope: 'Only remote roles posted within the last 30 days are shown.',
     scoringTitle: 'Signals, not endorsements',
     scoring:
-      'The hiring score is a heuristic based on public hiring signals, not an endorsement of a company or a role.',
+      'Scores are heuristics over public text — not endorsements of a company or role.',
+    scoringJob:
+      'Job score favors React, TypeScript, Node.js, GraphQL, and React Native; senior/staff titles; frontend or fullstack focus; remote work; and Brazil/LATAM/Americas geography. Junior, onsite-only, relocation-required, and unrelated stacks are heavily down-ranked.',
+    scoringCompany:
+      'Company hiring score aggregates active engineering openings, recent posting bursts, relevant tech matches, and leadership roles — again from public listings only.',
     applications:
       'The radar does not accept applications. Follow the original job links to check the details and apply directly at the source.',
+    contactTitle: 'Contact',
+    contact:
+      'Questions, corrections, or source suggestions — email works best. The personal site has more context on other work.',
+    contactEmailLabel: 'Email',
+    contactSiteLabel: 'Personal site',
     repositoryTitle: 'Open source',
     repository: 'Explore the code and how the radar works on GitHub.',
   },
 };
-
 export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   app: {
     name: 'Remote Engineering Radar',
@@ -283,17 +339,77 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     introduction:
       'Um panorama diário de oportunidades remotas de engenharia, com links para as fontes originais.',
     sourcesTitle: 'Fontes',
-    sources:
-      'Coletamos vagas públicas de Greenhouse, Ashby, Hacker News, frontendbr, Himalayas, Jobicy, GetOnBrd, Lever e Vagas Remotas.',
+    sourcesIntro:
+      'Coletamos apenas listagens públicas. Cada fonte é lida como JSON ou payload público embutido — nenhuma candidatura é enviada em seu nome.',
+    sources: [
+      {
+        name: 'Greenhouse',
+        description:
+          'API pública de boards para os tokens configurados (GREENHOUSE_BOARD_TOKENS).',
+      },
+      {
+        name: 'Ashby',
+        description:
+          'API pública de job board para os nomes configurados (ASHBY_BOARD_NAMES).',
+      },
+      {
+        name: 'Lever',
+        description:
+          'API pública de postings para os slugs configurados (LEVER_BOARD_SLUGS).',
+      },
+      {
+        name: 'GetOnBrd',
+        description: 'API pública da categoria programming (foco LATAM).',
+      },
+      {
+        name: 'Hacker News',
+        description:
+          'Busca Algolia nos comentários do thread mais recente de “Who is hiring?”.',
+      },
+      {
+        name: 'Himalayas',
+        description:
+          'API pública de vagas remotas (páginas recentes limitadas).',
+      },
+      {
+        name: 'Jobicy',
+        description:
+          'Feed público de engenharia remota (com limite de quantidade).',
+      },
+      {
+        name: 'frontendbr',
+        description:
+          'Issues abertas do repositório frontendbr/vagas no GitHub.',
+      },
+      {
+        name: 'Vagas Remotas',
+        description:
+          'API WordPress de job-listings filtrada para papéis de engenharia.',
+      },
+      {
+        name: 'Y Combinator',
+        description:
+          'Páginas públicas do Work at a Startup com vagas remotas de software engineering.',
+      },
+    ],
     freshnessTitle: 'Atualização e escopo',
     freshness:
       'A coleta é executada uma vez por dia pelo GitHub Actions. As vagas podem estar até 24 horas desatualizadas.',
     scope: 'São exibidas apenas vagas remotas publicadas nos últimos 30 dias.',
     scoringTitle: 'Sinais, não recomendações',
     scoring:
-      'A pontuação de contratação é uma heurística baseada em sinais públicos de contratação, não uma recomendação de empresa ou vaga.',
+      'As pontuações são heurísticas sobre texto público — não uma recomendação de empresa ou vaga.',
+    scoringJob:
+      'A nota da vaga favorece React, TypeScript, Node.js, GraphQL e React Native; títulos senior/staff; foco frontend ou fullstack; remoto; e geografia Brasil/LATAM/Américas. Junior, apenas presencial, relocação obrigatória e stacks sem relação são fortemente penalizados.',
+    scoringCompany:
+      'A nota da empresa agrega vagas de engenharia ativas, rajadas recentes de publicações, matches de tech relevante e papéis de liderança — sempre a partir de listagens públicas.',
     applications:
       'O radar não recebe candidaturas. Acesse os links originais das vagas para conferir os detalhes e se candidatar diretamente na fonte.',
+    contactTitle: 'Contato',
+    contact:
+      'Dúvidas, correções ou sugestões de fontes — e-mail é o melhor canal. O site pessoal traz mais contexto sobre outros trabalhos.',
+    contactEmailLabel: 'E-mail',
+    contactSiteLabel: 'Site pessoal',
     repositoryTitle: 'Código aberto',
     repository: 'Explore o código e o funcionamento do radar no GitHub.',
   },
