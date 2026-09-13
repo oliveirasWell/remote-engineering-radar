@@ -21,6 +21,14 @@ export const metadata: Metadata = {
     template: `%s | ${APP_NAME}`,
   },
   description: APP_DESCRIPTION,
+  // Title and description are intentionally omitted here so Next inherits each
+  // route's own values, and images come from the opengraph-image file convention.
+  openGraph: {
+    type: 'website',
+    siteName: APP_NAME,
+    locale: 'en_US',
+  },
+  twitter: { card: 'summary_large_image' },
 };
 
 const RootLayout = ({ children }: { children: ReactNode }) => {
