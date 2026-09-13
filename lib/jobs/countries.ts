@@ -24,6 +24,13 @@ const COUNTRY_ALIASES: Readonly<Record<string, string>> = {
   ua: 'ukraine',
   ukr: 'ukraine',
   ucrania: 'ukraine',
+  india: 'india',
+  in: 'india',
+  ind: 'india',
+  egypt: 'egypt',
+  eg: 'egypt',
+  egy: 'egypt',
+  egito: 'egypt',
   worldwide: 'worldwide',
   global: 'worldwide',
 };
