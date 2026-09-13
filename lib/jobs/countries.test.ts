@@ -1,11 +1,23 @@
 import { normalizeCountryName, resolveJobCountries } from './countries';
 
 const INHERITED_COUNTRY_NAMES = ['constructor', '__proto__'] as const;
-const UKRAINE_LOCATION = {
-  sourceCountries: ['Ukraine', 'UA', 'UKR'],
-  location: 'Remote - Ucrânia',
-  country: 'ukraine',
-};
+const LOCALIZED_COUNTRY_LOCATIONS = [
+  {
+    sourceCountries: ['Ukraine', 'UA', 'UKR'],
+    location: 'Remote - Ucrânia',
+    country: 'ukraine',
+  },
+  {
+    sourceCountries: ['India', 'IN', 'IND'],
+    location: 'Remote - India',
+    country: 'india',
+  },
+  {
+    sourceCountries: ['Egypt', 'EG', 'EGY'],
+    location: 'Remote - Egito',
+    country: 'egypt',
+  },
+] as const;
 
 describe('normalizeCountryName', () => {
   it.each(INHERITED_COUNTRY_NAMES)(
@@ -26,15 +38,18 @@ describe('normalizeCountryName', () => {
 });
 
 describe('resolveJobCountries', () => {
-  it('combines Ukrainian country codes and localized locations into one country', () => {
-    expect(
-      resolveJobCountries({
-        sourceCountries: UKRAINE_LOCATION.sourceCountries,
-        location: UKRAINE_LOCATION.location,
-        geographies: [],
-      }),
-    ).toEqual([UKRAINE_LOCATION.country]);
-  });
+  it.each(LOCALIZED_COUNTRY_LOCATIONS)(
+    'combines $country country codes and localized locations into one country',
+    ({ sourceCountries, location, country }) => {
+      expect(
+        resolveJobCountries({
+          sourceCountries: [...sourceCountries],
+          location,
+          geographies: [],
+        }),
+      ).toEqual([country]);
+    },
+  );
 
   it('keeps inherited property names as country strings from both inputs', () => {
     expect(
