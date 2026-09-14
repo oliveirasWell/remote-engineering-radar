@@ -3,7 +3,9 @@
 Eval-driven build, executed **one spec at a time**. All code, comments, test names,
 commit messages, and documentation are in **English**.
 
-Execution order: `001` → `002` → `003` → … → `014` (see project brief).
+Execution order: `001` → `002` → `003` → … → `014` (see project brief). Specs
+numbered `015` and above were added after that run and are independent of each other,
+except that SPEC-015 Part 1 now extends SPEC-016 rather than preceding it.
 
 Completed:
 
@@ -21,6 +23,15 @@ Completed:
 - [SPEC-012](012-company-page.md) — companies page
 - [SPEC-013](013-automated-ingestion.md) — automated ingestion
 - [SPEC-014](014-observability.md) — observability (GA4, Sentry, UptimeRobot)
+- [SPEC-016](016-cloud-ops-focus.md) — Cloud & Ops as a second tracked focus
+
+Open:
+
+- [SPEC-015](015-technology-prominence-and-egress.md) — technology prominence (Part 1,
+  extends SPEC-016's vocabulary) and egress attribution (Part 2)
+- [SPEC-015](015-design-system-about-and-cache-hardening.md) — design system, About page,
+  cache-key hardening
+- [SPEC-017](017-remoteok-source.md) — Remote OK source (and why Tecla is not ingestible)
 
 ---
 
