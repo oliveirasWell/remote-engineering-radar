@@ -45,6 +45,7 @@ type EnrichedJob = NormalizedJob & {
   score: number;
   geographies: ReturnType<typeof classifyJob>['geography'];
   countries: string[];
+  roleFocus: string[];
   shouldPersist: boolean;
 };
 
@@ -87,6 +88,7 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
     score: scored.score,
     geographies,
     countries,
+    roleFocus: classification.roleFocus,
     shouldPersist:
       shouldPersistClassifiedJob(classification) &&
       remotePolicy === REMOTE_POLICY_REMOTE &&
@@ -190,6 +192,7 @@ export const runIngestion = async (options: {
             technologies: job.technologies,
             geographies: scoredJob.geographies,
             countries: scoredJob.countries,
+            roleFocus: scoredJob.roleFocus,
             seniority: job.seniority,
             score: scoredJob.score,
             postedAt: job.postedAt,

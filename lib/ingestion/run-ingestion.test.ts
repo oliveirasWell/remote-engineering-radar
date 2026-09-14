@@ -408,6 +408,32 @@ describe('runIngestion', () => {
     );
   });
 
+  it('persists a Cloud & Ops role with its platform focus', async () => {
+    const db = await createTestDb();
+    const job = makeJob({
+      source: 'frontendbr',
+      sourceJobId: '9001',
+      url: 'https://github.com/frontendbr/vagas/issues/9001',
+      title: 'Senior DevOps Engineer',
+      description: 'AWS, Kubernetes, and Terraform. Remote LATAM.',
+    });
+    const source: JobSource = {
+      name: 'frontendbr',
+      fetchJobs: async () => ({ jobs: [job], complete: true }),
+    };
+
+    await runIngestion({ db, sources: [source] });
+
+    const persisted = await createJobsRepository(db).findBySourceJobId(
+      'frontendbr',
+      '9001',
+    );
+    expect(persisted?.roleFocus).toContain('platform');
+    expect(persisted?.technologies).toEqual(
+      expect.arrayContaining(['AWS', 'Kubernetes', 'Terraform']),
+    );
+  });
+
   it('preserves a still-valid job beyond the rolling feed limit', async () => {
     const db = await createTestDb();
     const now = new Date('2026-09-09T12:00:00.000Z');

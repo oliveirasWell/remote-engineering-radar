@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
+import type { JobFocusSlug } from '@/lib/jobs/constants';
 import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
 import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
@@ -18,6 +19,7 @@ const readJobs = cache(
     seniority: string | undefined,
     remote: string | undefined,
     country: string | undefined,
+    focus: JobFocusSlug | undefined,
     minimumScore: number | undefined,
   ) =>
     getJobsPageData({
@@ -25,6 +27,7 @@ const readJobs = cache(
       seniority,
       remote,
       country,
+      focus,
       minimumScore,
       limit: JOBS_PAGE_LIMIT,
     }),
@@ -37,6 +40,7 @@ const readResults = async (params: JobsSearchParams) => {
     filters.seniority,
     filters.remote,
     filters.country,
+    filters.focus,
     filters.minimumScore,
   );
   return { filters, data };
@@ -54,6 +58,7 @@ export const generateMetadata = async ({
       seniority: filters.seniority,
       remote: filters.remote,
       country: filters.country,
+      focus: filters.focus,
       minimumScore: filters.minimumScore,
     }),
   };

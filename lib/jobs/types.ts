@@ -13,6 +13,7 @@ export type Job = {
   technologies: string[];
   geographies: JobGeography[];
   countries: string[];
+  roleFocus: string[];
   seniority: string | null;
   score: number;
   postedAt: Date | null;
@@ -44,6 +45,7 @@ export type NewJob = {
   technologies?: string[];
   geographies?: JobGeography[];
   countries?: string[];
+  roleFocus?: string[];
   seniority?: string | null;
   score?: number;
   postedAt?: Date | null;

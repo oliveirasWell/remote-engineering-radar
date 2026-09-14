@@ -33,3 +33,12 @@ export const JOB_COUNTRY_FILTER_OPTIONS = [
 
 export type JobCountrySlug =
   (typeof JOB_COUNTRY_FILTER_OPTIONS)[number]['slug'];
+
+export const JOB_FOCUS_CLOUD_OPS = 'cloud-ops' as const;
+
+export const JOB_FOCUS_FILTER_OPTIONS = [
+  { slug: 'engineering' },
+  { slug: JOB_FOCUS_CLOUD_OPS },
+] as const;
+
+export type JobFocusSlug = (typeof JOB_FOCUS_FILTER_OPTIONS)[number]['slug'];

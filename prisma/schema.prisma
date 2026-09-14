@@ -37,6 +37,7 @@ model Job {
   technologies Json      @default("[]") @db.JsonB
   geographies  Json      @default("[]") @db.JsonB
   countries    Json      @default("[]") @db.JsonB
+  roleFocus    Json      @default("[]") @map("role_focus") @db.JsonB
   seniority    String?   @db.Text
   score        Int       @default(0)
   postedAt     DateTime? @map("posted_at") @db.Timestamptz(6)

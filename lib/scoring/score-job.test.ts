@@ -98,4 +98,43 @@ describe('scoreJob', () => {
 
     expect(scoreJob(input)).toEqual(scoreJob(input));
   });
+
+  it('scores a senior remote Cloud & Ops job on a par with its React equivalent', () => {
+    const cloudOps = scoreJob({
+      title: 'Senior DevOps Engineer',
+      description: 'AWS, Kubernetes, and Terraform',
+      location: 'Remote LATAM',
+      remotePolicy: 'remote',
+    });
+
+    const react = scoreJob({
+      title: 'Senior Frontend Engineer',
+      description: 'React, TypeScript, GraphQL',
+      location: 'Remote LATAM',
+      remotePolicy: 'remote',
+    });
+
+    expect(cloudOps.score).toBeGreaterThanOrEqual(90);
+    expect(cloudOps.score).toBe(react.score);
+    expect(cloudOps.reasons).toEqual(
+      expect.arrayContaining(['AWS', 'Kubernetes', 'Terraform', 'Platform']),
+    );
+    expect(cloudOps.reasons).not.toContain('Unrelated stack');
+  });
+
+  it('does not pay a React job for mentioning cloud tooling', () => {
+    const withCloudMentions = scoreJob({
+      title: 'Senior Frontend Engineer',
+      description: 'React and TypeScript, deployed with Docker on AWS',
+      remotePolicy: 'remote',
+    });
+
+    const withoutCloudMentions = scoreJob({
+      title: 'Senior Frontend Engineer',
+      description: 'React and TypeScript',
+      remotePolicy: 'remote',
+    });
+
+    expect(withCloudMentions.rawScore).toBe(withoutCloudMentions.rawScore);
+  });
 });

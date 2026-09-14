@@ -1,8 +1,11 @@
 import { Prisma, type Job as PrismaJob } from '@prisma/client';
+import { PLATFORM_ROLE_FOCUS } from '@/lib/classification/constants';
 import type { JobGeography } from '@/lib/classification/types';
 import {
+  JOB_FOCUS_CLOUD_OPS,
   JOB_MAX_AGE_MS,
   REMOTE_POLICY_REMOTE,
+  type JobFocusSlug,
   type JobSort,
 } from '@/lib/jobs/constants';
 import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
@@ -45,6 +48,7 @@ const jobCardColumns = {
   technologies: true,
   geographies: true,
   countries: true,
+  roleFocus: true,
   seniority: true,
   score: true,
   postedAt: true,
@@ -59,6 +63,7 @@ const toJobCard = (row: JobCardRow): JobCard => ({
   technologies: toStringArray('technologies', row.technologies),
   geographies: toGeographies(row.geographies),
   countries: toStringArray('countries', row.countries),
+  roleFocus: toStringArray('roleFocus', row.roleFocus),
 });
 
 const toJob = (row: PrismaJob): Job => ({
@@ -68,6 +73,22 @@ const toJob = (row: PrismaJob): Job => ({
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
 });
+
+/**
+ * The Cloud & Ops track is the presence of the platform role focus; the React
+ * track is its absence, so the two chips partition the active jobs.
+ */
+const focusFilter = (focus: JobFocusSlug | undefined) => {
+  if (focus === undefined) {
+    return {};
+  }
+  const containsPlatform: Prisma.JobWhereInput = {
+    roleFocus: { array_contains: [PLATFORM_ROLE_FOCUS] },
+  };
+  return focus === JOB_FOCUS_CLOUD_OPS
+    ? containsPlatform
+    : { NOT: containsPlatform };
+};
 
 const escapeLikePattern = (value: string): string =>
   value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
@@ -87,6 +108,7 @@ const createData = (
   technologies: input.technologies ?? [],
   geographies: input.geographies ?? [],
   countries: input.countries ?? [],
+  roleFocus: input.roleFocus ?? [],
   seniority: input.seniority ?? null,
   score: input.score ?? 0,
   postedAt: input.postedAt ?? null,
@@ -188,6 +210,7 @@ export const createJobsRepository = (db: Db) => ({
     seniority?: string;
     remotePolicy?: string;
     country?: string;
+    focus?: JobFocusSlug;
     location?: string;
     maxAgeMs?: number;
     now?: Date;
@@ -204,6 +227,7 @@ export const createJobsRepository = (db: Db) => ({
         ...(options?.country
           ? { countries: { array_contains: [options.country] } }
           : {}),
+        ...focusFilter(options?.focus),
         ...(options?.location
           ? {
               location: {
@@ -263,13 +287,14 @@ export const createJobsRepository = (db: Db) => ({
     return db.$executeRaw(Prisma.sql`
       INSERT INTO jobs (
         company_id, source, source_job_id, title, url, location, remote_policy,
-        description, technologies, geographies, countries, seniority, score,
-        posted_at, first_seen_at, last_seen_at, is_active
+        description, technologies, geographies, countries, role_focus, seniority,
+        score, posted_at, first_seen_at, last_seen_at, is_active
       )
       SELECT
         company_id, source, source_job_id, title, url, location, remote_policy,
         description, technologies::jsonb, geographies::jsonb, countries::jsonb,
-        seniority, score, posted_at, first_seen_at, last_seen_at, is_active
+        role_focus::jsonb, seniority, score, posted_at, first_seen_at,
+        last_seen_at, is_active
       FROM unnest(
         ${column((row) => row.companyId)}::uuid[],
         ${column((row) => row.source)}::text[],
@@ -282,6 +307,7 @@ export const createJobsRepository = (db: Db) => ({
         ${column((row) => JSON.stringify(row.technologies ?? []))}::text[],
         ${column((row) => JSON.stringify(row.geographies ?? []))}::text[],
         ${column((row) => JSON.stringify(row.countries ?? []))}::text[],
+        ${column((row) => JSON.stringify(row.roleFocus ?? []))}::text[],
         ${column((row) => row.seniority ?? null)}::text[],
         ${column((row) => row.score ?? 0)}::int[],
         ${column((row) => row.postedAt ?? null)}::timestamptz[],
@@ -290,8 +316,8 @@ export const createJobsRepository = (db: Db) => ({
         ${column((row) => row.isActive ?? true)}::boolean[]
       ) AS t(
         company_id, source, source_job_id, title, url, location, remote_policy,
-        description, technologies, geographies, countries, seniority, score,
-        posted_at, first_seen_at, last_seen_at, is_active
+        description, technologies, geographies, countries, role_focus, seniority,
+        score, posted_at, first_seen_at, last_seen_at, is_active
       )
       ON CONFLICT (source, source_job_id) DO UPDATE SET
         company_id = EXCLUDED.company_id,
@@ -303,6 +329,7 @@ export const createJobsRepository = (db: Db) => ({
         technologies = EXCLUDED.technologies,
         geographies = EXCLUDED.geographies,
         countries = EXCLUDED.countries,
+        role_focus = EXCLUDED.role_focus,
         seniority = EXCLUDED.seniority,
         score = EXCLUDED.score,
         posted_at = COALESCE(EXCLUDED.posted_at, jobs.posted_at),

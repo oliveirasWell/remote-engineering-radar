@@ -1,4 +1,6 @@
 import {
+  CLOUD_OPS_ROLE_PATTERNS,
+  PLATFORM_ROLE_FOCUS,
   RELEVANT_TECHNOLOGY_NAMES,
   TECHNOLOGY_PATTERNS,
   UNRELATED_ROLE_PATTERNS,
@@ -85,9 +87,13 @@ const classifyGeography = (
 };
 
 const classifyRoleFocus = (
+  input: ClassifyJobInput,
   haystack: string,
 ): JobClassification['roleFocus'] => {
   const roleFocus: JobClassification['roleFocus'] = [];
+  if (CLOUD_OPS_ROLE_PATTERNS.some((pattern) => pattern.test(input.title))) {
+    roleFocus.push(PLATFORM_ROLE_FOCUS);
+  }
   if (/\bfront[-\s]?end\b|\bfrontend\b/i.test(haystack)) {
     roleFocus.push('frontend');
   }
@@ -124,9 +130,16 @@ const extractTechnologies = (
 };
 
 const isUnrelatedStack = (
+  roleFocus: JobClassification['roleFocus'],
   technologies: string[],
   haystack: string,
 ): boolean => {
+  // A platform role is on its own track: the languages it automates deploys
+  // for say nothing about whether the job belongs on the radar.
+  if (roleFocus.includes(PLATFORM_ROLE_FOCUS)) {
+    return false;
+  }
+
   const hasRelevantTech = technologies.some((tech) =>
     RELEVANT_TECHNOLOGY_NAMES.has(tech),
   );
@@ -148,14 +161,15 @@ export const shouldPersistClassifiedJob = (
 export const classifyJob = (input: ClassifyJobInput): JobClassification => {
   const haystack = buildHaystack(input);
   const technologies = extractTechnologies(input, haystack);
+  const roleFocus = classifyRoleFocus(input, haystack);
 
   return {
     technologies,
     seniority: classifySeniority(haystack),
     remotePolicy: classifyRemotePolicy(input, haystack),
     geography: classifyGeography(haystack),
-    roleFocus: classifyRoleFocus(haystack),
-    isUnrelatedStack: isUnrelatedStack(technologies, haystack),
+    roleFocus,
+    isUnrelatedStack: isUnrelatedStack(roleFocus, technologies, haystack),
     isUnrelatedRole: isUnrelatedRole(input.title),
     requiresRelocation: /\brelocati(on|e)\b/i.test(haystack),
   };

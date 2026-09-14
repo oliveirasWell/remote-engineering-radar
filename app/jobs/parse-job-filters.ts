@@ -6,6 +6,7 @@ import {
 import type { JobFilters } from '@/lib/report/get-jobs-page-data';
 import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import { parseCountryFilter } from '@/lib/report/parse-country-filter';
+import { parseFocusFilter } from '@/lib/report/parse-focus-filter';
 import { JOBS_PAGE_LIMIT } from './constants';
 
 export type JobsSearchParams = {
@@ -13,6 +14,7 @@ export type JobsSearchParams = {
   seniority?: string | string[];
   remote?: string | string[];
   country?: string | string[];
+  focus?: string | string[];
   minimumScore?: string | string[];
 };
 
@@ -52,6 +54,7 @@ export const parseJobFilters = (params: JobsSearchParams): JobFilters => ({
     params.remote,
   ),
   country: parseCountryFilter(params.country),
+  focus: parseFocusFilter(params.focus),
   minimumScore: readMinimumScore(params.minimumScore),
   limit: JOBS_PAGE_LIMIT,
 });

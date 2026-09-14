@@ -11,7 +11,9 @@ export type JobClassification = {
   seniority?: JobSeniority;
   remotePolicy?: JobRemotePolicy;
   geography: JobGeography[];
-  roleFocus: Array<'frontend' | 'fullstack' | 'backend' | 'mobile'>;
+  roleFocus: Array<
+    'frontend' | 'fullstack' | 'backend' | 'mobile' | 'platform'
+  >;
   isUnrelatedStack: boolean;
   isUnrelatedRole: boolean;
   requiresRelocation: boolean;
