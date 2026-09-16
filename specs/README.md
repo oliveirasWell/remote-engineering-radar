@@ -33,6 +33,11 @@ Open:
   cache-key hardening
 - [SPEC-017](017-remoteok-source.md) — Remote OK source (and why Tecla is not ingestible)
 
+Open:
+
+- [SPEC-018](018-toolchain-upgrade-node-24-typescript-7.md) — toolchain upgrade: Node 24,
+  TypeScript 7, Vitest 5
+
 ---
 
 ## Working protocol
