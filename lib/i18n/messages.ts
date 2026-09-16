@@ -185,6 +185,10 @@ export const EN_MESSAGES = {
         description: 'Open issues from the frontendbr/vagas GitHub repository.',
       },
       {
+        name: 'quave',
+        description: 'Open issues from the quavedev/join GitHub repository.',
+      },
+      {
         name: 'Vagas Remotas',
         description:
           'WordPress job-listings API filtered to engineering roles.',
@@ -403,6 +407,10 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
         name: 'frontendbr',
         description:
           'Issues abertas do repositório frontendbr/vagas no GitHub.',
+      },
+      {
+        name: 'quave',
+        description: 'Issues abertas do repositório quavedev/join no GitHub.',
       },
       {
         name: 'Vagas Remotas',

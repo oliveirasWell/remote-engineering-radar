@@ -10,6 +10,7 @@ import { createHackerNewsAdapter } from '../lib/sources/hackernews/hackernews-ad
 import { createHimalayasAdapter } from '../lib/sources/himalayas/himalayas-adapter';
 import { createJobicyAdapter } from '../lib/sources/jobicy/jobicy-adapter';
 import { createLeverAdapter } from '../lib/sources/lever/lever-adapter';
+import { createQuaveAdapter } from '../lib/sources/quave/quave-adapter';
 import { createVagasRemotasAdapter } from '../lib/sources/vagasremotas/vagasremotas-adapter';
 import { createYCombinatorAdapter } from '../lib/sources/ycombinator/ycombinator-adapter';
 
@@ -87,6 +88,7 @@ const main = async () => {
     createHimalayasAdapter(),
     createJobicyAdapter(),
     createFrontendBrAdapter({ token: process.env.GITHUB_TOKEN }),
+    createQuaveAdapter({ token: process.env.GITHUB_TOKEN }),
     createVagasRemotasAdapter(),
     createYCombinatorAdapter(),
   ];
