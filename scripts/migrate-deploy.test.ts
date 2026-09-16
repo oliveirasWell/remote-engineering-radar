@@ -315,6 +315,19 @@ describe('production workflow operation isolation', () => {
     expect(workflow).toContain('.github/workflows/ingest\\.yml');
   });
 
+  it('deploys migrations before the quality check so Vercel cannot serve new columns first', () => {
+    const install = steps.findIndex((step) =>
+      step.includes('run: pnpm install --frozen-lockfile'),
+    );
+    const deploy = steps.findIndex((step) =>
+      /\brun: pnpm db:deploy\s/.test(step),
+    );
+    const check = steps.findIndex((step) => /^run: pnpm check\n/.test(step));
+    expect(install).toBeGreaterThanOrEqual(0);
+    expect(deploy).toBeGreaterThan(install);
+    expect(check).toBeGreaterThan(deploy);
+  });
+
   it('requires the exact preparation confirmation before the preparation step', () => {
     const confirmation = steps.findIndex((step) =>
       step.includes(
