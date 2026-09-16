@@ -36,7 +36,7 @@ Open:
 Open:
 
 - [SPEC-018](018-toolchain-upgrade-node-24-typescript-7.md) — toolchain upgrade: Node 24,
-  TypeScript 7, Vitest 5
+  TypeScript 6 (7 blocked by typescript-eslint), Vitest 5
 
 ---
 

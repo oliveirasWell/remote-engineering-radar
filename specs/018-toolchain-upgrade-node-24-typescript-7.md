@@ -23,6 +23,11 @@ it lands. `.npmrc` sets `engine-strict=true` and `package.json` declares:
 "engines": { "node": ">=22.12 <23", "pnpm": "11.22.0" }
 ```
 
+**As shipped:** under pnpm 11 the `.npmrc` settings were inert — pnpm reads them from
+`pnpm-workspace.yaml` — so the ceiling only warned. Both `engine-strict` and `save-exact`
+moved there as `engineStrict` and `saveExact`, and `.npmrc` was deleted. Only then did the
+ceiling actually fail the install.
+
 The `<23` ceiling means `pnpm install` **refuses to run at all** under Node 24, rather than
 warning. It also means Part 3 is blocked: `jsdom@30` requires
 `^22.22.2 || ^24.15.0 || >=26.0.0`, and Vitest 5 requires `^22.12.0 || ^24.0.0 || >=26.0.0`.
@@ -32,16 +37,23 @@ local development disagree:
 
 | Location                        | From                             | To                 |
 | ------------------------------- | -------------------------------- | ------------------ |
-| `.nvmrc`                        | `22`                             | `24`               |
-| `package.json` → `engines.node` | `">=22.12 <23"`                  | `">=24.21 <25"`    |
+| `.nvmrc`                        | `22`                             | `24.21.0`          |
+| `package.json` → `engines.node` | `">=22.12 <23"`                  | `">=24.19 <25"`    |
 | `README.md`                     | "Requires Node.js 22.12+ (22.x)" | Node 24.21+ (24.x) |
 | `CLAUDE.md` line 55             | "Use Node 22 and pnpm 11.22.0"   | Node 24            |
+
+**As shipped:** `engines.node` is `>=24.19` rather than `>=24.21`, because Vercel ignores
+`.nvmrc` and supplies v24.19.0 for `24.x`. `.nvmrc` pins `24.21.0` as the development and CI
+version; `engines.node` is the deployment compatibility floor.
 
 Both workflows read `node-version-file: .nvmrc`, so `.github/workflows/ci.yml` and
 `.github/workflows/ingest.yml` need no edit. `ingest.yml` runs a daily production cron
 against a live database — verify it green before considering this part done, not just `ci.yml`.
 
 ## Part 2 — TypeScript 5.9.3 → 7.0.2
+
+**As shipped: TypeScript 6.0.3.** TypeScript 7 stays blocked because typescript-eslint caps
+its peer range at `>=4.8.4 <6.1.0`. Moving to 7 is deferred until that range widens.
 
 TypeScript 7 is the native port of the compiler. **Measured result: this repo compiles clean
 under it.** `tsc --noEmit` was run against `tsconfig.json` with both versions:
@@ -120,7 +132,7 @@ already on flat config, but an ESLint major reshapes rule behavior across 56 tes
 ## Constraints
 
 - Every version stays an **exact pin**. No `^`, `~`, or `>=` enters `package.json` — this is
-  the rule in `CLAUDE.md` and it is enforced by `save-exact=true`.
+  the rule in `CLAUDE.md` and it is enforced by `saveExact: true` in `pnpm-workspace.yaml`.
 - `pnpm-lock.yaml` is committed with each part.
 - The `overrides` block in `pnpm-workspace.yaml` (`deepmerge-ts`, `js-yaml`, `mysql2`,
   `sharp`) exists to hold transitive dependencies at patched versions. Re-check each one
@@ -130,7 +142,7 @@ already on flat config, but an ESLint major reshapes rule behavior across 56 tes
 
 ## Acceptance
 
-1. `pnpm install --frozen-lockfile` succeeds under Node 24 with `engine-strict=true`.
+1. `pnpm install --frozen-lockfile` succeeds under Node 24 with `engineStrict: true`.
 2. `pnpm quality` passes — that is `format:check`, `lint --max-warnings=0`, `typecheck`,
    `test`, `db:validate`, then `build`, `deadcode`, `circular`, and `boundaries`.
 3. All 56 test files pass, with none skipped, marked `todo`, or deleted to get there.
