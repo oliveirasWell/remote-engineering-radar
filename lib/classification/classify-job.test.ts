@@ -6,6 +6,14 @@ const BRAZIL_GEOGRAPHY = 'brazil';
 const LATAM_GEOGRAPHY = 'latam';
 const ADVERSARIAL_LATAM_TEXT = 'LATAM '.repeat(40_000);
 const CLASSIFICATION_BUDGET_MS = 500;
+const CLOUD_OPS_JOB_TITLE = 'Senior DevOps Engineer';
+const CLOUD_OPS_DESCRIPTION =
+  'Own our AWS footprint, run Kubernetes in production, and manage infrastructure as code with Terraform. Docker experience required.';
+const PLATFORM_ROLE_FOCUS = 'platform';
+const DATA_ANNOTATION_ROLE_FOCUS = 'annotation';
+const QUAVE_ANNOTATION_TITLE = 'Senior Full-Stack Engineer';
+const QUAVE_ANNOTATION_DESCRIPTION =
+  'Work with a US client developing AI training and evaluation data for coding agents. React, TypeScript, and Node.js.';
 
 describe('classifyJob', () => {
   it.each(BRAZIL_LOCATIONS)('recognizes Brazil in %s', (location) => {
@@ -192,5 +200,102 @@ describe('classifyJob', () => {
     expect(result.technologies).toEqual(
       expect.arrayContaining(['TypeScript', 'Node.js', 'GraphQL']),
     );
+  });
+
+  it('classifies a DevOps role as a platform focus instead of an unrelated stack', () => {
+    const result = classifyJob({
+      title: CLOUD_OPS_JOB_TITLE,
+      description: CLOUD_OPS_DESCRIPTION,
+    });
+
+    expect(result.roleFocus).toContain(PLATFORM_ROLE_FOCUS);
+    expect(result.isUnrelatedStack).toBe(false);
+    expect(result.technologies).toEqual(
+      expect.arrayContaining(['AWS', 'Kubernetes', 'Terraform', 'Docker']),
+    );
+  });
+
+  it.each([
+    'Site Reliability Engineer',
+    'Platform Engineer',
+    'Cloud Engineer',
+    'Infrastructure Engineer',
+    'Senior SRE',
+  ])('classifies %s as a platform focus', (title) => {
+    expect(classifyJob({ title }).roleFocus).toContain(PLATFORM_ROLE_FOCUS);
+  });
+
+  it('keeps a platform role whose body mentions a competing language', () => {
+    const result = classifyJob({
+      title: CLOUD_OPS_JOB_TITLE,
+      description: 'Automate deploys for our Java and Kotlin services on GCP.',
+    });
+
+    expect(result.isUnrelatedStack).toBe(false);
+    expect(shouldPersistClassifiedJob(result)).toBe(true);
+  });
+
+  it('does not put a React role on the platform track for mentioning cloud tooling', () => {
+    const result = classifyJob({
+      title: 'Senior Frontend Engineer',
+      description:
+        'Build our React and TypeScript app. We deploy with Docker on AWS.',
+    });
+
+    expect(result.roleFocus).not.toContain(PLATFORM_ROLE_FOCUS);
+    expect(result.technologies).toEqual(
+      expect.arrayContaining(['React', 'TypeScript', 'Docker', 'AWS']),
+    );
+  });
+
+  it('still rejects a competing-stack role that merely mentions cloud tooling', () => {
+    const result = classifyJob({
+      title: 'Senior Backend Engineer',
+      description: 'Java and Spring services deployed on Kubernetes.',
+    });
+
+    expect(result.roleFocus).not.toContain(PLATFORM_ROLE_FOCUS);
+    expect(result.isUnrelatedStack).toBe(true);
+    expect(shouldPersistClassifiedJob(result)).toBe(false);
+  });
+
+  it('puts an engineering role that produces AI training data on the annotation track', () => {
+    const result = classifyJob({
+      title: QUAVE_ANNOTATION_TITLE,
+      description: QUAVE_ANNOTATION_DESCRIPTION,
+    });
+
+    expect(result.roleFocus).toContain(DATA_ANNOTATION_ROLE_FOCUS);
+  });
+
+  it.each([
+    'AI Response Labeler / Annotator – Korean Specialty',
+    'Bengali Transcription and Annotation Expert',
+    'Freelance AI Trainer - Python',
+    'Data Labeling Specialist',
+    'RLHF Evaluator',
+  ])('classifies %s as an annotation focus', (title) => {
+    expect(classifyJob({ title }).roleFocus).toContain(
+      DATA_ANNOTATION_ROLE_FOCUS,
+    );
+  });
+
+  it('does not put a role on the annotation track for a passing mention of annotations', () => {
+    const result = classifyJob({
+      title: 'Technical Writer',
+      description: 'Annotate code samples and review API docs.',
+    });
+
+    expect(result.roleFocus).not.toContain(DATA_ANNOTATION_ROLE_FOCUS);
+  });
+
+  it('keeps an annotation role whose body mentions a competing language', () => {
+    const result = classifyJob({
+      title: 'Freelance AI Trainer',
+      description: 'Review and rank Java and Kotlin code written by LLMs.',
+    });
+
+    expect(result.isUnrelatedStack).toBe(false);
+    expect(shouldPersistClassifiedJob(result)).toBe(true);
   });
 });

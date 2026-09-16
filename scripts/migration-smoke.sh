@@ -5,6 +5,10 @@ database_name='radar_prisma_smoke'
 unbaselined_database_name='radar_prisma_unbaselined'
 legacy_database_name='radar_prisma_legacy'
 
+# Fresh and legacy flows both end fully deployed, so the finished-migration
+# count must track prisma/migrations instead of a hardcoded number.
+expected_migration_count="$(find prisma/migrations -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+
 # All databases and cluster-wide test roles live in this disposable container.
 database_password="$(node -e 'process.stdout.write(require("node:crypto").randomBytes(24).toString("hex"))')"
 container_id="$(docker run --detach --rm --publish 127.0.0.1::5432 --env POSTGRES_PASSWORD="$database_password" postgres:17-alpine)"
@@ -44,7 +48,7 @@ table_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username
 test "$table_count" = '3'
 
 migration_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --tuples-only --no-align --command 'SELECT count(*) FROM "_prisma_migrations" WHERE finished_at IS NOT NULL')"
-test "$migration_count" = '2'
+test "$migration_count" = "$expected_migration_count"
 
 timestamp_typmods="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --tuples-only --no-align --command "SELECT string_agg(DISTINCT attribute.atttypmod::text, ',' ORDER BY attribute.atttypmod::text) FROM pg_attribute attribute JOIN pg_class relation ON relation.oid = attribute.attrelid JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace JOIN pg_type type ON type.oid = attribute.atttypid WHERE namespace.nspname = 'public' AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs') AND type.typname = 'timestamptz' AND attribute.attnum > 0")"
 test "$timestamp_typmods" = '-1'
@@ -82,7 +86,7 @@ docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbn
 "
 snapshot_query="SELECT jsonb_build_object(
   'companies', (SELECT jsonb_agg(to_jsonb(c) - 'kind' ORDER BY id) FROM companies c),
-  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' ORDER BY id) FROM jobs j),
+  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' - 'role_focus' ORDER BY id) FROM jobs j),
   'hiring_signals', (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM hiring_signals s),
   'ingestion_runs', (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM ingestion_runs r),
   'drizzle', (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM drizzle.__drizzle_migrations m)
@@ -117,5 +121,5 @@ test "$before" = "$after"
 preserved="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$legacy_database_name" --tuples-only --no-align --command "SELECT kind = 'consultancy' AND geographies = '[\"LATAM\"]'::jsonb AND countries = '[\"BR\"]'::jsonb FROM companies JOIN jobs ON jobs.company_id = companies.id")"
 test "$preserved" = 't'
 migration_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$legacy_database_name" --tuples-only --no-align --command 'SELECT count(*) FROM "_prisma_migrations" WHERE finished_at IS NOT NULL')"
-test "$migration_count" = '2'
+test "$migration_count" = "$expected_migration_count"
 echo 'Fresh deploy and legacy preparation/check/resolve/deploy passed without data loss.'

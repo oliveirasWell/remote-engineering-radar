@@ -33,6 +33,7 @@ const createJob = (overrides: Partial<Job> = {}): Job => ({
   technologies: [...TEST_JOB.technologies],
   geographies: [],
   countries: [],
+  roleFocus: [],
   postedAt: NOW,
   firstSeenAt: NOW,
   lastSeenAt: NOW,

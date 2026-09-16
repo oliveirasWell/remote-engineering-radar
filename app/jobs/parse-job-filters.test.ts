@@ -43,12 +43,14 @@ describe('parseJobFilters', () => {
         seniority: 'wizard',
         remote: 'lunar',
         country: 'atlantis',
+        focus: 'quantum-ops',
       }),
     ).toEqual({
       technology: undefined,
       seniority: undefined,
       remote: undefined,
       country: undefined,
+      focus: undefined,
       minimumScore: undefined,
       limit: JOBS_PAGE_LIMIT,
     });
@@ -61,12 +63,14 @@ describe('parseJobFilters', () => {
         seniority: 'Senior',
         remote: 'hybrid',
         country: 'Brazil',
+        focus: ' Cloud-Ops ',
       }),
     ).toMatchObject({
       technology: 'React',
       seniority: 'senior',
       remote: 'hybrid',
       country: 'brazil',
+      focus: 'cloud-ops',
     });
   });
 });

@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
-import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
+import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
 import { I18N_TEST } from '../i18n-fixtures';
 import { TEST_JOB } from '@/lib/db/repositories/test-fixtures';
-import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
+import {
+  JOB_COUNTRY_FILTER_OPTIONS,
+  JOB_FOCUS_CLOUD_OPS,
+  JOB_FOCUS_DATA_ANNOTATION,
+} from '@/lib/jobs/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import JobsPage from './page';
@@ -78,9 +82,50 @@ describe('JobsPage', () => {
       ...FILTERS,
       technology: undefined,
       remote: undefined,
+      focus: undefined,
       minimumScore: undefined,
       limit: JOBS_PAGE_LIMIT,
     });
+  });
+
+  it('offers the focus tracks as links and marks the active one', async () => {
+    render(
+      await resolvePageSection(
+        JobsPage({
+          searchParams: Promise.resolve({
+            focus: JOB_FOCUS_CLOUD_OPS,
+            country: FILTERS.country,
+          }),
+        }),
+      ),
+    );
+
+    const tracks = screen.getByRole('navigation', {
+      name: JOBS_PAGE_COPY.focusLabel,
+    });
+    expect(
+      within(tracks).getByRole('link', { name: JOBS_PAGE_COPY.focusAll }),
+    ).toHaveAttribute('href', `/jobs?country=${FILTERS.country}`);
+    // Switching tracks must keep the filters already applied.
+    expect(
+      within(tracks).getByRole('link', {
+        name: EN_MESSAGES.focus[JOB_FOCUS_CLOUD_OPS],
+      }),
+    ).toHaveAttribute(
+      'href',
+      `/jobs?country=${FILTERS.country}&focus=${JOB_FOCUS_CLOUD_OPS}`,
+    );
+    expect(
+      within(tracks).getByRole('link', {
+        name: EN_MESSAGES.focus[JOB_FOCUS_DATA_ANNOTATION],
+      }),
+    ).toHaveAttribute(
+      'href',
+      `/jobs?country=${FILTERS.country}&focus=${JOB_FOCUS_DATA_ANNOTATION}`,
+    );
+    expect(getJobsPageData).toHaveBeenLastCalledWith(
+      expect.objectContaining({ focus: JOB_FOCUS_CLOUD_OPS }),
+    );
   });
 
   it('shows the focus-stack subtitle for SEO visitors', async () => {
@@ -111,6 +156,7 @@ describe('JobsPage', () => {
       seniority: TEST_JOB.seniority,
       remote: undefined,
       country,
+      focus: undefined,
       minimumScore,
       limit: JOBS_PAGE_LIMIT,
     };

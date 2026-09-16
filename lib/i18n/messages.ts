@@ -5,9 +5,10 @@ export type Locale = (typeof LOCALES)[number];
 export const EN_MESSAGES = {
   app: {
     name: 'Remote Engineering Radar',
-    focusStack: 'React, TypeScript, Node.js, GraphQL, and React Native',
+    focusStack:
+      'React, TypeScript, Node.js, GraphQL, React Native, and Cloud & Ops',
     description:
-      'Automated job intelligence for remote senior frontend and fullstack roles in React, TypeScript, Node.js, GraphQL, and React Native.',
+      'Automated job intelligence for remote senior engineering roles: React, TypeScript, Node.js, GraphQL and React Native, plus Cloud & Ops.',
   },
   navigation: {
     label: 'Main navigation',
@@ -20,7 +21,7 @@ export const EN_MESSAGES = {
   },
   home: {
     subtitle:
-      'Remote senior frontend and fullstack companies hiring in React, TypeScript, Node.js, GraphQL, and React Native.',
+      'Remote senior companies hiring in React, TypeScript, Node.js, GraphQL and React Native, plus Cloud & Ops.',
     companiesToWatch: 'Companies to watch',
     relevantJobs: 'Relevant jobs',
     openRoles: (count: number) =>
@@ -39,9 +40,12 @@ export const EN_MESSAGES = {
   jobs: {
     title: 'Jobs',
     subtitle:
-      'Search remote senior frontend and fullstack openings in React, TypeScript, Node.js, GraphQL, and React Native.',
-    metaTitle: 'Jobs in React, TypeScript, Node.js, GraphQL, and React Native',
+      'Search remote senior openings across two tracks: React, TypeScript, Node.js, GraphQL and React Native, or Cloud & Ops.',
+    metaTitle:
+      'Jobs in React, TypeScript, Node.js, GraphQL, React Native, and Cloud & Ops',
     filtersHeading: 'Filters',
+    focusLabel: 'Focus area',
+    focusAll: 'All roles',
     technology: 'Technology',
     seniority: 'Seniority',
     remote: 'Remote policy',
@@ -59,6 +63,11 @@ export const EN_MESSAGES = {
       newest: 'Newest first',
       relevance: 'Most relevant',
     },
+  },
+  focus: {
+    engineering: 'React & Product',
+    'cloud-ops': 'Cloud & Ops',
+    'data-annotation': 'Data Annotation',
   },
   countries: {
     brazil: 'Brazil',
@@ -87,6 +96,7 @@ export const EN_MESSAGES = {
     Junior: 'Junior',
     Frontend: 'Frontend',
     Fullstack: 'Fullstack',
+    Platform: 'Cloud & Ops',
     Remote: 'Remote',
     'On-site only': 'On-site only',
     Brazil: 'Brazil',
@@ -176,6 +186,10 @@ export const EN_MESSAGES = {
         description: 'Open issues from the frontendbr/vagas GitHub repository.',
       },
       {
+        name: 'quave',
+        description: 'Open issues from the quavedev/join GitHub repository.',
+      },
+      {
         name: 'Vagas Remotas',
         description:
           'WordPress job-listings API filtered to engineering roles.',
@@ -189,12 +203,13 @@ export const EN_MESSAGES = {
     freshnessTitle: 'Freshness and scope',
     freshness:
       'Ingestion runs once daily through GitHub Actions. Listings can be up to 24 hours out of date.',
-    scope: 'Only remote roles posted within the last 30 days are shown.',
+    scope:
+      'Only remote roles posted within the last 30 days are shown, across all focus areas.',
     scoringTitle: 'Signals, not endorsements',
     scoring:
       'Scores are heuristics over public text — not endorsements of a company or role.',
     scoringJob:
-      'Job score favors React, TypeScript, Node.js, GraphQL, and React Native; senior/staff titles; frontend or fullstack focus; remote work; and Brazil/LATAM/Americas geography. Junior, onsite-only, relocation-required, and unrelated stacks are heavily down-ranked.',
+      'The radar tracks three focus areas. React & Product and Cloud & Ops are scored on equal footing: React & Product favors React, TypeScript, Node.js, GraphQL, and React Native; Cloud & Ops favors AWS, Kubernetes, Terraform, Docker, Azure, and GCP. Data Annotation groups AI training, data labeling, and RLHF roles. All three favor senior/staff titles, remote work, and Brazil/LATAM/Americas geography. Junior, onsite-only, relocation-required, and unrelated stacks are heavily down-ranked.',
     scoringCompany:
       'Company hiring score aggregates active engineering openings, recent posting bursts, relevant tech matches, and leadership roles — again from public listings only.',
     applications:
@@ -211,9 +226,10 @@ export const EN_MESSAGES = {
 export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   app: {
     name: 'Remote Engineering Radar',
-    focusStack: 'React, TypeScript, Node.js, GraphQL e React Native',
+    focusStack:
+      'React, TypeScript, Node.js, GraphQL, React Native e Cloud & Ops',
     description:
-      'Inteligência automatizada de vagas remotas sênior de frontend e fullstack em React, TypeScript, Node.js, GraphQL e React Native.',
+      'Inteligência automatizada de vagas remotas sênior de engenharia: React, TypeScript, Node.js, GraphQL e React Native, além de Cloud & Ops.',
   },
   navigation: {
     label: 'Navegação principal',
@@ -226,7 +242,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   },
   home: {
     subtitle:
-      'Empresas contratando profissionais sênior de frontend e fullstack para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native.',
+      'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, além de Cloud & Ops.',
     companiesToWatch: 'Empresas para acompanhar',
     relevantJobs: 'Vagas relevantes',
     openRoles: (count: number) =>
@@ -245,9 +261,12 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   jobs: {
     title: 'Vagas',
     subtitle:
-      'Busque vagas remotas sênior de frontend e fullstack em React, TypeScript, Node.js, GraphQL e React Native.',
-    metaTitle: 'Vagas em React, TypeScript, Node.js, GraphQL e React Native',
+      'Busque vagas remotas sênior em duas trilhas: React, TypeScript, Node.js, GraphQL e React Native, ou Cloud & Ops.',
+    metaTitle:
+      'Vagas em React, TypeScript, Node.js, GraphQL, React Native e Cloud & Ops',
     filtersHeading: 'Filtros',
+    focusLabel: 'Área de foco',
+    focusAll: 'Todas as áreas',
     technology: 'Tecnologia',
     seniority: 'Senioridade',
     remote: 'Modelo de trabalho',
@@ -265,6 +284,11 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
       newest: 'Mais recentes',
       relevance: 'Maior relevância',
     },
+  },
+  focus: {
+    engineering: 'React & Produto',
+    'cloud-ops': 'Cloud & Ops',
+    'data-annotation': 'Anotação de Dados',
   },
   countries: {
     brazil: 'Brasil',
@@ -293,6 +317,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     Junior: 'Júnior',
     Frontend: 'Frontend',
     Fullstack: 'Fullstack',
+    Platform: 'Cloud & Ops',
     Remote: 'Remoto',
     'On-site only': 'Somente presencial',
     Brazil: 'Brasil',
@@ -386,6 +411,10 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
           'Issues abertas do repositório frontendbr/vagas no GitHub.',
       },
       {
+        name: 'quave',
+        description: 'Issues abertas do repositório quavedev/join no GitHub.',
+      },
+      {
         name: 'Vagas Remotas',
         description:
           'API WordPress de job-listings filtrada para papéis de engenharia.',
@@ -399,12 +428,13 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     freshnessTitle: 'Atualização e escopo',
     freshness:
       'A coleta é executada uma vez por dia pelo GitHub Actions. As vagas podem estar até 24 horas desatualizadas.',
-    scope: 'São exibidas apenas vagas remotas publicadas nos últimos 30 dias.',
+    scope:
+      'São exibidas apenas vagas remotas publicadas nos últimos 30 dias, em todas as áreas de foco.',
     scoringTitle: 'Sinais, não recomendações',
     scoring:
       'As pontuações são heurísticas sobre texto público — não uma recomendação de empresa ou vaga.',
     scoringJob:
-      'A nota da vaga favorece React, TypeScript, Node.js, GraphQL e React Native; títulos senior/staff; foco frontend ou fullstack; remoto; e geografia Brasil/LATAM/Américas. Junior, apenas presencial, relocação obrigatória e stacks sem relação são fortemente penalizados.',
+      'O radar acompanha três áreas de foco. React & Produto e Cloud & Ops são pontuadas em pé de igualdade: React & Produto favorece React, TypeScript, Node.js, GraphQL e React Native; Cloud & Ops favorece AWS, Kubernetes, Terraform, Docker, Azure e GCP. Anotação de Dados reúne vagas de treinamento de IA, rotulagem de dados e RLHF. As três favorecem títulos senior/staff, remoto e geografia Brasil/LATAM/Américas. Junior, apenas presencial, relocação obrigatória e stacks sem relação são fortemente penalizados.',
     scoringCompany:
       'A nota da empresa agrega vagas de engenharia ativas, rajadas recentes de publicações, matches de tech relevante e papéis de liderança — sempre a partir de listagens públicas.',
     applications:

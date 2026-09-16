@@ -1,11 +1,41 @@
 'use client';
 
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
-import Link from 'next/link';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import type { JobFilters, JobsPageData } from '@/lib/report/get-jobs-page-data';
 import { TECHNOLOGY_NAMES } from '@/lib/classification/constants';
+import {
+  JOB_FOCUS_FILTER_OPTIONS,
+  type JobFocusSlug,
+} from '@/lib/jobs/constants';
+import Link from 'next/link';
+
+const CHIP_BASE = 'inline-flex min-h-[44px] items-center';
+const ACTIVE_CHIP = `${CHIP_BASE} font-semibold text-foreground shadow-[inset_0_-2px_0_var(--primary)]`;
+const INACTIVE_CHIP = `${CHIP_BASE} text-muted-foreground underline underline-offset-2`;
+
+/**
+ * Track switching keeps the filters already applied, so a country or seniority
+ * choice survives moving between focus areas.
+ */
+const focusHref = (filters: JobFilters, focus: JobFocusSlug | undefined) => {
+  const entries: Array<[string, string | number | undefined]> = [
+    ['technology', filters.technology],
+    ['seniority', filters.seniority],
+    ['remote', filters.remote],
+    ['country', filters.country],
+    ['minimumScore', filters.minimumScore],
+    ['focus', focus],
+  ];
+  const params = new URLSearchParams(
+    entries
+      .filter(([, value]) => value !== undefined)
+      .map(([name, value]) => [name, String(value)]),
+  );
+  const query = params.toString();
+  return query ? `/jobs?${query}` : '/jobs';
+};
 
 export const JobsReport = ({
   data,
@@ -35,11 +65,37 @@ export const JobsReport = ({
         </p>
       ) : null}
 
+      <nav
+        aria-label={messages.jobs.focusLabel}
+        className="flex flex-wrap gap-3 text-sm"
+      >
+        <Link
+          href={focusHref(filters, undefined)}
+          className={filters.focus ? INACTIVE_CHIP : ACTIVE_CHIP}
+        >
+          {messages.jobs.focusAll}
+        </Link>
+        {JOB_FOCUS_FILTER_OPTIONS.map((option) => (
+          <Link
+            key={option.slug}
+            href={focusHref(filters, option.slug)}
+            className={
+              filters.focus === option.slug ? ACTIVE_CHIP : INACTIVE_CHIP
+            }
+          >
+            {messages.focus[option.slug]}
+          </Link>
+        ))}
+      </nav>
+
       <section aria-labelledby="job-filters">
         <h2 id="job-filters" className="sr-only">
           {messages.jobs.filtersHeading}
         </h2>
         <form className="grid gap-3 sm:grid-cols-2" method="get">
+          {filters.focus ? (
+            <input type="hidden" name="focus" value={filters.focus} />
+          ) : null}
           {fields.map((field) => (
             <label key={field.name} className="flex flex-col gap-1 text-sm">
               <span>{messages.jobs[field.name]}</span>

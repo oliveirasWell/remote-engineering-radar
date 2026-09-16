@@ -2,6 +2,7 @@ import {
   classifyJob,
   type ClassifyJobInput,
 } from '../classification/classify-job';
+import { PLATFORM_ROLE_FOCUS } from '../classification/constants';
 import type { JobClassification } from '../classification/types';
 import {
   MAX_NORMALIZED_SCORE,
@@ -34,7 +35,13 @@ const scoreClassification = (classification: JobClassification): JobScore => {
   let rawScore = 0;
   const reasons: string[] = [];
 
-  for (const [name, weight] of Object.entries(SCORE_WEIGHTS.technologies)) {
+  const technologyWeights = classification.roleFocus.includes(
+    PLATFORM_ROLE_FOCUS,
+  )
+    ? SCORE_WEIGHTS.cloudTechnologies
+    : SCORE_WEIGHTS.technologies;
+
+  for (const [name, weight] of Object.entries(technologyWeights)) {
     if (classification.technologies.includes(name)) {
       rawScore += weight;
       reasons.push(name);
@@ -62,6 +69,10 @@ const scoreClassification = (classification: JobClassification): JobScore => {
   if (classification.roleFocus.includes('fullstack')) {
     rawScore += SCORE_WEIGHTS.roleFocus.fullstack;
     reasons.push('Fullstack');
+  }
+  if (classification.roleFocus.includes(PLATFORM_ROLE_FOCUS)) {
+    rawScore += SCORE_WEIGHTS.roleFocus.platform;
+    reasons.push('Platform');
   }
 
   if (classification.remotePolicy === 'remote') {

@@ -4,6 +4,7 @@ SET LOCAL lock_timeout = '5s';
 ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS kind text DEFAULT 'product' NOT NULL;
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS geographies jsonb DEFAULT '[]'::jsonb NOT NULL;
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS countries jsonb DEFAULT '[]'::jsonb NOT NULL;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS role_focus jsonb DEFAULT '[]'::jsonb NOT NULL;
 
 DO $$
 BEGIN

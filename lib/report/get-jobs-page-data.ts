@@ -7,6 +7,7 @@ import {
   DEFAULT_JOB_SORT,
   JOB_MAX_AGE_MS,
   REMOTE_POLICY_REMOTE,
+  type JobFocusSlug,
 } from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { REPORT_CACHE_LIFE } from './constants';
@@ -18,6 +19,7 @@ export type JobFilters = {
   seniority?: string;
   remote?: string;
   country?: string;
+  focus?: JobFocusSlug;
   minimumScore?: number;
   limit?: number;
 };
@@ -63,6 +65,7 @@ export const getJobsPageData = async (
       seniority: filters.seniority,
       remotePolicy: filters.remote ?? REMOTE_POLICY_REMOTE,
       country: filters.country,
+      focus: filters.focus,
       minimumScore: filters.minimumScore ?? 0,
       limit: filters.limit,
       maxAgeMs: JOB_MAX_AGE_MS,

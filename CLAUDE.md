@@ -52,4 +52,4 @@ Do not prefix application files or folders with underscores to imply privacy. Us
 
 Component tests that require browser APIs must use the `// @vitest-environment jsdom` docblock. Route handlers, schemas, and adapters must keep Vitest's Node environment.
 
-Use Node 22 and pnpm 11.22.0. Dependency versions in `package.json` must be exact and must not use `^` or `~` ranges.
+Use Node 24 and pnpm 11.22.0. Dependency versions in `package.json` must be exact and must not use `^` or `~` ranges.
