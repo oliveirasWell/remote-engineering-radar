@@ -1,3 +1,6 @@
+engineStrict: true
+saveExact: true
+
 allowBuilds:
   '@prisma/engines': true
   '@sentry/cli': true

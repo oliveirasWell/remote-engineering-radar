@@ -12,7 +12,7 @@ public report.
 
 ## Getting Started
 
-Requires **Node.js 22.12+ (22.x)**, **pnpm 11.22.0**, and **Docker**.
+Requires **Node.js 24.21+ (24.x)**, **pnpm 11.22.0**, and **Docker**.
 
 With Docker running:
 
