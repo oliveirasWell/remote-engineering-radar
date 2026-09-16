@@ -42,6 +42,15 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Apply schema before pnpm check. Vercel ships the new release in
+      # parallel; waiting on the test suite lets GET / query columns that
+      # do not exist yet. resolve-baseline still deploys after recording
+      # the baseline, below.
+      - run: pnpm db:deploy
+        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'ingest' || inputs.operation == 'deploy-migrations'
+        env:
+          DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
+          NODE_ENV: production
       - run: pnpm check
       - name: Require explicit production preparation confirmation
         if: github.event_name == 'workflow_dispatch' && inputs.operation == 'prepare-baseline'
@@ -72,7 +81,7 @@ jobs:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
       - run: pnpm db:deploy
-        if: github.event_name != 'workflow_dispatch' || inputs.operation == 'ingest' || inputs.operation == 'resolve-baseline' || inputs.operation == 'deploy-migrations'
+        if: github.event_name == 'workflow_dispatch' && inputs.operation == 'resolve-baseline'
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
