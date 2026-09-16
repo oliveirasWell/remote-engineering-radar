@@ -1,4 +1,15 @@
-import { JOB_MAX_AGE_MS, JOB_RETENTION_MS } from '@/lib/jobs/constants';
+import {
+  DATA_ANNOTATION_ROLE_FOCUS,
+  PLATFORM_ROLE_FOCUS,
+} from '@/lib/classification/constants';
+import {
+  JOB_FOCUS_CLOUD_OPS,
+  JOB_FOCUS_DATA_ANNOTATION,
+  JOB_FOCUS_ENGINEERING,
+  JOB_FOCUS_FILTER_OPTIONS,
+  JOB_MAX_AGE_MS,
+  JOB_RETENTION_MS,
+} from '@/lib/jobs/constants';
 import { createCompaniesRepository } from './companies-repository';
 import { createJobsRepository } from './jobs-repository';
 import { createTestDb } from '../test/create-test-db';
@@ -313,6 +324,46 @@ describe('createJobsRepository', () => {
     });
 
     expect(cards.map((card) => card.sourceJobId)).toEqual(['brazil-role']);
+  });
+
+  it('splits active jobs into disjoint focus tracks', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const roleFocusByJobId = {
+      'product-role': ['frontend'],
+      'platform-role': [PLATFORM_ROLE_FOCUS],
+      'annotation-role': ['fullstack', DATA_ANNOTATION_ROLE_FOCUS],
+    };
+
+    for (const [sourceJobId, roleFocus] of Object.entries(roleFocusByJobId)) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId,
+        roleFocus,
+        postedAt: now,
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
+
+    const idsByFocus = await Promise.all(
+      JOB_FOCUS_FILTER_OPTIONS.map(async ({ slug }) => {
+        const jobs = await jobsRepository.listActiveByScore({
+          focus: slug,
+          now,
+        });
+        return [slug, jobs.map((job) => job.sourceJobId)];
+      }),
+    );
+
+    expect(Object.fromEntries(idsByFocus)).toEqual({
+      [JOB_FOCUS_ENGINEERING]: ['product-role'],
+      [JOB_FOCUS_CLOUD_OPS]: ['platform-role'],
+      [JOB_FOCUS_DATA_ANNOTATION]: ['annotation-role'],
+    });
   });
 
   it('orders company card rows by most recent posted date first', async () => {

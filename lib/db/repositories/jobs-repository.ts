@@ -1,8 +1,13 @@
 import { Prisma, type Job as PrismaJob } from '@prisma/client';
-import { PLATFORM_ROLE_FOCUS } from '@/lib/classification/constants';
+import {
+  DATA_ANNOTATION_ROLE_FOCUS,
+  PLATFORM_ROLE_FOCUS,
+} from '@/lib/classification/constants';
 import type { JobGeography } from '@/lib/classification/types';
 import {
   JOB_FOCUS_CLOUD_OPS,
+  JOB_FOCUS_DATA_ANNOTATION,
+  JOB_FOCUS_ENGINEERING,
   JOB_MAX_AGE_MS,
   REMOTE_POLICY_REMOTE,
   type JobFocusSlug,
@@ -74,20 +79,27 @@ const toJob = (row: PrismaJob): Job => ({
   updatedAt: row.updatedAt,
 });
 
+const containsRoleFocus = (roleFocus: string): Prisma.JobWhereInput => ({
+  roleFocus: { array_contains: [roleFocus] },
+});
+
+const TRACK_ROLE_FOCUS = {
+  [JOB_FOCUS_CLOUD_OPS]: PLATFORM_ROLE_FOCUS,
+  [JOB_FOCUS_DATA_ANNOTATION]: DATA_ANNOTATION_ROLE_FOCUS,
+} as const;
+
 /**
- * The Cloud & Ops track is the presence of the platform role focus; the React
- * track is its absence, so the two chips partition the active jobs.
+ * Cloud & Ops and Data Annotation are each the presence of their role focus;
+ * the React track is the absence of both, so the chips partition the active
+ * jobs.
  */
-const focusFilter = (focus: JobFocusSlug | undefined) => {
+const focusFilter = (focus: JobFocusSlug | undefined): Prisma.JobWhereInput => {
   if (focus === undefined) {
     return {};
   }
-  const containsPlatform: Prisma.JobWhereInput = {
-    roleFocus: { array_contains: [PLATFORM_ROLE_FOCUS] },
-  };
-  return focus === JOB_FOCUS_CLOUD_OPS
-    ? containsPlatform
-    : { NOT: containsPlatform };
+  return focus === JOB_FOCUS_ENGINEERING
+    ? { NOT: Object.values(TRACK_ROLE_FOCUS).map(containsRoleFocus) }
+    : containsRoleFocus(TRACK_ROLE_FOCUS[focus]);
 };
 
 const escapeLikePattern = (value: string): string =>

@@ -10,6 +10,7 @@ import { TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import {
   JOB_COUNTRY_FILTER_OPTIONS,
   JOB_FOCUS_CLOUD_OPS,
+  JOB_FOCUS_DATA_ANNOTATION,
 } from '@/lib/jobs/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
@@ -113,6 +114,14 @@ describe('JobsPage', () => {
     ).toHaveAttribute(
       'href',
       `/jobs?country=${FILTERS.country}&focus=${JOB_FOCUS_CLOUD_OPS}`,
+    );
+    expect(
+      within(tracks).getByRole('link', {
+        name: EN_MESSAGES.focus[JOB_FOCUS_DATA_ANNOTATION],
+      }),
+    ).toHaveAttribute(
+      'href',
+      `/jobs?country=${FILTERS.country}&focus=${JOB_FOCUS_DATA_ANNOTATION}`,
     );
     expect(getJobsPageData).toHaveBeenLastCalledWith(
       expect.objectContaining({ focus: JOB_FOCUS_CLOUD_OPS }),

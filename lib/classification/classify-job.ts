@@ -1,5 +1,8 @@
 import {
   CLOUD_OPS_ROLE_PATTERNS,
+  DATA_ANNOTATION_ROLE_FOCUS,
+  DATA_ANNOTATION_TEXT_PATTERNS,
+  DATA_ANNOTATION_TITLE_PATTERNS,
   PLATFORM_ROLE_FOCUS,
   RELEVANT_TECHNOLOGY_NAMES,
   TECHNOLOGY_PATTERNS,
@@ -94,6 +97,14 @@ const classifyRoleFocus = (
   if (CLOUD_OPS_ROLE_PATTERNS.some((pattern) => pattern.test(input.title))) {
     roleFocus.push(PLATFORM_ROLE_FOCUS);
   }
+  if (
+    DATA_ANNOTATION_TITLE_PATTERNS.some((pattern) =>
+      pattern.test(input.title),
+    ) ||
+    DATA_ANNOTATION_TEXT_PATTERNS.some((pattern) => pattern.test(haystack))
+  ) {
+    roleFocus.push(DATA_ANNOTATION_ROLE_FOCUS);
+  }
   if (/\bfront[-\s]?end\b|\bfrontend\b/i.test(haystack)) {
     roleFocus.push('frontend');
   }
@@ -134,9 +145,13 @@ const isUnrelatedStack = (
   technologies: string[],
   haystack: string,
 ): boolean => {
-  // A platform role is on its own track: the languages it automates deploys
-  // for say nothing about whether the job belongs on the radar.
-  if (roleFocus.includes(PLATFORM_ROLE_FOCUS)) {
+  // Platform and annotation roles are on their own tracks: the languages a
+  // platform role deploys or an annotator reviews say nothing about whether
+  // the job belongs on the radar.
+  if (
+    roleFocus.includes(PLATFORM_ROLE_FOCUS) ||
+    roleFocus.includes(DATA_ANNOTATION_ROLE_FOCUS)
+  ) {
     return false;
   }
 

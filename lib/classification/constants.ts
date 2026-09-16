@@ -77,6 +77,29 @@ export const CLOUD_OPS_ROLE_PATTERNS = [
   /\bsystems?\s+engineer\b/i,
 ] as const;
 
+/** The role-focus value that marks the Data Annotation track. */
+export const DATA_ANNOTATION_ROLE_FOCUS = 'annotation' as const;
+
+/** Matched against the title, which names the work outright. */
+export const DATA_ANNOTATION_TITLE_PATTERNS = [
+  /\bannotat(?:or|ors|ion)\b/i,
+  /\bai\s+train(?:er|ing)\b/i,
+  /\bdata\s+label(?:l)?(?:er|ing)\b/i,
+  /\blabeler\b/i,
+  /\brlhf\b/i,
+] as const;
+
+/**
+ * Matched against the whole posting. Only full phrases: a bare "annotate" or
+ * "RLHF" in a body shows up in technical-writer and ML-research jobs too.
+ */
+export const DATA_ANNOTATION_TEXT_PATTERNS = [
+  /\bdata\s+annotation\b/i,
+  /\bai\s+training\s+data\b/i,
+  /\btraining\s+and\s+evaluation\s+data\b/i,
+  /\bai\s+trainer\b/i,
+] as const;
+
 export const UNRELATED_STACK_PATTERNS = [
   /\bdata engineer\b|\betl\b|\bspark\b|\bairflow\b/i,
   /\bqa engineer\b|\bquality assurance\b|\btest automation engineer\b/i,
