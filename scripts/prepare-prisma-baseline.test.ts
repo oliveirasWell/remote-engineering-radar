@@ -33,13 +33,13 @@ describe('legacy Prisma baseline preparation SQL', () => {
     await db.close();
   });
 
-  it('adds exactly the three legacy columns with NOT NULL types and defaults, preserving rows', async () => {
+  it('adds exactly the four legacy columns with NOT NULL types and defaults, preserving rows', async () => {
     await db.exec(preparationSql);
 
     const columns = await db.query(`
       SELECT table_name, column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
-      WHERE table_schema = 'public' AND column_name IN ('kind', 'geographies', 'countries')
+      WHERE table_schema = 'public' AND column_name IN ('kind', 'geographies', 'countries', 'role_focus')
       ORDER BY table_name, column_name
     `);
     expect(columns.rows).toEqual([
@@ -64,6 +64,13 @@ describe('legacy Prisma baseline preparation SQL', () => {
         is_nullable: 'NO',
         column_default: "'[]'::jsonb",
       },
+      {
+        table_name: 'jobs',
+        column_name: 'role_focus',
+        data_type: 'jsonb',
+        is_nullable: 'NO',
+        column_default: "'[]'::jsonb",
+      },
     ]);
     expect((await db.query('SELECT * FROM companies')).rows).toEqual([
       { id: 1, name: 'Legacy company', kind: 'product' },
@@ -76,6 +83,7 @@ describe('legacy Prisma baseline preparation SQL', () => {
         technologies: ['React'],
         geographies: [],
         countries: [],
+        role_focus: [],
       },
     ]);
     await db.exec(`
@@ -86,14 +94,20 @@ describe('legacy Prisma baseline preparation SQL', () => {
       (await db.query('SELECT kind FROM companies WHERE id = 5')).rows,
     ).toEqual([{ kind: 'product' }]);
     expect(
-      (await db.query('SELECT geographies, countries FROM jobs WHERE id = 6'))
-        .rows,
-    ).toEqual([{ geographies: [], countries: [] }]);
+      (
+        await db.query(
+          'SELECT geographies, countries, role_focus FROM jobs WHERE id = 6',
+        )
+      ).rows,
+    ).toEqual([{ geographies: [], countries: [], role_focus: [] }]);
     await expect(db.exec('UPDATE companies SET kind = NULL')).rejects.toThrow();
     await expect(
       db.exec('UPDATE jobs SET geographies = NULL'),
     ).rejects.toThrow();
     await expect(db.exec('UPDATE jobs SET countries = NULL')).rejects.toThrow();
+    await expect(
+      db.exec('UPDATE jobs SET role_focus = NULL'),
+    ).rejects.toThrow();
   });
 
   it('is safe to repeat and preserves existing non-default column values', async () => {
