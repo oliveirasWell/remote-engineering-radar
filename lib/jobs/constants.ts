@@ -28,6 +28,8 @@ export const JOB_COUNTRY_FILTER_OPTIONS = [
   { slug: 'ukraine', label: 'Ukraine' },
   { slug: 'india', label: 'India' },
   { slug: 'egypt', label: 'Egypt' },
+  { slug: 'pakistan', label: 'Pakistan' },
+  { slug: 'latam', label: 'LATAM' },
   { slug: 'worldwide', label: 'Worldwide' },
 ] as const;
 

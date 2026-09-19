@@ -79,6 +79,8 @@ export const EN_MESSAGES = {
     ukraine: 'Ukraine',
     india: 'India',
     egypt: 'Egypt',
+    pakistan: 'Pakistan',
+    latam: 'LATAM',
     worldwide: 'Worldwide',
   },
   seniority: {
@@ -300,6 +302,8 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     ukraine: 'Ucrânia',
     india: 'Índia',
     egypt: 'Egito',
+    pakistan: 'Paquistão',
+    latam: 'América Latina',
     worldwide: 'Mundo todo',
   },
   seniority: {

@@ -810,6 +810,34 @@ describe('runIngestion', () => {
     ).resolves.toMatchObject({ isActive: true, remotePolicy: 'remote' });
   });
 
+  it('tags countries only from the explicit location, not the description', async () => {
+    const db = await createTestDb();
+    const location = 'Pakistan';
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => ({
+        complete: true,
+        jobs: [
+          makeJob({
+            source: 'greenhouse',
+            sourceJobId: 'pk-1',
+            title: 'Senior Frontend Engineer',
+            url: 'https://example.com/jobs/pk-1',
+            location,
+            description:
+              'Senior React engineer. Remote. Our worldwide customers span Brazil, Latin America, and the United States.',
+          }),
+        ],
+      }),
+    };
+
+    await runIngestion({ db, sources: [source] });
+
+    await expect(
+      createJobsRepository(db).findBySourceJobId('greenhouse', 'pk-1'),
+    ).resolves.toMatchObject({ countries: [location.toLowerCase()] });
+  });
+
   it('skips Sales Representative and other unrelated roles', async () => {
     const db = await createTestDb();
     const source: JobSource = {
