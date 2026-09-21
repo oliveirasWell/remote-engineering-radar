@@ -105,12 +105,13 @@ export const PRODUCT_ROLE_FOCUS = 'product' as const;
 
 /**
  * Matched against the title alone: engineering bodies routinely mention
- * working with product managers. "Product Engineer" and "Product Marketing"
- * titles stay off this track.
+ * working with product managers. A neighbouring discipline ("Product Lead
+ * Engineer", "Head of Product Design") names a different job, and "Product
+ * Engineer" and "Product Marketing" titles never match.
  */
 export const PRODUCT_ROLE_PATTERNS = [
-  /\bproduct\s+(?:manager|owner|lead|director)\b/i,
-  /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b/i,
+  /\bproduct\s+(?:manager|owner|lead|director)\b(?!\s+(?:engineer|designer|developer)\b)/i,
+  /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b(?!\s+(?:engineering|design|designer|marketing|operations)\b)/i,
   /\bgerente\s+de\s+produto\b/i,
 ] as const;
 

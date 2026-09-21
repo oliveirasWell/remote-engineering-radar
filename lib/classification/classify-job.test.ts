@@ -18,9 +18,16 @@ const PRODUCT_MANAGER_TITLES = [
   'Product Owner',
   'Group Product Manager',
   'Head of Product',
+  'Director of Product Management',
 ];
-const PRODUCT_MARKETING_TITLE = 'Product Marketing Manager';
-const PRODUCT_ENGINEER_TITLE = 'Senior Product Engineer';
+const NON_PRODUCT_MANAGEMENT_TITLES = [
+  'Product Marketing Manager',
+  'Senior Product Engineer',
+  'Head of Product Engineering',
+  'Director of Product Design',
+  'VP of Product Operations',
+  'Product Lead Engineer',
+];
 const QUAVE_ANNOTATION_TITLE = 'Senior Full-Stack Engineer';
 const QUAVE_ANNOTATION_DESCRIPTION =
   'Work with a US client developing AI training and evaluation data for coding agents. React, TypeScript, and Node.js.';
@@ -313,7 +320,7 @@ describe('classifyJob', () => {
     expect(classifyJob({ title }).roleFocus).toContain(PRODUCT_ROLE_FOCUS);
   });
 
-  it.each([PRODUCT_MARKETING_TITLE, PRODUCT_ENGINEER_TITLE])(
+  it.each(NON_PRODUCT_MANAGEMENT_TITLES)(
     'keeps %s off the product track',
     (title) => {
       expect(classifyJob({ title }).roleFocus).not.toContain(
