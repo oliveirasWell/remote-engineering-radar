@@ -7,7 +7,7 @@ import {
   TECHNOLOGY_PATTERNS,
   UNRELATED_STACK_PATTERNS,
 } from './constants';
-import type { JobClassification } from './types';
+import type { JobClassification, JobRemotePolicy } from './types';
 import { VOCABULARY } from './vocabulary/vocabulary';
 
 export type ClassifyJobInput = {
@@ -35,24 +35,59 @@ const SENIORITY_ORDER = [
   'senior',
 ] as const;
 
-const classifySeniority = (haystack: string): JobClassification['seniority'] =>
-  SENIORITY_ORDER.find((level) =>
-    matchesAny(VOCABULARY.seniority[level], haystack),
+const classifySeniority = (
+  title: string,
+  haystack: string,
+): JobClassification['seniority'] =>
+  SENIORITY_ORDER.find(
+    (level) =>
+      matchesAny(VOCABULARY.seniority[level], haystack) ||
+      matchesAny(VOCABULARY.seniorityTitle[level], title),
   );
 
-const REMOTE_POLICY_ORDER = ['remote', 'hybrid', 'onsite'] as const;
+/** Title and location name the work model; the most permissive wins. */
+const TITLE_POLICY_ORDER = ['remote', 'hybrid', 'onsite'] as const;
+
+/** A body mentioning remote work in passing must not outvote its stated model. */
+const BODY_POLICY_ORDER = ['hybrid', 'onsite', 'remote'] as const;
+
+const firstPolicy = (
+  order: readonly JobRemotePolicy[],
+  patterns: Record<JobRemotePolicy, readonly RegExp[]>,
+  text: string,
+): JobRemotePolicy | undefined =>
+  order.find((policy) => matchesAny(patterns[policy], text));
+
+const stripBenefitNoise = (text: string): string =>
+  VOCABULARY.remote.benefitNoise.reduce(
+    (remaining, pattern) =>
+      remaining.replace(new RegExp(pattern.source, `${pattern.flags}g`), ' '),
+    text,
+  );
 
 const classifyRemotePolicy = (
   input: ClassifyJobInput,
-  haystack: string,
 ): JobClassification['remotePolicy'] => {
   const explicit = input.remotePolicy?.toLowerCase();
   if (explicit === 'remote' || explicit === 'hybrid' || explicit === 'onsite') {
     return explicit;
   }
 
-  return REMOTE_POLICY_ORDER.find((policy) =>
-    matchesAny(VOCABULARY.remote[policy], haystack),
+  return (
+    firstPolicy(
+      TITLE_POLICY_ORDER,
+      VOCABULARY.remote.title,
+      foldText(
+        [input.title, input.location, input.remotePolicy]
+          .filter(Boolean)
+          .join('\n'),
+      ),
+    ) ??
+    firstPolicy(
+      BODY_POLICY_ORDER,
+      VOCABULARY.remote.body,
+      stripBenefitNoise(foldText(input.description ?? '')),
+    )
   );
 };
 
@@ -157,8 +192,8 @@ export const classifyJob = (input: ClassifyJobInput): JobClassification => {
 
   return {
     technologies,
-    seniority: classifySeniority(haystack),
-    remotePolicy: classifyRemotePolicy(input, haystack),
+    seniority: classifySeniority(title, haystack),
+    remotePolicy: classifyRemotePolicy(input),
     geography: classifyGeography(haystack),
     roleFocus,
     isUnrelatedStack: isUnrelatedStack(roleFocus, technologies, haystack),

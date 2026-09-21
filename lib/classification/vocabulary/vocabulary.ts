@@ -1,8 +1,12 @@
 import { EN_VOCABULARY } from './en';
+import { PT_VOCABULARY } from './pt';
 import type { ClassificationVocabulary } from './types';
 
 /** Adding a language is one vocabulary file and one entry here. */
-const LANGUAGES: readonly ClassificationVocabulary[] = [EN_VOCABULARY];
+const LANGUAGES: readonly ClassificationVocabulary[] = [
+  EN_VOCABULARY,
+  PT_VOCABULARY,
+];
 
 const merge = <K extends string>(
   pick: (vocabulary: ClassificationVocabulary) => Record<K, readonly RegExp[]>,
@@ -28,8 +32,13 @@ const concat = (
  * posting is matched against all of them.
  */
 export const VOCABULARY: ClassificationVocabulary = {
-  remote: merge((vocabulary) => vocabulary.remote),
+  remote: {
+    title: merge((vocabulary) => vocabulary.remote.title),
+    body: merge((vocabulary) => vocabulary.remote.body),
+    benefitNoise: concat((vocabulary) => vocabulary.remote.benefitNoise),
+  },
   seniority: merge((vocabulary) => vocabulary.seniority),
+  seniorityTitle: merge((vocabulary) => vocabulary.seniorityTitle),
   roleFocus: merge((vocabulary) => vocabulary.roleFocus),
   cloudOpsTitle: concat((vocabulary) => vocabulary.cloudOpsTitle),
   annotationTitle: concat((vocabulary) => vocabulary.annotationTitle),

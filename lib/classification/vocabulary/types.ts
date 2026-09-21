@@ -1,20 +1,32 @@
 type Patterns = readonly RegExp[];
 
+type RemotePolicy = 'remote' | 'hybrid' | 'onsite';
+
+type Seniority = 'junior' | 'mid' | 'senior' | 'staff' | 'principal';
+
 /**
  * Every language-dependent pattern the classifier reads, for one language.
  * Patterns run against accent-folded, lowercased text, so they are written
  * without accents.
  */
 export type ClassificationVocabulary = {
+  /**
+   * Title and location name the work model; a description is only trusted
+   * for explicit markers, after `benefitNoise` is removed, because Brazilian
+   * postings list "auxílio home office" as a benefit on every contract type.
+   */
   remote: {
-    remote: Patterns;
-    hybrid: Patterns;
-    onsite: Patterns;
+    title: Record<RemotePolicy, Patterns>;
+    body: Record<RemotePolicy, Patterns>;
+    benefitNoise: Patterns;
   };
-  seniority: Record<
-    'junior' | 'mid' | 'senior' | 'staff' | 'principal',
-    Patterns
-  >;
+  /** Matched against the whole posting. */
+  seniority: Record<Seniority, Patterns>;
+  /**
+   * Matched against the title alone, for words that are also ordinary
+   * vocabulary: "pleno domínio", "estágio do negócio", "atividade principal".
+   */
+  seniorityTitle: Record<Seniority, Patterns>;
   roleFocus: Record<'frontend' | 'fullstack' | 'backend' | 'mobile', Patterns>;
   /** Matched against the title alone; see `en.ts` for why. */
   cloudOpsTitle: Patterns;

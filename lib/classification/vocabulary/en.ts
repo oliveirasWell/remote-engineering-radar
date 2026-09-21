@@ -2,16 +2,36 @@ import type { ClassificationVocabulary } from './types';
 
 export const EN_VOCABULARY: ClassificationVocabulary = {
   remote: {
-    remote: [/\bremote\b/i],
-    hybrid: [/\bhybrid\b/i],
-    onsite: [/\bonsite\b|\bon-site\b|\bin[-\s]?office\b/i],
+    title: {
+      remote: [/\bremote\b/i],
+      hybrid: [/\bhybrid\b/i],
+      onsite: [/\bonsite\b|\bon-site\b|\bin[-\s]?office\b/i],
+    },
+    // "#LI-Remote", "#LI-Hybrid", and "#LI-Onsite" tags match these too.
+    body: {
+      remote: [/\bremote\b/i],
+      hybrid: [/\bhybrid\b/i],
+      onsite: [/\bonsite\b|\bon-site\b|\bin[-\s]?office\b/i],
+    },
+    benefitNoise: [
+      /\bhome[\s-]?office\s+(?:allowance|stipend)\b/i,
+      /\bwork\s+from\s+anywhere\b[^.]{0,80}\b(?:days|weeks)\b/i,
+    ],
   },
   seniority: {
     junior: [/\b(intern|internship|entry[-\s]?level|junior)\b/i],
     mid: [/\bmid[-\s]?level\b|\bmid\b(?=[\s,-])/i],
-    principal: [/\bprincipal\b/i],
+    principal: [],
     staff: [/\bstaff\b/i],
     senior: [/\bsenior\b|\bsr\.?\b/i],
+  },
+  seniorityTitle: {
+    junior: [],
+    mid: [],
+    // Bodies say "principal responsibilities"; only a title names the level.
+    principal: [/\bprincipal\b/i],
+    staff: [],
+    senior: [],
   },
   roleFocus: {
     frontend: [/\bfront[-\s]?end\b|\bfrontend\b/i],
@@ -58,7 +78,6 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
   productTitle: [
     /\bproduct\s+(?:manager|owner|lead|director)\b(?!\s+(?:engineer|designer|developer)\b)/i,
     /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b(?!\s+(?:engineering|design|designer|marketing|operations)\b)/i,
-    /\bgerente\s+de\s+produto\b/i,
   ],
   unrelatedRoleTitle: [
     /\bsales\s+representative\b/i,
@@ -70,11 +89,10 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
     /\bcustomer\s+success\b/i,
     /\baccount\s+manager\b/i,
     /\b(?:marketing\s+manager|growth\s+marketing|product\s+marketing|content\s+marketing)\b/i,
-    /\brepresentante\s+comercial\b|\bvendedor\b/i,
   ],
   relocation: [/\brelocati(on|e)\b/i],
   geography: {
-    brazil: [/\bbrazil\b|\bbrasil\b|\bsao paulo\b/i],
+    brazil: [/\bbrazil\b/i],
     latam: [/\blatam\b|\blatin america\b|\bsouth america\b/i],
     americas: [
       /\bamericas\b|\bnorth america\b|\bunited states\b|\busa\b|\bcanada\b/i,
