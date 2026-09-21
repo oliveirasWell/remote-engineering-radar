@@ -4,6 +4,8 @@ import {
   DATA_ANNOTATION_TEXT_PATTERNS,
   DATA_ANNOTATION_TITLE_PATTERNS,
   PLATFORM_ROLE_FOCUS,
+  PRODUCT_ROLE_FOCUS,
+  PRODUCT_ROLE_PATTERNS,
   RELEVANT_TECHNOLOGY_NAMES,
   TECHNOLOGY_PATTERNS,
   UNRELATED_ROLE_PATTERNS,
@@ -105,6 +107,9 @@ const classifyRoleFocus = (
   ) {
     roleFocus.push(DATA_ANNOTATION_ROLE_FOCUS);
   }
+  if (PRODUCT_ROLE_PATTERNS.some((pattern) => pattern.test(input.title))) {
+    roleFocus.push(PRODUCT_ROLE_FOCUS);
+  }
   if (/\bfront[-\s]?end\b|\bfrontend\b/i.test(haystack)) {
     roleFocus.push('frontend');
   }
@@ -145,12 +150,13 @@ const isUnrelatedStack = (
   technologies: string[],
   haystack: string,
 ): boolean => {
-  // Platform and annotation roles are on their own tracks: the languages a
-  // platform role deploys or an annotator reviews say nothing about whether
-  // the job belongs on the radar.
+  // Platform, annotation, and product roles are on their own tracks: the
+  // languages a platform role deploys, an annotator reviews, or a product
+  // manager's teams write say nothing about whether the job belongs here.
   if (
     roleFocus.includes(PLATFORM_ROLE_FOCUS) ||
-    roleFocus.includes(DATA_ANNOTATION_ROLE_FOCUS)
+    roleFocus.includes(DATA_ANNOTATION_ROLE_FOCUS) ||
+    roleFocus.includes(PRODUCT_ROLE_FOCUS)
   ) {
     return false;
   }

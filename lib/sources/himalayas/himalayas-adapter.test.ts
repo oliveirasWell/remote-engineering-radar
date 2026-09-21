@@ -3,7 +3,10 @@ import { asFetch, jsonResponse } from '@/test/http';
 import malformedPage from './fixtures/jobs-malformed.json';
 import page1 from './fixtures/jobs-page-1.json';
 import page2 from './fixtures/jobs-page-2.json';
-import { HIMALAYAS_SOURCE_NAME } from './constants';
+import {
+  HIMALAYAS_SOURCE_NAME,
+  HIMALAYAS_UNRESTRICTED_COUNTRIES,
+} from './constants';
 import { createHimalayasAdapter } from './himalayas-adapter';
 import { normalizeHimalayasJob } from './normalize-himalayas-job';
 
@@ -39,10 +42,10 @@ describe('normalizeHimalayasJob', () => {
     });
   });
 
-  it('falls back to a remote location when unrestricted', () => {
+  it('marks an unrestricted job as open worldwide', () => {
     expect(normalizeHimalayasJob(deeterJob)).toMatchObject({
       location: 'Remote',
-      countries: [],
+      countries: HIMALAYAS_UNRESTRICTED_COUNTRIES,
     });
   });
 

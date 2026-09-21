@@ -1,4 +1,9 @@
-import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import { PLATFORM_ROLE_FOCUS } from '@/lib/classification/constants';
+import {
+  JOB_FOCUS_CLOUD_OPS,
+  JOB_MAX_AGE_MS,
+  REMOTE_POLICY_REMOTE,
+} from '@/lib/jobs/constants';
 import { createTestDb } from '../test/create-test-db';
 import { createCompaniesRepository } from './companies-repository';
 import { createJobsRepository } from './jobs-repository';
@@ -58,6 +63,69 @@ describe('createCompaniesRepository country filter', () => {
       'chile-co',
       'brazil-co',
     ]);
+  });
+
+  it('lists companies whose only jobs are open worldwide under a country', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-08-31T12:00:00.000Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+      countries: ['worldwide'],
+      postedAt: new Date('2026-08-20T12:00:00.000Z'),
+    });
+
+    const brazil = await companiesRepository.listByHiringScore({
+      country: 'brazil',
+      maxJobAgeMs: JOB_MAX_AGE_MS,
+      now,
+    });
+
+    expect(brazil.map(({ slug }) => slug)).toEqual([TEST_COMPANY.slug]);
+  });
+
+  it('lists only companies with recent jobs in the selected focus track', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-08-31T12:00:00.000Z');
+    const platformCompany = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'platform-co',
+      name: 'Platform Co',
+    });
+    const reactCompany = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'react-co',
+      name: 'React Co',
+    });
+
+    for (const [company, roleFocus] of [
+      [platformCompany, [PLATFORM_ROLE_FOCUS]],
+      [reactCompany, ['frontend']],
+    ] as const) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        technologies: [...TEST_JOB.technologies],
+        sourceJobId: company.slug,
+        roleFocus: [...roleFocus],
+        postedAt: new Date('2026-08-20T12:00:00.000Z'),
+      });
+    }
+
+    const cloudOps = await companiesRepository.listByHiringScore({
+      focus: JOB_FOCUS_CLOUD_OPS,
+      maxJobAgeMs: JOB_MAX_AGE_MS,
+      now,
+    });
+
+    expect(cloudOps.map(({ slug }) => slug)).toEqual(['platform-co']);
   });
 
   it('excludes companies without remote jobs', async () => {

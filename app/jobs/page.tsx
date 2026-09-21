@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
-import type { JobFocusSlug } from '@/lib/jobs/constants';
+import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
 import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
 import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
@@ -18,7 +18,7 @@ const readJobs = cache(
     technology: string | undefined,
     seniority: string | undefined,
     remote: string | undefined,
-    country: string | undefined,
+    country: JobCountrySlug | undefined,
     focus: JobFocusSlug | undefined,
     minimumScore: number | undefined,
   ) =>

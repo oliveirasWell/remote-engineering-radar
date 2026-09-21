@@ -12,7 +12,13 @@ export type JobClassification = {
   remotePolicy?: JobRemotePolicy;
   geography: JobGeography[];
   roleFocus: Array<
-    'frontend' | 'fullstack' | 'backend' | 'mobile' | 'platform' | 'annotation'
+    | 'frontend'
+    | 'fullstack'
+    | 'backend'
+    | 'mobile'
+    | 'platform'
+    | 'annotation'
+    | 'product'
   >;
   isUnrelatedStack: boolean;
   isUnrelatedRole: boolean;

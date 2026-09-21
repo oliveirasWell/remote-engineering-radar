@@ -4,7 +4,11 @@ import { createCompaniesRepository } from '@/lib/db/repositories/companies-repos
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
-import { JOB_MAX_AGE_MS, type JobCountrySlug } from '@/lib/jobs/constants';
+import {
+  JOB_MAX_AGE_MS,
+  type JobCountrySlug,
+  type JobFocusSlug,
+} from '@/lib/jobs/constants';
 import { COMPANIES_PAGE_LIMIT, REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
 import type { ReportCompanyCard, ReportJobCard } from './types';
@@ -17,11 +21,13 @@ export type CompaniesPageItem = ReportCompanyCard & {
 export type CompaniesPageData = {
   companies: CompaniesPageItem[];
   country?: JobCountrySlug;
+  focus?: JobFocusSlug;
   updatedAt: Date | null;
 };
 
 export type CompaniesPageOptions = {
   country?: JobCountrySlug;
+  focus?: JobFocusSlug;
 };
 
 const groupByCompanyId = <T extends { companyId: string }>(
@@ -47,7 +53,7 @@ export const getCompaniesPageData = async (
   'use cache';
   cacheLife(REPORT_CACHE_LIFE);
 
-  const { country } = options;
+  const { country, focus } = options;
 
   try {
     const db = getDb();
@@ -60,6 +66,7 @@ export const getCompaniesPageData = async (
       limit: COMPANIES_PAGE_LIMIT,
       minimumHiringScore: 0,
       country,
+      focus,
       maxJobAgeMs: JOB_MAX_AGE_MS,
       now,
     });
@@ -72,6 +79,7 @@ export const getCompaniesPageData = async (
         maxAgeMs: JOB_MAX_AGE_MS,
         now,
         country,
+        focus,
       }),
       createIngestionRunsRepository(db).getLatestCompletedAt(),
     ]);
@@ -118,7 +126,7 @@ export const getCompaniesPageData = async (
       };
     });
 
-    return { companies: items, country, updatedAt };
+    return { companies: items, country, focus, updatedAt };
   } catch (error) {
     logReportError('companies', error);
     throw error;

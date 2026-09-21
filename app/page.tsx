@@ -1,32 +1,41 @@
 import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
-import type { JobCountrySlug } from '@/lib/jobs/constants';
+import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
 import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
 import { parseCountryFilter } from '@/lib/report/parse-country-filter';
+import { parseFocusFilter } from '@/lib/report/parse-focus-filter';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { CompaniesReport, HomeHeading } from './home-presentation';
 
 type HomeProps = {
-  searchParams: Promise<{ country?: string | string[] }>;
+  searchParams: Promise<{
+    country?: string | string[];
+    focus?: string | string[];
+  }>;
 };
 
-const readCompanies = cache((country: JobCountrySlug | undefined) =>
-  getCompaniesPageData({ country }),
+const readCompanies = cache(
+  (country: JobCountrySlug | undefined, focus: JobFocusSlug | undefined) =>
+    getCompaniesPageData({ country, focus }),
 );
 
 export const generateMetadata = async ({
   searchParams,
 }: HomeProps): Promise<Metadata> => {
-  const country = parseCountryFilter((await searchParams).country);
-  await readCompanies(country);
-  return canonicalMetadata('/', { country });
+  const params = await searchParams;
+  const country = parseCountryFilter(params.country);
+  const focus = parseFocusFilter(params.focus);
+  await readCompanies(country, focus);
+  return canonicalMetadata('/', { country, focus });
 };
 
 const CompaniesSection = async ({ searchParams }: HomeProps) => {
   const params = await searchParams;
-  const country = parseCountryFilter(params.country);
-  const data = await readCompanies(country);
+  const data = await readCompanies(
+    parseCountryFilter(params.country),
+    parseFocusFilter(params.focus),
+  );
 
   return <CompaniesReport data={data} />;
 };

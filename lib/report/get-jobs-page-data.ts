@@ -7,6 +7,7 @@ import {
   DEFAULT_JOB_SORT,
   JOB_MAX_AGE_MS,
   REMOTE_POLICY_REMOTE,
+  type JobCountrySlug,
   type JobFocusSlug,
 } from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
@@ -18,7 +19,7 @@ export type JobFilters = {
   technology?: string;
   seniority?: string;
   remote?: string;
-  country?: string;
+  country?: JobCountrySlug;
   focus?: JobFocusSlug;
   minimumScore?: number;
   limit?: number;

@@ -5,12 +5,38 @@ import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
 import { CompanySummary } from '@/components/report/CompanySummary/CompanySummary';
 import { CompanyJobs } from '@/components/report/CompanyJobs/CompanyJobs';
-import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
+import {
+  JOB_COUNTRY_FILTER_OPTIONS,
+  JOB_FOCUS_FILTER_OPTIONS,
+  type JobCountrySlug,
+  type JobFocusSlug,
+} from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import type { CompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import { COMPANY_SORTS, type CompanySort } from './home-constants';
 import Link from 'next/link';
+
+const ACTIVE_TAB =
+  'inline-flex min-h-[44px] items-center font-semibold text-foreground shadow-[inset_0_-2px_0_var(--primary)]';
+const INACTIVE_TAB =
+  'inline-flex min-h-[44px] items-center text-muted-foreground underline underline-offset-2';
+
+/** Each tab row keeps the other row's selection. */
+const homeHref = (
+  country: JobCountrySlug | undefined,
+  focus: JobFocusSlug | undefined,
+) => {
+  const params = new URLSearchParams();
+  if (country) {
+    params.set('country', country);
+  }
+  if (focus) {
+    params.set('focus', focus);
+  }
+  const query = params.toString();
+  return query ? `/?${query}` : '/';
+};
 
 export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
   const { locale, messages } = useI18n();
@@ -20,28 +46,40 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
   return (
     <>
       <nav
+        aria-label={messages.jobs.focusLabel}
+        className="flex flex-wrap gap-3 text-sm"
+      >
+        <Link
+          href={homeHref(data.country, undefined)}
+          className={data.focus ? INACTIVE_TAB : ACTIVE_TAB}
+        >
+          {messages.jobs.focusAll}
+        </Link>
+        {JOB_FOCUS_FILTER_OPTIONS.map((option) => (
+          <Link
+            key={option.slug}
+            href={homeHref(data.country, option.slug)}
+            className={data.focus === option.slug ? ACTIVE_TAB : INACTIVE_TAB}
+          >
+            {messages.focus[option.slug]}
+          </Link>
+        ))}
+      </nav>
+      <nav
         aria-label={messages.home.countryFilterLabel}
         className="flex flex-wrap gap-3 text-sm"
       >
         <Link
-          href="/"
-          className={
-            !data.country
-              ? 'inline-flex min-h-[44px] items-center font-semibold text-foreground shadow-[inset_0_-2px_0_var(--primary)]'
-              : 'inline-flex min-h-[44px] items-center text-muted-foreground underline underline-offset-2'
-          }
+          href={homeHref(undefined, data.focus)}
+          className={data.country ? INACTIVE_TAB : ACTIVE_TAB}
         >
           {messages.home.countryAll}
         </Link>
         {JOB_COUNTRY_FILTER_OPTIONS.map((option) => (
           <Link
             key={option.slug}
-            href={`/?country=${option.slug}`}
-            className={
-              data.country === option.slug
-                ? 'inline-flex min-h-[44px] items-center font-semibold text-foreground shadow-[inset_0_-2px_0_var(--primary)]'
-                : 'inline-flex min-h-[44px] items-center text-muted-foreground underline underline-offset-2'
-            }
+            href={homeHref(option.slug, data.focus)}
+            className={data.country === option.slug ? ACTIVE_TAB : INACTIVE_TAB}
           >
             {messages.countries[option.slug]}
           </Link>

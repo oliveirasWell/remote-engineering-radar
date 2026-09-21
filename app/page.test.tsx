@@ -2,7 +2,11 @@
 
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
-import { JOB_COUNTRY_FILTER_OPTIONS } from '@/lib/jobs/constants';
+import {
+  JOB_COUNTRY_FILTER_OPTIONS,
+  JOB_FOCUS_CLOUD_OPS,
+  JOB_FOCUS_PRODUCT,
+} from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
@@ -11,7 +15,7 @@ import { APP_DESCRIPTION, APP_NAME, FOCUS_TECHNOLOGIES } from './constants';
 import { HOME_SECTIONS } from './home-constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { TEST_REPORT_COMPANY } from '@/components/report/test-fixtures';
-import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
+import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { I18N_TEST } from './i18n-fixtures';
 import { CompaniesReport } from './home-presentation';
 import Home from './page';
@@ -200,6 +204,80 @@ describe('home country tabs', () => {
   );
 });
 
+describe('home focus tabs', () => {
+  it('reads the selected focus track and keeps country and focus across tab links', async () => {
+    const [brazil, chile] = JOB_COUNTRY_FILTER_OPTIONS;
+    vi.mocked(getCompaniesPageData).mockResolvedValue({
+      companies: [],
+      country: brazil.slug,
+      focus: JOB_FOCUS_CLOUD_OPS,
+      updatedAt: null,
+    });
+
+    render(
+      await resolvePageSection(
+        Home({
+          searchParams: Promise.resolve({
+            country: brazil.slug,
+            focus: JOB_FOCUS_CLOUD_OPS,
+          }),
+        }),
+      ),
+    );
+
+    const focusNav = within(
+      screen.getByRole('navigation', { name: EN_MESSAGES.jobs.focusLabel }),
+    );
+    const countryNav = within(
+      screen.getByRole('navigation', {
+        name: HOME_SECTIONS.countryFilterLabel,
+      }),
+    );
+    expect(getCompaniesPageData).toHaveBeenLastCalledWith({
+      country: brazil.slug,
+      focus: JOB_FOCUS_CLOUD_OPS,
+    });
+    expect(
+      focusNav.getByRole('link', {
+        name: EN_MESSAGES.focus[JOB_FOCUS_CLOUD_OPS],
+      }),
+    ).toHaveClass('font-semibold');
+    expect(
+      focusNav.getByRole('link', {
+        name: EN_MESSAGES.focus[JOB_FOCUS_PRODUCT],
+      }),
+    ).toHaveAttribute(
+      'href',
+      `/?country=${brazil.slug}&focus=${JOB_FOCUS_PRODUCT}`,
+    );
+    expect(
+      focusNav.getByRole('link', { name: EN_MESSAGES.jobs.focusAll }),
+    ).toHaveAttribute('href', `/?country=${brazil.slug}`);
+    expect(countryNav.getByRole('link', { name: chile.label })).toHaveAttribute(
+      'href',
+      `/?country=${chile.slug}&focus=${JOB_FOCUS_CLOUD_OPS}`,
+    );
+    expect(
+      countryNav.getByRole('link', { name: HOME_SECTIONS.countryAll }),
+    ).toHaveAttribute('href', `/?focus=${JOB_FOCUS_CLOUD_OPS}`);
+  });
+
+  it('self-canonicalizes the focus filter', async () => {
+    vi.mocked(getCompaniesPageData).mockResolvedValue({
+      companies: [],
+      updatedAt: null,
+    });
+
+    const metadata = await homeRoute.generateMetadata({
+      searchParams: Promise.resolve({ focus: JOB_FOCUS_PRODUCT }),
+    });
+
+    expect(metadata).toMatchObject({
+      alternates: { canonical: `/?focus=${JOB_FOCUS_PRODUCT}` },
+    });
+  });
+});
+
 describe('Home cache boundary', () => {
   beforeEach(() => {
     vi.mocked(getCompaniesPageData)
@@ -228,7 +306,9 @@ describe('Home cache boundary', () => {
     }
 
     expect(vi.mocked(getCompaniesPageData).mock.calls).toStrictEqual(
-      Array.from({ length: 6 }, () => [{ country: undefined }]),
+      Array.from({ length: 6 }, () => [
+        { country: undefined, focus: undefined },
+      ]),
     );
   });
 
@@ -270,8 +350,8 @@ describe('Home cache boundary', () => {
       screen.getByText(formatUpdatedLabel(UPDATED_AT)),
     ).toBeInTheDocument();
     expect(vi.mocked(getCompaniesPageData).mock.calls).toStrictEqual([
-      [{ country: country.slug }],
-      [{ country: country.slug }],
+      [{ country: country.slug, focus: undefined }],
+      [{ country: country.slug, focus: undefined }],
     ]);
   });
 

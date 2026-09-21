@@ -11,6 +11,16 @@ const CLOUD_OPS_DESCRIPTION =
   'Own our AWS footprint, run Kubernetes in production, and manage infrastructure as code with Terraform. Docker experience required.';
 const PLATFORM_ROLE_FOCUS = 'platform';
 const DATA_ANNOTATION_ROLE_FOCUS = 'annotation';
+const PRODUCT_ROLE_FOCUS = 'product';
+const PRODUCT_MANAGER_TITLES = [
+  'Senior Product Manager',
+  'Technical Product Manager - Payments',
+  'Product Owner',
+  'Group Product Manager',
+  'Head of Product',
+];
+const PRODUCT_MARKETING_TITLE = 'Product Marketing Manager';
+const PRODUCT_ENGINEER_TITLE = 'Senior Product Engineer';
 const QUAVE_ANNOTATION_TITLE = 'Senior Full-Stack Engineer';
 const QUAVE_ANNOTATION_DESCRIPTION =
   'Work with a US client developing AI training and evaluation data for coding agents. React, TypeScript, and Node.js.';
@@ -293,6 +303,29 @@ describe('classifyJob', () => {
     const result = classifyJob({
       title: 'Freelance AI Trainer',
       description: 'Review and rank Java and Kotlin code written by LLMs.',
+    });
+
+    expect(result.isUnrelatedStack).toBe(false);
+    expect(shouldPersistClassifiedJob(result)).toBe(true);
+  });
+
+  it.each(PRODUCT_MANAGER_TITLES)('puts %s on the product track', (title) => {
+    expect(classifyJob({ title }).roleFocus).toContain(PRODUCT_ROLE_FOCUS);
+  });
+
+  it.each([PRODUCT_MARKETING_TITLE, PRODUCT_ENGINEER_TITLE])(
+    'keeps %s off the product track',
+    (title) => {
+      expect(classifyJob({ title }).roleFocus).not.toContain(
+        PRODUCT_ROLE_FOCUS,
+      );
+    },
+  );
+
+  it('keeps a product role whose body mentions a competing language', () => {
+    const result = classifyJob({
+      title: 'Senior Product Manager',
+      description: 'Partner with our Java and Kotlin platform teams.',
     });
 
     expect(result.isUnrelatedStack).toBe(false);

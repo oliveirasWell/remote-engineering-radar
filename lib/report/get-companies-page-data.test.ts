@@ -3,7 +3,8 @@ import { createCompaniesRepository } from '@/lib/db/repositories/companies-repos
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { TEST_COMPANY, TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import { createTestDb } from '@/lib/db/test/create-test-db';
-import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
+import { PRODUCT_ROLE_FOCUS } from '@/lib/classification/constants';
+import { JOB_FOCUS_PRODUCT, JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
 import { getCompaniesPageData } from './get-companies-page-data';
 import { COUNTRY_FILTER_CASES, COUNTRY_JOBS } from './fixtures/country-jobs';
 
@@ -177,6 +178,40 @@ describe('getCompaniesPageData', () => {
     expect(data.companies[0]?.openEngineeringJobs).toBe(1);
     expect(data.companies[0]?.jobs.map((job) => job.title)).toEqual([
       'Brazil Role',
+    ]);
+  });
+
+  it('returns only jobs in the selected focus track under each company', async () => {
+    const db = await createTestDb();
+    vi.mocked(getDb).mockReturnValue(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobsRepository = createJobsRepository(db);
+    const productTitle = 'Senior Product Manager';
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'product-role',
+      title: productTitle,
+      roleFocus: [PRODUCT_ROLE_FOCUS],
+      postedAt: new Date(),
+      technologies: [...TEST_JOB.technologies],
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      sourceJobId: 'engineering-role',
+      roleFocus: ['frontend'],
+      postedAt: new Date(),
+      technologies: [...TEST_JOB.technologies],
+    });
+
+    const data = await getCompaniesPageData({ focus: JOB_FOCUS_PRODUCT });
+
+    expect(data.focus).toBe(JOB_FOCUS_PRODUCT);
+    expect(data.companies[0]?.openEngineeringJobs).toBe(1);
+    expect(data.companies[0]?.jobs.map((job) => job.title)).toEqual([
+      productTitle,
     ]);
   });
 });

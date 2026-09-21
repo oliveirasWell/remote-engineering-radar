@@ -100,6 +100,20 @@ export const DATA_ANNOTATION_TEXT_PATTERNS = [
   /\bai\s+trainer\b/i,
 ] as const;
 
+/** The role-focus value that marks the Product track. */
+export const PRODUCT_ROLE_FOCUS = 'product' as const;
+
+/**
+ * Matched against the title alone: engineering bodies routinely mention
+ * working with product managers. "Product Engineer" and "Product Marketing"
+ * titles stay off this track.
+ */
+export const PRODUCT_ROLE_PATTERNS = [
+  /\bproduct\s+(?:manager|owner|lead|director)\b/i,
+  /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b/i,
+  /\bgerente\s+de\s+produto\b/i,
+] as const;
+
 export const UNRELATED_STACK_PATTERNS = [
   /\bdata engineer\b|\betl\b|\bspark\b|\bairflow\b/i,
   /\bqa engineer\b|\bquality assurance\b|\btest automation engineer\b/i,

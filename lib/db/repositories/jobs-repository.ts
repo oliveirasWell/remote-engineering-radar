@@ -1,20 +1,16 @@
 import { Prisma, type Job as PrismaJob } from '@prisma/client';
-import {
-  DATA_ANNOTATION_ROLE_FOCUS,
-  PLATFORM_ROLE_FOCUS,
-} from '@/lib/classification/constants';
 import type { JobGeography } from '@/lib/classification/types';
 import {
-  JOB_FOCUS_CLOUD_OPS,
-  JOB_FOCUS_DATA_ANNOTATION,
-  JOB_FOCUS_ENGINEERING,
   JOB_MAX_AGE_MS,
   REMOTE_POLICY_REMOTE,
+  type JobCountrySlug,
   type JobFocusSlug,
   type JobSort,
 } from '@/lib/jobs/constants';
 import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
+import { countryFilter } from './country-filter';
+import { focusFilter } from './focus-filter';
 import { coalescedPostedAtFilter } from './posted-at-filter';
 import { JOB_ORDER_BY } from './constants';
 
@@ -78,29 +74,6 @@ const toJob = (row: PrismaJob): Job => ({
   createdAt: row.createdAt,
   updatedAt: row.updatedAt,
 });
-
-const containsRoleFocus = (roleFocus: string): Prisma.JobWhereInput => ({
-  roleFocus: { array_contains: [roleFocus] },
-});
-
-const TRACK_ROLE_FOCUS = {
-  [JOB_FOCUS_CLOUD_OPS]: PLATFORM_ROLE_FOCUS,
-  [JOB_FOCUS_DATA_ANNOTATION]: DATA_ANNOTATION_ROLE_FOCUS,
-} as const;
-
-/**
- * Cloud & Ops and Data Annotation are each the presence of their role focus;
- * the React track is the absence of both, so the chips partition the active
- * jobs.
- */
-const focusFilter = (focus: JobFocusSlug | undefined): Prisma.JobWhereInput => {
-  if (focus === undefined) {
-    return {};
-  }
-  return focus === JOB_FOCUS_ENGINEERING
-    ? { NOT: Object.values(TRACK_ROLE_FOCUS).map(containsRoleFocus) }
-    : containsRoleFocus(TRACK_ROLE_FOCUS[focus]);
-};
 
 const escapeLikePattern = (value: string): string =>
   value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
@@ -171,7 +144,8 @@ export const createJobsRepository = (db: Db) => ({
       maxAgeMs?: number;
       now?: Date;
       activeOnly?: boolean;
-      country?: string;
+      country?: JobCountrySlug;
+      focus?: JobFocusSlug;
     },
   ): Promise<JobCard[]> => {
     if (companyIds.length === 0) {
@@ -196,10 +170,11 @@ export const createJobsRepository = (db: Db) => ({
     const rows = await db.job.findMany({
       where: {
         companyId: { in: companyIds },
-        ...freshnessFilter(),
-        ...(options?.country
-          ? { countries: { array_contains: [options.country] } }
-          : {}),
+        AND: [
+          freshnessFilter(),
+          countryFilter(options?.country),
+          focusFilter(options?.focus),
+        ],
       },
       select: jobCardColumns,
     });
@@ -221,7 +196,7 @@ export const createJobsRepository = (db: Db) => ({
     technology?: string;
     seniority?: string;
     remotePolicy?: string;
-    country?: string;
+    country?: JobCountrySlug;
     focus?: JobFocusSlug;
     location?: string;
     maxAgeMs?: number;
@@ -236,10 +211,6 @@ export const createJobsRepository = (db: Db) => ({
           ? {}
           : { score: { gte: options.minimumScore } }),
         ...(options?.seniority ? { seniority: options.seniority } : {}),
-        ...(options?.country
-          ? { countries: { array_contains: [options.country] } }
-          : {}),
-        ...focusFilter(options?.focus),
         ...(options?.location
           ? {
               location: {
@@ -251,12 +222,16 @@ export const createJobsRepository = (db: Db) => ({
         ...(options?.technology
           ? { technologies: { array_contains: [options.technology] } }
           : {}),
-        ...(options?.maxAgeMs === undefined
-          ? {}
-          : coalescedPostedAtFilter(
-              'gte',
-              new Date(now.getTime() - options.maxAgeMs),
-            )),
+        AND: [
+          countryFilter(options?.country),
+          focusFilter(options?.focus),
+          options?.maxAgeMs === undefined
+            ? {}
+            : coalescedPostedAtFilter(
+                'gte',
+                new Date(now.getTime() - options.maxAgeMs),
+              ),
+        ],
       },
       select: jobCardColumns,
       orderBy: JOB_ORDER_BY[options?.sort ?? 'relevance'],

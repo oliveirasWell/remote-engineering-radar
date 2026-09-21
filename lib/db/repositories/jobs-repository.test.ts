@@ -1,12 +1,14 @@
 import {
   DATA_ANNOTATION_ROLE_FOCUS,
   PLATFORM_ROLE_FOCUS,
+  PRODUCT_ROLE_FOCUS,
 } from '@/lib/classification/constants';
 import {
   JOB_FOCUS_CLOUD_OPS,
   JOB_FOCUS_DATA_ANNOTATION,
   JOB_FOCUS_ENGINEERING,
   JOB_FOCUS_FILTER_OPTIONS,
+  JOB_FOCUS_PRODUCT,
   JOB_MAX_AGE_MS,
   JOB_RETENTION_MS,
 } from '@/lib/jobs/constants';
@@ -333,9 +335,10 @@ describe('createJobsRepository', () => {
     const now = new Date('2026-09-08T00:00:00Z');
     const company = await companiesRepository.create(TEST_COMPANY);
     const roleFocusByJobId = {
-      'product-role': ['frontend'],
+      'engineering-role': ['frontend'],
       'platform-role': [PLATFORM_ROLE_FOCUS],
       'annotation-role': ['fullstack', DATA_ANNOTATION_ROLE_FOCUS],
+      'product-role': [PRODUCT_ROLE_FOCUS],
     };
 
     for (const [sourceJobId, roleFocus] of Object.entries(roleFocusByJobId)) {
@@ -360,10 +363,86 @@ describe('createJobsRepository', () => {
     );
 
     expect(Object.fromEntries(idsByFocus)).toEqual({
-      [JOB_FOCUS_ENGINEERING]: ['product-role'],
+      [JOB_FOCUS_ENGINEERING]: ['engineering-role'],
       [JOB_FOCUS_CLOUD_OPS]: ['platform-role'],
       [JOB_FOCUS_DATA_ANNOTATION]: ['annotation-role'],
+      [JOB_FOCUS_PRODUCT]: ['product-role'],
     });
+  });
+
+  it('filters card rows by focus track when requested', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+
+    for (const [sourceJobId, roleFocus] of [
+      ['engineering-role', ['frontend']],
+      ['platform-role', [PLATFORM_ROLE_FOCUS]],
+    ] as const) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId,
+        roleFocus: [...roleFocus],
+        postedAt: now,
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
+
+    const cards = await jobsRepository.listCardsByCompanyIds([company.id], {
+      maxAgeMs: JOB_MAX_AGE_MS,
+      now,
+      focus: JOB_FOCUS_CLOUD_OPS,
+    });
+
+    expect(cards.map((card) => card.sourceJobId)).toEqual(['platform-role']);
+  });
+
+  it('counts regional and worldwide jobs as open to a country', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const countriesByJobId = {
+      'brazil-role': ['brazil'],
+      'latam-role': ['latam'],
+      'worldwide-role': ['worldwide'],
+      'guatemala-role': ['guatemala'],
+      'india-role': ['india'],
+    };
+
+    for (const [sourceJobId, countries] of Object.entries(countriesByJobId)) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId,
+        countries,
+        postedAt: now,
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
+
+    const brazilJobs = await jobsRepository.listActiveByScore({
+      country: 'brazil',
+      now,
+    });
+    const indiaCards = await jobsRepository.listCardsByCompanyIds(
+      [company.id],
+      { maxAgeMs: JOB_MAX_AGE_MS, now, country: 'india' },
+    );
+
+    expect(brazilJobs.map((job) => job.sourceJobId).sort()).toEqual([
+      'brazil-role',
+      'latam-role',
+      'worldwide-role',
+    ]);
+    expect(indiaCards.map((card) => card.sourceJobId).sort()).toEqual([
+      'india-role',
+      'worldwide-role',
+    ]);
   });
 
   it('orders company card rows by most recent posted date first', async () => {
