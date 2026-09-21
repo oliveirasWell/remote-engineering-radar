@@ -24,7 +24,7 @@ const TRACK_ROLE_FOCUS = {
 
 /**
  * Cloud & Ops, Data Annotation, and Product are each the presence of their
- * role focus; Software Engineering is the absence of all three, so the chips
+ * role focus; React Engineering is the absence of all three, so the chips
  * partition the active jobs.
  */
 export const focusFilter = (

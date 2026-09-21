@@ -65,7 +65,7 @@ export const EN_MESSAGES = {
     },
   },
   focus: {
-    engineering: 'Software Engineering',
+    engineering: 'React Engineering',
     'cloud-ops': 'Cloud & Ops',
     'data-annotation': 'Data Annotation',
     product: 'Product',
@@ -207,7 +207,7 @@ export const EN_MESSAGES = {
     scoring:
       'Scores are heuristics over public text — not endorsements of a company or role.',
     scoringJob:
-      'The radar tracks four focus areas. Software Engineering and Cloud & Ops are scored on equal footing: Software Engineering favors React, TypeScript, Node.js, GraphQL, and React Native; Cloud & Ops favors AWS, Kubernetes, Terraform, Docker, Azure, and GCP. Data Annotation groups AI training, data labeling, and RLHF roles. Product groups product manager and product owner roles. All four favor senior/staff titles, remote work, and Brazil/LATAM/Americas geography. Junior, onsite-only, relocation-required, and unrelated stacks are heavily down-ranked.',
+      'The radar tracks four focus areas. React Engineering and Cloud & Ops are scored on equal footing: React Engineering favors React, TypeScript, Node.js, GraphQL, and React Native; Cloud & Ops favors AWS, Kubernetes, Terraform, Docker, Azure, and GCP. Data Annotation groups AI training, data labeling, and RLHF roles. Product groups product manager and product owner roles. All four favor senior/staff titles, remote work, and Brazil/LATAM/Americas geography. Junior, onsite-only, relocation-required, and unrelated stacks are heavily down-ranked.',
     scoringCompany:
       'Company hiring score aggregates active engineering openings, recent posting bursts, relevant tech matches, and leadership roles — again from public listings only.',
     applications:
@@ -284,7 +284,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     },
   },
   focus: {
-    engineering: 'Engenharia de Software',
+    engineering: 'Engenharia React',
     'cloud-ops': 'Cloud & Ops',
     'data-annotation': 'Anotação de Dados',
     product: 'Produto',
@@ -430,7 +430,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     scoring:
       'As pontuações são heurísticas sobre texto público — não uma recomendação de empresa ou vaga.',
     scoringJob:
-      'O radar acompanha quatro áreas de foco. Engenharia de Software e Cloud & Ops são pontuadas em pé de igualdade: Engenharia de Software favorece React, TypeScript, Node.js, GraphQL e React Native; Cloud & Ops favorece AWS, Kubernetes, Terraform, Docker, Azure e GCP. Anotação de Dados reúne vagas de treinamento de IA, rotulagem de dados e RLHF. Produto reúne vagas de product manager e product owner. As quatro favorecem títulos senior/staff, remoto e geografia Brasil/LATAM/Américas. Junior, apenas presencial, relocação obrigatória e stacks sem relação são fortemente penalizados.',
+      'O radar acompanha quatro áreas de foco. Engenharia React e Cloud & Ops são pontuadas em pé de igualdade: Engenharia React favorece React, TypeScript, Node.js, GraphQL e React Native; Cloud & Ops favorece AWS, Kubernetes, Terraform, Docker, Azure e GCP. Anotação de Dados reúne vagas de treinamento de IA, rotulagem de dados e RLHF. Produto reúne vagas de product manager e product owner. As quatro favorecem títulos senior/staff, remoto e geografia Brasil/LATAM/Américas. Junior, apenas presencial, relocação obrigatória e stacks sem relação são fortemente penalizados.',
     scoringCompany:
       'A nota da empresa agrega vagas de engenharia ativas, rajadas recentes de publicações, matches de tech relevante e papéis de liderança — sempre a partir de listagens públicas.',
     applications:
