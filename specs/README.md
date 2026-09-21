@@ -37,6 +37,8 @@ Open:
 
 - [SPEC-018](018-toolchain-upgrade-node-24-typescript-7.md) — toolchain upgrade: Node 24,
   TypeScript 6 (7 blocked by typescript-eslint), Vitest 5
+- [SPEC-019](019-multilingual-classification.md) — multilingual job classification,
+  starting with Portuguese (two PRs; depends on PR #48)
 
 ---
 
