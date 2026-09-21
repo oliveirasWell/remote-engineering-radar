@@ -1,3 +1,5 @@
+import { foldText } from '@/lib/text/fold-text/fold-text';
+
 const COUNTRY_ALIASES: Readonly<Record<string, string>> = {
   brazil: 'brazil',
   brasil: 'brazil',
@@ -42,11 +44,7 @@ const COUNTRY_ALIASES: Readonly<Record<string, string>> = {
 };
 
 export const normalizeCountryName = (value: string): string | undefined => {
-  const key = value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '');
+  const key = foldText(value.trim());
 
   if (!key || key === 'remote') {
     return undefined;

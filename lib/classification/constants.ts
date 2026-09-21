@@ -63,57 +63,11 @@ export const JOB_REMOTE_POLICIES = ['remote', 'hybrid', 'onsite'] as const;
 /** The role-focus value that marks the Cloud & Ops track. */
 export const PLATFORM_ROLE_FOCUS = 'platform' as const;
 
-/**
- * Matched against the title alone. A body that mentions "infrastructure" or
- * "cloud" describes a backend job's environment; a title that says so names
- * the discipline the job is actually for.
- */
-export const CLOUD_OPS_ROLE_PATTERNS = [
-  /\bdevops\b/i,
-  /\bsite reliability\b|\bsre\b/i,
-  /\bplatform\s+(?:engineer|engineering)\b/i,
-  /\bcloud\s+(?:engineer|architect|infrastructure)\b/i,
-  /\binfrastructure\s+engineer\b/i,
-  /\bsystems?\s+engineer\b/i,
-] as const;
-
 /** The role-focus value that marks the Data Annotation track. */
 export const DATA_ANNOTATION_ROLE_FOCUS = 'annotation' as const;
 
-/** Matched against the title, which names the work outright. */
-export const DATA_ANNOTATION_TITLE_PATTERNS = [
-  /\bannotat(?:or|ors|ion)\b/i,
-  /\bai\s+train(?:er|ing)\b/i,
-  /\bdata\s+label(?:l)?(?:er|ing)\b/i,
-  /\blabeler\b/i,
-  /\brlhf\b/i,
-] as const;
-
-/**
- * Matched against the whole posting. Only full phrases: a bare "annotate" or
- * "RLHF" in a body shows up in technical-writer and ML-research jobs too.
- */
-export const DATA_ANNOTATION_TEXT_PATTERNS = [
-  /\bdata\s+annotation\b/i,
-  /\bai\s+training\s+data\b/i,
-  /\btraining\s+and\s+evaluation\s+data\b/i,
-  /\bai\s+trainer\b/i,
-] as const;
-
 /** The role-focus value that marks the Product track. */
 export const PRODUCT_ROLE_FOCUS = 'product' as const;
-
-/**
- * Matched against the title alone: engineering bodies routinely mention
- * working with product managers. A neighbouring discipline ("Product Lead
- * Engineer", "Head of Product Design") names a different job, and "Product
- * Engineer" and "Product Marketing" titles never match.
- */
-export const PRODUCT_ROLE_PATTERNS = [
-  /\bproduct\s+(?:manager|owner|lead|director)\b(?!\s+(?:engineer|designer|developer)\b)/i,
-  /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b(?!\s+(?:engineering|design|designer|marketing|operations)\b)/i,
-  /\bgerente\s+de\s+produto\b/i,
-] as const;
 
 export const UNRELATED_STACK_PATTERNS = [
   /\bdata engineer\b|\betl\b|\bspark\b|\bairflow\b/i,
@@ -122,17 +76,4 @@ export const UNRELATED_STACK_PATTERNS = [
   /\bios\b(?!.*(react native|expo))/i,
   /\bswift\b|\bkotlin\b|\bjava\b(?!script)/i,
   /\bruby on rails\b|\b\.net\b|\bc#\b|\bgolang\b|\bgo engineer\b/i,
-] as const;
-
-export const UNRELATED_ROLE_PATTERNS = [
-  /\bsales\s+representative\b/i,
-  /\baccount\s+executive\b/i,
-  /\b(?:sdr|bdr)\b/i,
-  /\b(?:sales\s+development|business\s+development)\s+representative\b/i,
-  /\bsales\s+(?:manager|director|engineer|associate|executive)\b/i,
-  /\brecruiter\b|\btalent\s+acquisition\b|\bpeople\s+partner\b/i,
-  /\bcustomer\s+success\b/i,
-  /\baccount\s+manager\b/i,
-  /\b(?:marketing\s+manager|growth\s+marketing|product\s+marketing|content\s+marketing)\b/i,
-  /\brepresentante\s+comercial\b|\bvendedor\b/i,
 ] as const;

@@ -1,0 +1,84 @@
+import type { ClassificationVocabulary } from './types';
+
+export const EN_VOCABULARY: ClassificationVocabulary = {
+  remote: {
+    remote: [/\bremote\b/i],
+    hybrid: [/\bhybrid\b/i],
+    onsite: [/\bonsite\b|\bon-site\b|\bin[-\s]?office\b/i],
+  },
+  seniority: {
+    junior: [/\b(intern|internship|entry[-\s]?level|junior)\b/i],
+    mid: [/\bmid[-\s]?level\b|\bmid\b(?=[\s,-])/i],
+    principal: [/\bprincipal\b/i],
+    staff: [/\bstaff\b/i],
+    senior: [/\bsenior\b|\bsr\.?\b/i],
+  },
+  roleFocus: {
+    frontend: [/\bfront[-\s]?end\b|\bfrontend\b/i],
+    fullstack: [/\bfull[-\s]?stack\b|\bfullstack\b/i],
+    backend: [/\bback[-\s]?end\b|\bbackend\b/i],
+    mobile: [/\bmobile\b|\breact native\b/i],
+  },
+  /**
+   * A body that mentions "infrastructure" or "cloud" describes a backend
+   * job's environment; a title that says so names the discipline the job is
+   * actually for.
+   */
+  cloudOpsTitle: [
+    /\bdevops\b/i,
+    /\bsite reliability\b|\bsre\b/i,
+    /\bplatform\s+(?:engineer|engineering)\b/i,
+    /\bcloud\s+(?:engineer|architect|infrastructure)\b/i,
+    /\binfrastructure\s+engineer\b/i,
+    /\bsystems?\s+engineer\b/i,
+  ],
+  annotationTitle: [
+    /\bannotat(?:or|ors|ion)\b/i,
+    /\bai\s+train(?:er|ing)\b/i,
+    /\bdata\s+label(?:l)?(?:er|ing)\b/i,
+    /\blabeler\b/i,
+    /\brlhf\b/i,
+  ],
+  /**
+   * Only full phrases: a bare "annotate" or "RLHF" in a body shows up in
+   * technical-writer and ML-research jobs too.
+   */
+  annotationText: [
+    /\bdata\s+annotation\b/i,
+    /\bai\s+training\s+data\b/i,
+    /\btraining\s+and\s+evaluation\s+data\b/i,
+    /\bai\s+trainer\b/i,
+  ],
+  /**
+   * Engineering bodies routinely mention working with product managers. A
+   * neighbouring discipline ("Product Lead Engineer", "Head of Product
+   * Design") names a different job, and "Product Engineer" and "Product
+   * Marketing" titles never match.
+   */
+  productTitle: [
+    /\bproduct\s+(?:manager|owner|lead|director)\b(?!\s+(?:engineer|designer|developer)\b)/i,
+    /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b(?!\s+(?:engineering|design|designer|marketing|operations)\b)/i,
+    /\bgerente\s+de\s+produto\b/i,
+  ],
+  unrelatedRoleTitle: [
+    /\bsales\s+representative\b/i,
+    /\baccount\s+executive\b/i,
+    /\b(?:sdr|bdr)\b/i,
+    /\b(?:sales\s+development|business\s+development)\s+representative\b/i,
+    /\bsales\s+(?:manager|director|engineer|associate|executive)\b/i,
+    /\brecruiter\b|\btalent\s+acquisition\b|\bpeople\s+partner\b/i,
+    /\bcustomer\s+success\b/i,
+    /\baccount\s+manager\b/i,
+    /\b(?:marketing\s+manager|growth\s+marketing|product\s+marketing|content\s+marketing)\b/i,
+    /\brepresentante\s+comercial\b|\bvendedor\b/i,
+  ],
+  relocation: [/\brelocati(on|e)\b/i],
+  geography: {
+    brazil: [/\bbrazil\b|\bbrasil\b|\bsao paulo\b/i],
+    latam: [/\blatam\b|\blatin america\b|\bsouth america\b/i],
+    americas: [
+      /\bamericas\b|\bnorth america\b|\bunited states\b|\busa\b|\bcanada\b/i,
+    ],
+    worldwide: [/\bworldwide\b|\banywhere\b|\bglobal remote\b/i],
+  },
+};

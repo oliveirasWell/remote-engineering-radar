@@ -1,6 +1,10 @@
 import { classifyJob, shouldPersistClassifiedJob } from './classify-job';
 
 const GEOGRAPHY_JOB_TITLE = 'Senior React Engineer';
+const ACCENTED_SENIORITY_TITLES = [
+  { title: 'Desenvolvedor Sênior React', seniority: 'senior' },
+  { title: 'Desenvolvedora Júnior Front-end', seniority: 'junior' },
+] as const;
 const BRAZIL_LOCATIONS = ['Brazil', 'Brasil', 'Sao Paulo', 'LATAM - Brazil'];
 const BRAZIL_GEOGRAPHY = 'brazil';
 const LATAM_GEOGRAPHY = 'latam';
@@ -33,6 +37,13 @@ const QUAVE_ANNOTATION_DESCRIPTION =
   'Work with a US client developing AI training and evaluation data for coding agents. React, TypeScript, and Node.js.';
 
 describe('classifyJob', () => {
+  it.each(ACCENTED_SENIORITY_TITLES)(
+    'reads $seniority from the accented title $title',
+    ({ title, seniority }) => {
+      expect(classifyJob({ title }).seniority).toBe(seniority);
+    },
+  );
+
   it.each(BRAZIL_LOCATIONS)('recognizes Brazil in %s', (location) => {
     expect(
       classifyJob({ title: GEOGRAPHY_JOB_TITLE, location }).geography,

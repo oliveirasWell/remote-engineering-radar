@@ -36,6 +36,8 @@ const DIFF_FIELDS = [
   'roleFocus',
   'geography',
   'remotePolicy',
+  'technologies',
+  'requiresRelocation',
 ] as const;
 
 const classify = (input: ClassifyJobInput) => {

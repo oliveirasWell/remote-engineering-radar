@@ -1,0 +1,41 @@
+import { EN_VOCABULARY } from './en';
+import type { ClassificationVocabulary } from './types';
+
+/** Adding a language is one vocabulary file and one entry here. */
+const LANGUAGES: readonly ClassificationVocabulary[] = [EN_VOCABULARY];
+
+const merge = <K extends string>(
+  pick: (vocabulary: ClassificationVocabulary) => Record<K, readonly RegExp[]>,
+): Record<K, readonly RegExp[]> => {
+  const merged = {} as Record<K, RegExp[]>;
+  for (const vocabulary of LANGUAGES) {
+    for (const [key, patterns] of Object.entries(pick(vocabulary)) as [
+      K,
+      readonly RegExp[],
+    ][]) {
+      merged[key] = [...(merged[key] ?? []), ...patterns];
+    }
+  }
+  return merged;
+};
+
+const concat = (
+  pick: (vocabulary: ClassificationVocabulary) => readonly RegExp[],
+): readonly RegExp[] => LANGUAGES.flatMap(pick);
+
+/**
+ * Every registered language merged per concept. No language detection: a
+ * posting is matched against all of them.
+ */
+export const VOCABULARY: ClassificationVocabulary = {
+  remote: merge((vocabulary) => vocabulary.remote),
+  seniority: merge((vocabulary) => vocabulary.seniority),
+  roleFocus: merge((vocabulary) => vocabulary.roleFocus),
+  cloudOpsTitle: concat((vocabulary) => vocabulary.cloudOpsTitle),
+  annotationTitle: concat((vocabulary) => vocabulary.annotationTitle),
+  annotationText: concat((vocabulary) => vocabulary.annotationText),
+  productTitle: concat((vocabulary) => vocabulary.productTitle),
+  unrelatedRoleTitle: concat((vocabulary) => vocabulary.unrelatedRoleTitle),
+  relocation: concat((vocabulary) => vocabulary.relocation),
+  geography: merge((vocabulary) => vocabulary.geography),
+};

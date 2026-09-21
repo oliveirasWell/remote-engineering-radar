@@ -1,17 +1,14 @@
+import { foldText } from '@/lib/text/fold-text/fold-text';
 import {
-  CLOUD_OPS_ROLE_PATTERNS,
   DATA_ANNOTATION_ROLE_FOCUS,
-  DATA_ANNOTATION_TEXT_PATTERNS,
-  DATA_ANNOTATION_TITLE_PATTERNS,
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
-  PRODUCT_ROLE_PATTERNS,
   RELEVANT_TECHNOLOGY_NAMES,
   TECHNOLOGY_PATTERNS,
-  UNRELATED_ROLE_PATTERNS,
   UNRELATED_STACK_PATTERNS,
 } from './constants';
 import type { JobClassification } from './types';
+import { VOCABULARY } from './vocabulary/vocabulary';
 
 export type ClassifyJobInput = {
   title: string;
@@ -26,26 +23,24 @@ const buildHaystack = (input: ClassifyJobInput): string =>
     .filter(Boolean)
     .join('\n');
 
-const classifySeniority = (
-  haystack: string,
-): JobClassification['seniority'] => {
-  if (/\b(intern|internship|entry[-\s]?level|junior)\b/i.test(haystack)) {
-    return 'junior';
-  }
-  if (/\bmid[-\s]?level\b|\bmid\b(?=[\s,-])/i.test(haystack)) {
-    return 'mid';
-  }
-  if (/\bprincipal\b/i.test(haystack)) {
-    return 'principal';
-  }
-  if (/\bstaff\b/i.test(haystack)) {
-    return 'staff';
-  }
-  if (/\bsenior\b|\bsr\.?\b/i.test(haystack)) {
-    return 'senior';
-  }
-  return undefined;
-};
+const matchesAny = (patterns: readonly RegExp[], text: string): boolean =>
+  patterns.some((pattern) => pattern.test(text));
+
+/** First hit wins, most junior first, so "Senior Intern" stays junior. */
+const SENIORITY_ORDER = [
+  'junior',
+  'mid',
+  'principal',
+  'staff',
+  'senior',
+] as const;
+
+const classifySeniority = (haystack: string): JobClassification['seniority'] =>
+  SENIORITY_ORDER.find((level) =>
+    matchesAny(VOCABULARY.seniority[level], haystack),
+  );
+
+const REMOTE_POLICY_ORDER = ['remote', 'hybrid', 'onsite'] as const;
 
 const classifyRemotePolicy = (
   input: ClassifyJobInput,
@@ -56,72 +51,47 @@ const classifyRemotePolicy = (
     return explicit;
   }
 
-  if (/\bremote\b/i.test(haystack)) {
-    return 'remote';
-  }
-  if (/\bhybrid\b/i.test(haystack)) {
-    return 'hybrid';
-  }
-  if (/\bonsite\b|\bon-site\b|\bin[-\s]?office\b/i.test(haystack)) {
-    return 'onsite';
-  }
-  return undefined;
+  return REMOTE_POLICY_ORDER.find((policy) =>
+    matchesAny(VOCABULARY.remote[policy], haystack),
+  );
 };
 
-const classifyGeography = (
-  haystack: string,
-): JobClassification['geography'] => {
-  const geography: JobClassification['geography'] = [];
-  if (/\bbrazil\b|\bbrasil\b|\bs[ãa]o paulo\b/i.test(haystack)) {
-    geography.push('brazil');
-  }
-  if (/\blatam\b|\blatin america\b|\bsouth america\b/i.test(haystack)) {
-    geography.push('latam');
-  }
-  if (
-    /\bamericas\b|\bnorth america\b|\bunited states\b|\busa\b|\bcanada\b/i.test(
-      haystack,
-    )
-  ) {
-    geography.push('americas');
-  }
-  if (/\bworldwide\b|\banywhere\b|\bglobal remote\b/i.test(haystack)) {
-    geography.push('worldwide');
-  }
-  return geography;
-};
+const GEOGRAPHY_ORDER = ['brazil', 'latam', 'americas', 'worldwide'] as const;
+
+const classifyGeography = (haystack: string): JobClassification['geography'] =>
+  GEOGRAPHY_ORDER.filter((region) =>
+    matchesAny(VOCABULARY.geography[region], haystack),
+  );
+
+const ROLE_FOCUS_ORDER = [
+  'frontend',
+  'fullstack',
+  'backend',
+  'mobile',
+] as const;
 
 const classifyRoleFocus = (
-  input: ClassifyJobInput,
+  title: string,
   haystack: string,
 ): JobClassification['roleFocus'] => {
   const roleFocus: JobClassification['roleFocus'] = [];
-  if (CLOUD_OPS_ROLE_PATTERNS.some((pattern) => pattern.test(input.title))) {
+  if (matchesAny(VOCABULARY.cloudOpsTitle, title)) {
     roleFocus.push(PLATFORM_ROLE_FOCUS);
   }
   if (
-    DATA_ANNOTATION_TITLE_PATTERNS.some((pattern) =>
-      pattern.test(input.title),
-    ) ||
-    DATA_ANNOTATION_TEXT_PATTERNS.some((pattern) => pattern.test(haystack))
+    matchesAny(VOCABULARY.annotationTitle, title) ||
+    matchesAny(VOCABULARY.annotationText, haystack)
   ) {
     roleFocus.push(DATA_ANNOTATION_ROLE_FOCUS);
   }
-  if (PRODUCT_ROLE_PATTERNS.some((pattern) => pattern.test(input.title))) {
+  if (matchesAny(VOCABULARY.productTitle, title)) {
     roleFocus.push(PRODUCT_ROLE_FOCUS);
   }
-  if (/\bfront[-\s]?end\b|\bfrontend\b/i.test(haystack)) {
-    roleFocus.push('frontend');
-  }
-  if (/\bfull[-\s]?stack\b|\bfullstack\b/i.test(haystack)) {
-    roleFocus.push('fullstack');
-  }
-  if (/\bback[-\s]?end\b|\bbackend\b/i.test(haystack)) {
-    roleFocus.push('backend');
-  }
-  if (/\bmobile\b|\breact native\b/i.test(haystack)) {
-    roleFocus.push('mobile');
-  }
+  roleFocus.push(
+    ...ROLE_FOCUS_ORDER.filter((focus) =>
+      matchesAny(VOCABULARY.roleFocus[focus], haystack),
+    ),
+  );
   return roleFocus;
 };
 
@@ -172,7 +142,7 @@ const isUnrelatedStack = (
 };
 
 const isUnrelatedRole = (title: string): boolean =>
-  UNRELATED_ROLE_PATTERNS.some((pattern) => pattern.test(title));
+  matchesAny(VOCABULARY.unrelatedRoleTitle, title);
 
 export const shouldPersistClassifiedJob = (
   classification: JobClassification,
@@ -180,9 +150,10 @@ export const shouldPersistClassifiedJob = (
   !classification.isUnrelatedRole && !classification.isUnrelatedStack;
 
 export const classifyJob = (input: ClassifyJobInput): JobClassification => {
-  const haystack = buildHaystack(input);
+  const title = foldText(input.title);
+  const haystack = foldText(buildHaystack(input));
   const technologies = extractTechnologies(input, haystack);
-  const roleFocus = classifyRoleFocus(input, haystack);
+  const roleFocus = classifyRoleFocus(title, haystack);
 
   return {
     technologies,
@@ -191,7 +162,7 @@ export const classifyJob = (input: ClassifyJobInput): JobClassification => {
     geography: classifyGeography(haystack),
     roleFocus,
     isUnrelatedStack: isUnrelatedStack(roleFocus, technologies, haystack),
-    isUnrelatedRole: isUnrelatedRole(input.title),
-    requiresRelocation: /\brelocati(on|e)\b/i.test(haystack),
+    isUnrelatedRole: isUnrelatedRole(title),
+    requiresRelocation: matchesAny(VOCABULARY.relocation, haystack),
   };
 };
