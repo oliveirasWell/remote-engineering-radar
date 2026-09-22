@@ -29,6 +29,37 @@ const SOFTWARE_TITLES = [
   'Engenheiro de Software Sênior',
   'Líder Técnico',
 ];
+const NON_TECH_TITLES = [
+  'Registered Nurse (RN) - Telehealth',
+  'Senior Accountant',
+  'Tax Manager',
+  'Paralegal',
+  'Spanish Interpreter',
+  'Online Math Tutor',
+  'CDL Truck Driver',
+  'Warehouse Associate',
+  'Enfermeira Assistencial',
+  'Advogada Trabalhista',
+  'Professor de Inglês',
+  'Contador(a) Sênior',
+];
+const GUARDED_TECH_TITLES = [
+  'Clinical Software Engineer',
+  'Tax Software Developer',
+  'Nurse Informatics Developer',
+  'Device Driver Engineer',
+  'Product Manager, Tax Platform',
+  'AI Trainer - Registered Nurse',
+  'SAP Business Warehouse and SAP Business Objects',
+  'Tutor de QA LATAM',
+  'Teacher/Lehrer (m/w/d) AWS Solutions Architect',
+  'High School Computer Science Teacher',
+];
+const AI_EVALUATION_TITLES = [
+  'Primary Care Physician - AI Evaluator',
+  'AI Tutor - Malay',
+  'QLD Senior English Teacher - AI Content Reviewer',
+];
 const NON_SOFTWARE_TITLES = [
   'Tax Manager',
   'Senior Data Scientist',
@@ -570,5 +601,26 @@ describe('classifyJob', () => {
         }).roleFocus,
       ).toContain(SOFTWARE_ROLE_FOCUS);
     });
+  });
+
+  describe('obvious non-tech titles', () => {
+    it.each(NON_TECH_TITLES)('does not persist %s', (title) => {
+      const result = classifyJob({ title });
+      expect(result.isUnrelatedRole).toBe(true);
+      expect(shouldPersistClassifiedJob(result)).toBe(false);
+    });
+
+    it.each(GUARDED_TECH_TITLES)(
+      'keeps %s despite a non-tech word in the title',
+      (title) => {
+        expect(classifyJob({ title }).isUnrelatedRole).toBe(false);
+      },
+    );
+  });
+
+  it.each(AI_EVALUATION_TITLES)('puts %s on the annotation track', (title) => {
+    const result = classifyJob({ title });
+    expect(result.roleFocus).toContain(DATA_ANNOTATION_ROLE_FOCUS);
+    expect(result.isUnrelatedRole).toBe(false);
   });
 });

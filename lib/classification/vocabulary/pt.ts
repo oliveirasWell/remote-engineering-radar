@@ -80,6 +80,15 @@ export const PT_VOCABULARY: ClassificationVocabulary = {
     /\brecrutador(?:a|\(a\))?(?=\W|$)/i,
     /\bsucesso\s+do\s+cliente\b/i,
   ],
+  nonTechTitle: [
+    /\benfermeir[oa]\b/i,
+    /\bcontador(?:a|\(a\))?(?=\W|$)/i,
+    /\badvogad[oa]\b/i,
+    /\bprofessor(?:a|\(a\))?(?=\W|$)/i,
+    /\btradutor(?:a|\(a\))?(?=\W|$)|\binterprete\b/i,
+    /\batendente\b/i,
+  ],
+  techTermTitle: [/\b(?:dados|seguranca|automacao|ti)\b/i],
   relocation: [/\b(?:realocacao|relocacao)\b/i],
   geography: {
     brazil: [/\bbrasil\b/i, /\bsao paulo\b/i],

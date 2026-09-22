@@ -58,6 +58,7 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
     /\bdata\s+label(?:l)?(?:er|ing)\b/i,
     /\blabeler\b/i,
     /\brlhf\b/i,
+    /\bai\s+(?:tutor|evaluator|content\s+reviewer)\b/i,
   ],
   /**
    * Only full phrases: a bare "annotate" or "RLHF" in a body shows up in
@@ -100,6 +101,24 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
     /\bcustomer\s+success\b/i,
     /\baccount\s+manager\b/i,
     /\b(?:marketing\s+manager|growth\s+marketing|product\s+marketing|content\s+marketing)\b/i,
+  ],
+  nonTechTitle: [
+    /\bnurs(?:e|es|ing)\b/i,
+    /\b(?:rn|lpn|cna)\b/i,
+    /\bphysician\b|\bpharmacist\b|\bdental\b|\btherapist\b/i,
+    /\baccountant\b|\baccounting\s+(?:clerk|specialist|manager)\b|\bbookkeep(?:er|ing)\b/i,
+    /\btax\s+(?:manager|preparer|associate|accountant|senior)\b/i,
+    /\bparalegal\b|\battorney\b|\blawyer\b|\blegal\s+counsel\b/i,
+    /\bteacher\b|\btutor\b/i,
+    /\btranslator\b|\binterpreter\b/i,
+    /\bcustomer\s+service\s+representative\b|\bcall\s+center\b/i,
+    /\binsurance\s+agent\b|\bunderwriter\b|\breal\s+estate\s+agent\b/i,
+    /\bdriver\b|\bwarehouse\b/i,
+  ],
+  techTermTitle: [
+    /\b(?:ai|ml|llm|qa|sap|aws|azure|gcp|cloud|data|it|saas)\b/i,
+    /\b(?:architect|security|analytics|automation|salesforce|informatics)\b/i,
+    /\bcomputer\s+science\b|\bprogramming\b/i,
   ],
   relocation: [/\brelocati(on|e)\b/i],
   geography: {

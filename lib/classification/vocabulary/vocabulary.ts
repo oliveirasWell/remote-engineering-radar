@@ -46,6 +46,8 @@ export const VOCABULARY: ClassificationVocabulary = {
   productTitle: concat((vocabulary) => vocabulary.productTitle),
   softwareTitle: concat((vocabulary) => vocabulary.softwareTitle),
   unrelatedRoleTitle: concat((vocabulary) => vocabulary.unrelatedRoleTitle),
+  nonTechTitle: concat((vocabulary) => vocabulary.nonTechTitle),
+  techTermTitle: concat((vocabulary) => vocabulary.techTermTitle),
   relocation: concat((vocabulary) => vocabulary.relocation),
   geography: merge((vocabulary) => vocabulary.geography),
 };

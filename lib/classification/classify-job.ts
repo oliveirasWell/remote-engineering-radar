@@ -184,8 +184,22 @@ const isUnrelatedStack = (
   return UNRELATED_STACK_PATTERNS.some((pattern) => pattern.test(haystack));
 };
 
-const isUnrelatedRole = (title: string): boolean =>
-  matchesAny(VOCABULARY.unrelatedRoleTitle, title);
+/** Any of these means the title's non-tech word describes the domain, not the job. */
+const TECH_SIGNAL_ROLE_FOCUS = [
+  SOFTWARE_ROLE_FOCUS,
+  PRODUCT_ROLE_FOCUS,
+  PLATFORM_ROLE_FOCUS,
+  DATA_ANNOTATION_ROLE_FOCUS,
+] as const;
+
+const isUnrelatedRole = (
+  title: string,
+  roleFocus: JobClassification['roleFocus'],
+): boolean =>
+  matchesAny(VOCABULARY.unrelatedRoleTitle, title) ||
+  (matchesAny(VOCABULARY.nonTechTitle, title) &&
+    !matchesAny(VOCABULARY.techTermTitle, title) &&
+    !TECH_SIGNAL_ROLE_FOCUS.some((focus) => roleFocus.includes(focus)));
 
 export const shouldPersistClassifiedJob = (
   classification: JobClassification,
@@ -205,7 +219,7 @@ export const classifyJob = (input: ClassifyJobInput): JobClassification => {
     geography: classifyGeography(haystack),
     roleFocus,
     isUnrelatedStack: isUnrelatedStack(roleFocus, technologies, haystack),
-    isUnrelatedRole: isUnrelatedRole(title),
+    isUnrelatedRole: isUnrelatedRole(title, roleFocus),
     requiresRelocation: matchesAny(VOCABULARY.relocation, haystack),
   };
 };

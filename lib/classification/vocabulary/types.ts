@@ -36,6 +36,17 @@ export type ClassificationVocabulary = {
   /** A title that names a software job; see `SOFTWARE_ROLE_FOCUS`. */
   softwareTitle: Patterns;
   unrelatedRoleTitle: Patterns;
+  /**
+   * Titles that are obviously not tech. Unlike `unrelatedRoleTitle`, they
+   * only reject a job with no software, product, platform, or annotation
+   * signal, so "Clinical Software Engineer" stays.
+   */
+  nonTechTitle: Patterns;
+  /**
+   * Tech terms that keep a `nonTechTitle` job: "SAP Business Warehouse",
+   * "Tutor de QA", "Teacher - AWS Solutions Architect".
+   */
+  techTermTitle: Patterns;
   relocation: Patterns;
   geography: Record<'brazil' | 'latam' | 'americas' | 'worldwide', Patterns>;
 };
