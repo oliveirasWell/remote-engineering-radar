@@ -12,7 +12,8 @@ describe('jobs page copy', () => {
   it('names React and the other focus technologies for SEO visitors', () => {
     for (const technology of FOCUS_TECHNOLOGIES) {
       expect(JOBS_PAGE_COPY.subtitle).toContain(technology);
-      expect(JOBS_PAGE_COPY.metaTitle).toContain(technology);
     }
+    // A title past ~60 characters is truncated in results; it leads with React.
+    expect(JOBS_PAGE_COPY.metaTitle).toContain(FOCUS_TECHNOLOGIES[0]);
   });
 });

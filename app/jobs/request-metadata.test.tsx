@@ -40,6 +40,9 @@ vi.mock('react', async (importOriginal) => ({
     };
   },
 }));
+vi.mock('@/lib/seo/filter-job-count', () => ({
+  filterJobCount: vi.fn(async () => 0),
+}));
 vi.mock('@/lib/report/get-companies-page-data', () => ({
   getCompaniesPageData: vi.fn(),
 }));

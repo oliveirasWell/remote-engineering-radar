@@ -1,15 +1,23 @@
 import { connection } from 'next/server';
 import { getDb } from '@/lib/db/client';
-import { JOB_MAX_AGE_MS, REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
 import {
   TEST_JOB_ID,
   TEST_REPORT_ERROR_MESSAGE,
 } from '@/lib/report/test-fixtures';
-import { DEFAULT_SITE_ORIGIN } from '@/lib/seo/constants';
+import {
+  JOB_COUNTRY_FILTER_OPTIONS,
+  JOB_MAX_AGE_MS,
+  REMOTE_POLICY_REMOTE,
+} from '@/lib/jobs/constants';
+import { DEFAULT_SITE_ORIGIN, MIN_INDEXABLE_JOBS } from '@/lib/seo/constants';
+import { filterJobCount } from '@/lib/seo/filter-job-count';
 import sitemap from './sitemap';
 
 vi.mock('next/server', () => ({ connection: vi.fn(async () => undefined) }));
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
+vi.mock('@/lib/seo/filter-job-count', () => ({
+  filterJobCount: vi.fn(async () => 0),
+}));
 
 const NOW = new Date('2026-09-09T12:00:00Z');
 const JOBS = Array.from({ length: 105 }, (_, index) => ({
@@ -80,5 +88,27 @@ describe('sitemap', () => {
     } as unknown as ReturnType<typeof getDb>);
     await expect(sitemap()).rejects.toBe(error);
     await expect(sitemap()).resolves.toHaveLength(JOBS.length + 3);
+  });
+
+  it('lists the companies and jobs views of every filter with enough jobs', async () => {
+    const [brazil] = JOB_COUNTRY_FILTER_OPTIONS;
+    vi.mocked(getDb).mockReturnValue({
+      job: { findMany: vi.fn(async () => []) },
+    } as unknown as ReturnType<typeof getDb>);
+    vi.mocked(filterJobCount).mockImplementation(async ({ country }) =>
+      country === brazil.slug ? MIN_INDEXABLE_JOBS : MIN_INDEXABLE_JOBS - 1,
+    );
+
+    const urls = (await sitemap()).map(({ url }) => url);
+
+    expect(urls).toStrictEqual(
+      [
+        '/',
+        '/jobs',
+        '/about',
+        `/?country=${brazil.slug}`,
+        `/jobs?country=${brazil.slug}`,
+      ].map((path) => new URL(path, DEFAULT_SITE_ORIGIN).href),
+    );
   });
 });

@@ -144,6 +144,54 @@ const keepPerCompany = (sorted: RankedJob[], limit: number): string[] => {
 const escapeLikePattern = (value: string): string =>
   value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
 
+type ActiveJobsOptions = {
+  minimumScore?: number;
+  technology?: string;
+  seniority?: string;
+  remotePolicy?: string;
+  country?: JobCountrySlug;
+  focus?: JobFocusSlug;
+  company?: string;
+  location?: string;
+  maxAgeMs?: number;
+  now?: Date;
+};
+
+/** The jobs the site lists; one definition for the list and its count. */
+const activeJobsWhere = (options?: ActiveJobsOptions): Prisma.JobWhereInput => {
+  const now = options?.now ?? new Date();
+  return {
+    isActive: true,
+    remotePolicy: options?.remotePolicy ?? REMOTE_POLICY_REMOTE,
+    ...(options?.minimumScore === undefined
+      ? {}
+      : { score: { gte: options.minimumScore } }),
+    ...(options?.seniority ? { seniority: options.seniority } : {}),
+    ...(options?.company ? { company: { slug: options.company } } : {}),
+    ...(options?.location
+      ? {
+          location: {
+            contains: escapeLikePattern(options.location),
+            mode: 'insensitive' as const,
+          },
+        }
+      : {}),
+    ...(options?.technology
+      ? { technologies: { array_contains: [options.technology] } }
+      : {}),
+    AND: [
+      countryFilter(options?.country),
+      focusFilter(options?.focus),
+      options?.maxAgeMs === undefined
+        ? {}
+        : coalescedPostedAtFilter(
+            'gte',
+            new Date(now.getTime() - options.maxAgeMs),
+          ),
+    ],
+  };
+};
+
 const createData = (
   input: NewJob,
   now: Date,
@@ -259,58 +307,20 @@ export const createJobsRepository = (db: Db) => ({
     return new Map(groups.map((group) => [group.companyId, group._count._all]));
   },
 
-  listActiveByScore: async (options?: {
-    limit?: number;
-    sort?: JobSort;
-    minimumScore?: number;
-    technology?: string;
-    seniority?: string;
-    remotePolicy?: string;
-    country?: JobCountrySlug;
-    focus?: JobFocusSlug;
-    company?: string;
-    location?: string;
-    maxAgeMs?: number;
-    now?: Date;
-  }): Promise<JobCard[]> => {
-    const now = options?.now ?? new Date();
+  listActiveByScore: async (
+    options?: ActiveJobsOptions & { limit?: number; sort?: JobSort },
+  ): Promise<JobCard[]> => {
     const rows = await db.job.findMany({
-      where: {
-        isActive: true,
-        remotePolicy: options?.remotePolicy ?? REMOTE_POLICY_REMOTE,
-        ...(options?.minimumScore === undefined
-          ? {}
-          : { score: { gte: options.minimumScore } }),
-        ...(options?.seniority ? { seniority: options.seniority } : {}),
-        ...(options?.company ? { company: { slug: options.company } } : {}),
-        ...(options?.location
-          ? {
-              location: {
-                contains: escapeLikePattern(options.location),
-                mode: 'insensitive' as const,
-              },
-            }
-          : {}),
-        ...(options?.technology
-          ? { technologies: { array_contains: [options.technology] } }
-          : {}),
-        AND: [
-          countryFilter(options?.country),
-          focusFilter(options?.focus),
-          options?.maxAgeMs === undefined
-            ? {}
-            : coalescedPostedAtFilter(
-                'gte',
-                new Date(now.getTime() - options.maxAgeMs),
-              ),
-        ],
-      },
+      where: activeJobsWhere(options),
       select: jobCardColumns,
       orderBy: JOB_ORDER_BY[options?.sort ?? 'relevance'],
       ...(options?.limit === undefined ? {} : { take: options.limit }),
     });
     return rows.map(toJobCard);
   },
+
+  countActive: async (options?: ActiveJobsOptions): Promise<number> =>
+    db.job.count({ where: activeJobsWhere(options) }),
 
   updateScore: async (id: string, score: number): Promise<Job | null> => {
     const [row] = await db.job.updateManyAndReturn({

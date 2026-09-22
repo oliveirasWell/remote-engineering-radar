@@ -8,3 +8,9 @@ export const SITEMAP_CACHE_LIFE = {
   revalidate: 300,
   expire: 3600,
 } as const;
+
+/**
+ * A single country or focus view is indexed only with at least this many
+ * jobs, so search engines never see near-empty pages.
+ */
+export const MIN_INDEXABLE_JOBS = 10;

@@ -3,8 +3,8 @@ import { cache, Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
 import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
-import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
-import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
+import { searchMetadata } from '@/lib/seo/search-metadata/search-metadata';
+import { JOBS_PAGE_LIMIT } from './constants';
 import { parseJobFilters, type JobsSearchParams } from './parse-job-filters';
 import { JobsHeading, JobsReport } from './jobs-presentation';
 
@@ -53,19 +53,15 @@ export const generateMetadata = async ({
   searchParams,
 }: JobsPageProps): Promise<Metadata> => {
   const { filters } = await readResults(await searchParams);
-  return {
-    title: JOBS_PAGE_COPY.metaTitle,
-    description: JOBS_PAGE_COPY.subtitle,
-    ...canonicalMetadata('/jobs', {
-      technology: filters.technology,
-      seniority: filters.seniority,
-      remote: filters.remote,
-      country: filters.country,
-      focus: filters.focus,
-      company: filters.company,
-      minimumScore: filters.minimumScore,
-    }),
-  };
+  return searchMetadata('jobs', '/jobs', {
+    technology: filters.technology,
+    seniority: filters.seniority,
+    remote: filters.remote,
+    country: filters.country,
+    focus: filters.focus,
+    company: filters.company,
+    minimumScore: filters.minimumScore,
+  });
 };
 
 const JobsResults = async ({ searchParams }: JobsPageProps) => {

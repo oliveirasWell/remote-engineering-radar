@@ -17,6 +17,9 @@ import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import JobsPage from './page';
 import * as jobsRoute from './page';
 
+vi.mock('@/lib/seo/filter-job-count', () => ({
+  filterJobCount: vi.fn(async () => 0),
+}));
 vi.mock('@/lib/report/get-jobs-page-data', () => ({
   getJobsPageData: vi.fn(async () => ({ jobs: [] })),
 }));

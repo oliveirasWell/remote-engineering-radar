@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
 import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
-import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
+import { searchMetadata } from '@/lib/seo/search-metadata/search-metadata';
 import { parseCountryFilter } from '@/lib/report/parse-country-filter';
 import { parseFocusFilter } from '@/lib/report/parse-focus-filter';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
@@ -27,7 +27,7 @@ export const generateMetadata = async ({
   const country = parseCountryFilter(params.country);
   const focus = parseFocusFilter(params.focus);
   await readCompanies(country, focus);
-  return canonicalMetadata('/', { country, focus });
+  return searchMetadata('companies', '/', { country, focus });
 };
 
 const CompaniesSection = async ({ searchParams }: HomeProps) => {

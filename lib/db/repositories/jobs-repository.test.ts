@@ -531,6 +531,63 @@ describe('createJobsRepository', () => {
     });
   });
 
+  it('counts active remote jobs under the country and focus filters', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const postings = [
+      ['brazil-product', ['brazil'], [PRODUCT_ROLE_FOCUS], 'remote', now],
+      ['worldwide-product', ['worldwide'], [PRODUCT_ROLE_FOCUS], 'remote', now],
+      ['india-product', ['india'], [PRODUCT_ROLE_FOCUS], 'remote', now],
+      ['brazil-hybrid', ['brazil'], [PRODUCT_ROLE_FOCUS], 'hybrid', now],
+      [
+        'brazil-stale',
+        ['brazil'],
+        [PRODUCT_ROLE_FOCUS],
+        'remote',
+        new Date(now.getTime() - JOB_MAX_AGE_MS - 1),
+      ],
+      ['brazil-platform', ['brazil'], [PLATFORM_ROLE_FOCUS], 'remote', now],
+    ] as const;
+
+    for (const [
+      sourceJobId,
+      countries,
+      roleFocus,
+      remotePolicy,
+      postedAt,
+    ] of postings) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId,
+        countries: [...countries],
+        roleFocus: [...roleFocus],
+        remotePolicy,
+        postedAt,
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
+
+    const counts = await Promise.all([
+      jobsRepository.countActive({ maxAgeMs: JOB_MAX_AGE_MS, now }),
+      jobsRepository.countActive({
+        country: 'brazil',
+        maxAgeMs: JOB_MAX_AGE_MS,
+        now,
+      }),
+      jobsRepository.countActive({
+        focus: JOB_FOCUS_PRODUCT,
+        maxAgeMs: JOB_MAX_AGE_MS,
+        now,
+      }),
+    ]);
+
+    expect(counts).toEqual([4, 3, 3]);
+  });
+
   it('lists active jobs of a single company by slug', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);

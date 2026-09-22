@@ -27,6 +27,9 @@ import PageError from './error';
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
+vi.mock('@/lib/seo/filter-job-count', () => ({
+  filterJobCount: vi.fn(async () => 0),
+}));
 vi.mock('@/lib/report/get-companies-page-data', () => ({
   getCompaniesPageData: vi.fn(),
 }));
