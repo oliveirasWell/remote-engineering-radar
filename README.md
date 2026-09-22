@@ -1,8 +1,29 @@
 # Remote Engineering Radar
 
-Public, automated radar for remote software engineering jobs outside LinkedIn.
-Focused on Senior Frontend, Fullstack, React, and React Native roles in Brazil,
-LATAM, and the Americas.
+Public, automated radar for remote senior tech jobs and the companies hiring for
+them, built from public job boards and updated daily. Focused on Brazil, LATAM,
+and the Americas, in English and Portuguese.
+
+## What it does
+
+- **Four tracks.** React Engineering (React, TypeScript, Node.js, GraphQL, React
+  Native), Cloud & Ops, Product, and Data Annotation. React Engineering only
+  holds jobs with a software signal; everything else stays under "All roles".
+- **Country filters by eligibility.** A country tab also lists the regions that
+  include it: Brazil shows Brazil, LATAM, and worldwide jobs. Countries come
+  only from each posting's stated restrictions, never from its description.
+- **Portuguese-aware classification.** Seniority, work model, and tracks are
+  read from English and Portuguese postings (`lib/classification/vocabulary`).
+  Benefit phrases such as "auxílio home office" do not count as remote.
+- **Two languages, two URLs.** English at `/`, Portuguese at `/pt-BR`, both
+  rendered on the server with `hreflang` alternates. The language picker keeps
+  the current page and filters.
+- **Search-ready views.** Each single country or track view with enough jobs is
+  indexed with its own title and listed in the sitemap.
+
+Sources: Himalayas, Jobicy, GetOnBrd, Hacker News "Who is hiring?", Y
+Combinator's Work at a Startup, the frontendbr and quavedev GitHub boards, and
+any Greenhouse, Ashby, or Lever boards you configure.
 
 ## Stack
 
@@ -51,6 +72,16 @@ limit with `GITHUB_TOKEN`.
 | `pnpm db:smoke`  | Test migrations in a disposable PostgreSQL container            |
 
 See [`package.json`](package.json) for all scripts.
+
+### Maintenance scripts
+
+Run with `pnpm dlx tsx --conditions=react-server scripts/<name>.ts` and a
+`DATABASE_URL`.
+
+| Script                      | Purpose                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------- |
+| `replay-classification.ts`  | Snapshot classifier results, then diff them after a change (`--snapshot`/`--compare`) |
+| `reclassify-active-jobs.ts` | Reclassify stored jobs with the current classifier (`--dry-run --audit <file>` first) |
 
 ## Documentation
 
