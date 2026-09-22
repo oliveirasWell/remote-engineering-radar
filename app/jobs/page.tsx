@@ -20,6 +20,7 @@ const readJobs = cache(
     remote: string | undefined,
     country: JobCountrySlug | undefined,
     focus: JobFocusSlug | undefined,
+    company: string | undefined,
     minimumScore: number | undefined,
   ) =>
     getJobsPageData({
@@ -28,6 +29,7 @@ const readJobs = cache(
       remote,
       country,
       focus,
+      company,
       minimumScore,
       limit: JOBS_PAGE_LIMIT,
     }),
@@ -41,6 +43,7 @@ const readResults = async (params: JobsSearchParams) => {
     filters.remote,
     filters.country,
     filters.focus,
+    filters.company,
     filters.minimumScore,
   );
   return { filters, data };
@@ -59,6 +62,7 @@ export const generateMetadata = async ({
       remote: filters.remote,
       country: filters.country,
       focus: filters.focus,
+      company: filters.company,
       minimumScore: filters.minimumScore,
     }),
   };

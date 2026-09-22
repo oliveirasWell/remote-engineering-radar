@@ -14,7 +14,10 @@ import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import { APP_DESCRIPTION, APP_NAME, FOCUS_TECHNOLOGIES } from './constants';
 import { HOME_SECTIONS } from './home-constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
-import { TEST_REPORT_COMPANY } from '@/components/report/test-fixtures';
+import {
+  TEST_REPORT_COMPANY,
+  TEST_REPORT_JOB,
+} from '@/components/report/test-fixtures';
 import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { I18N_TEST } from './i18n-fixtures';
 import { CompaniesReport } from './home-presentation';
@@ -275,6 +278,39 @@ describe('home focus tabs', () => {
     expect(metadata).toMatchObject({
       alternates: { canonical: `/?focus=${JOB_FOCUS_PRODUCT}` },
     });
+  });
+});
+
+describe('home company job previews', () => {
+  it('links a company preview to all of its jobs under the same country and focus', () => {
+    const [brazil] = JOB_COUNTRY_FILTER_OPTIONS;
+    render(
+      <CompaniesReport
+        data={{
+          companies: [
+            {
+              ...TEST_REPORT_COMPANY,
+              jobs: [TEST_REPORT_JOB],
+              signalSourceUrls: [],
+            },
+          ],
+          country: brazil.slug,
+          focus: JOB_FOCUS_CLOUD_OPS,
+          updatedAt: null,
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', {
+        name: EN_MESSAGES.home.seeAllJobs(
+          TEST_REPORT_COMPANY.openEngineeringJobs,
+        ),
+      }),
+    ).toHaveAttribute(
+      'href',
+      `/jobs?company=${TEST_REPORT_COMPANY.slug}&country=${brazil.slug}&focus=${JOB_FOCUS_CLOUD_OPS}`,
+    );
   });
 });
 

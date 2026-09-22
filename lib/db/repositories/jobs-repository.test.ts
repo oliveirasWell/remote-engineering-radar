@@ -480,6 +480,85 @@ describe('createJobsRepository', () => {
     ]);
   });
 
+  it('caps card rows per company, newest first, while counts cover every job', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const busy = await companiesRepository.create(TEST_COMPANY);
+    const quiet = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'quiet-co',
+      name: 'Quiet Co',
+    });
+    const postings = [
+      [busy, 'busy-oldest', '2026-09-01T00:00:00Z'],
+      [busy, 'busy-middle', '2026-09-04T00:00:00Z'],
+      [busy, 'busy-newest', '2026-09-07T00:00:00Z'],
+      [quiet, 'quiet-only', '2026-09-02T00:00:00Z'],
+    ] as const;
+
+    for (const [company, sourceJobId, postedAt] of postings) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId,
+        postedAt: new Date(postedAt),
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
+
+    const options = { maxAgeMs: JOB_MAX_AGE_MS, now };
+    const cards = await jobsRepository.listCardsByCompanyIds(
+      [busy.id, quiet.id],
+      { ...options, perCompanyLimit: 2 },
+    );
+    const counts = await jobsRepository.countByCompanyIds(
+      [busy.id, quiet.id],
+      options,
+    );
+
+    expect(cards.map((card) => card.sourceJobId)).toEqual([
+      'busy-newest',
+      'busy-middle',
+      'quiet-only',
+    ]);
+    expect(Object.fromEntries(counts)).toEqual({
+      [busy.id]: 3,
+      [quiet.id]: 1,
+    });
+  });
+
+  it('lists active jobs of a single company by slug', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const now = new Date('2026-09-08T00:00:00Z');
+    const target = await companiesRepository.create(TEST_COMPANY);
+    const other = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: 'other-co',
+      name: 'Other Co',
+    });
+
+    for (const company of [target, other]) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId: company.slug,
+        postedAt: now,
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
+
+    const jobs = await jobsRepository.listActiveByScore({
+      company: TEST_COMPANY.slug,
+      now,
+    });
+
+    expect(jobs.map((job) => job.sourceJobId)).toEqual([TEST_COMPANY.slug]);
+  });
+
   it('deletes inactive jobs past the retention window and keeps the rest', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);

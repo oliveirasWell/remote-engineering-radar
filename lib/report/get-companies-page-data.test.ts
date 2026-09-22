@@ -5,6 +5,7 @@ import { TEST_COMPANY, TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import { createTestDb } from '@/lib/db/test/create-test-db';
 import { PRODUCT_ROLE_FOCUS } from '@/lib/classification/constants';
 import { JOB_FOCUS_PRODUCT, JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
+import { COMPANY_JOBS_PREVIEW_LIMIT } from './constants';
 import { getCompaniesPageData } from './get-companies-page-data';
 import { COUNTRY_FILTER_CASES, COUNTRY_JOBS } from './fixtures/country-jobs';
 
@@ -213,5 +214,28 @@ describe('getCompaniesPageData', () => {
     expect(data.companies[0]?.jobs.map((job) => job.title)).toEqual([
       productTitle,
     ]);
+  });
+
+  it("ships a preview of each company's jobs and counts all of them", async () => {
+    const db = await createTestDb();
+    vi.mocked(getDb).mockReturnValue(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobsRepository = createJobsRepository(db);
+    const totalJobs = COMPANY_JOBS_PREVIEW_LIMIT + 2;
+
+    for (let index = 0; index < totalJobs; index += 1) {
+      await jobsRepository.create({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId: `job-${index}`,
+        postedAt: new Date(Date.now() - index * 1000),
+        technologies: [...TEST_JOB.technologies],
+      });
+    }
+
+    const data = await getCompaniesPageData();
+
+    expect(data.companies[0]?.jobs).toHaveLength(COMPANY_JOBS_PREVIEW_LIMIT);
+    expect(data.companies[0]?.openEngineeringJobs).toBe(totalJobs);
   });
 });

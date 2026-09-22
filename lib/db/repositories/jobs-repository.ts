@@ -75,6 +75,72 @@ const toJob = (row: PrismaJob): Job => ({
   updatedAt: row.updatedAt,
 });
 
+type CompanyJobsOptions = {
+  maxAgeMs?: number;
+  now?: Date;
+  activeOnly?: boolean;
+  country?: JobCountrySlug;
+  focus?: JobFocusSlug;
+};
+
+const companyJobsWhere = (
+  companyIds: string[],
+  options?: CompanyJobsOptions,
+): Prisma.JobWhereInput => {
+  const freshness = (): Prisma.JobWhereInput => {
+    if (options?.maxAgeMs !== undefined) {
+      const now = options.now ?? new Date();
+      return {
+        isActive: true,
+        remotePolicy: REMOTE_POLICY_REMOTE,
+        ...coalescedPostedAtFilter(
+          'gte',
+          new Date(now.getTime() - options.maxAgeMs),
+        ),
+      };
+    }
+    return options?.activeOnly ? { isActive: true } : {};
+  };
+
+  return {
+    companyId: { in: companyIds },
+    AND: [
+      freshness(),
+      countryFilter(options?.country),
+      focusFilter(options?.focus),
+    ],
+  };
+};
+
+type RankedJob = {
+  id: string;
+  companyId: string;
+  postedAt: Date | null;
+  firstSeenAt: Date;
+  score: number;
+};
+
+/** Most recently posted first, then the higher score. */
+const newestFirst = (left: RankedJob, right: RankedJob): number => {
+  const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
+  const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
+  if (rightMs !== leftMs) {
+    return rightMs - leftMs;
+  }
+  return right.score - left.score;
+};
+
+const keepPerCompany = (sorted: RankedJob[], limit: number): string[] => {
+  const kept = new Map<string, number>();
+  return sorted
+    .filter((job) => {
+      const count = kept.get(job.companyId) ?? 0;
+      kept.set(job.companyId, count + 1);
+      return count < limit;
+    })
+    .map((job) => job.id);
+};
+
 const escapeLikePattern = (value: string): string =>
   value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
 
@@ -140,53 +206,57 @@ export const createJobsRepository = (db: Db) => ({
 
   listCardsByCompanyIds: async (
     companyIds: string[],
-    options?: {
-      maxAgeMs?: number;
-      now?: Date;
-      activeOnly?: boolean;
-      country?: JobCountrySlug;
-      focus?: JobFocusSlug;
-    },
+    options?: CompanyJobsOptions & { perCompanyLimit?: number },
   ): Promise<JobCard[]> => {
     if (companyIds.length === 0) {
       return [];
     }
 
-    const freshnessFilter = (): Prisma.JobWhereInput => {
-      if (options?.maxAgeMs !== undefined) {
-        const now = options.now ?? new Date();
-        return {
-          isActive: true,
-          remotePolicy: REMOTE_POLICY_REMOTE,
-          ...coalescedPostedAtFilter(
-            'gte',
-            new Date(now.getTime() - options.maxAgeMs),
-          ),
-        };
-      }
-      return options?.activeOnly ? { isActive: true } : {};
-    };
+    const where = companyJobsWhere(companyIds, options);
+    const perCompanyLimit = options?.perCompanyLimit;
+    // Prisma cannot take N rows per group, so rank on a few narrow columns
+    // first and load full cards only for the rows that are kept.
+    const keptIds =
+      perCompanyLimit === undefined
+        ? undefined
+        : keepPerCompany(
+            (
+              await db.job.findMany({
+                where,
+                select: {
+                  id: true,
+                  companyId: true,
+                  postedAt: true,
+                  firstSeenAt: true,
+                  score: true,
+                },
+              })
+            ).sort(newestFirst),
+            perCompanyLimit,
+          );
 
     const rows = await db.job.findMany({
-      where: {
-        companyId: { in: companyIds },
-        AND: [
-          freshnessFilter(),
-          countryFilter(options?.country),
-          focusFilter(options?.focus),
-        ],
-      },
+      where: keptIds ? { id: { in: keptIds } } : where,
       select: jobCardColumns,
     });
 
-    return rows.map(toJobCard).sort((left, right) => {
-      const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
-      const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
-      if (rightMs !== leftMs) {
-        return rightMs - leftMs;
-      }
-      return right.score - left.score;
+    return rows.map(toJobCard).sort(newestFirst);
+  },
+
+  countByCompanyIds: async (
+    companyIds: string[],
+    options?: CompanyJobsOptions,
+  ): Promise<Map<string, number>> => {
+    if (companyIds.length === 0) {
+      return new Map();
+    }
+
+    const groups = await db.job.groupBy({
+      by: ['companyId'],
+      where: companyJobsWhere(companyIds, options),
+      _count: { _all: true },
     });
+    return new Map(groups.map((group) => [group.companyId, group._count._all]));
   },
 
   listActiveByScore: async (options?: {
@@ -198,6 +268,7 @@ export const createJobsRepository = (db: Db) => ({
     remotePolicy?: string;
     country?: JobCountrySlug;
     focus?: JobFocusSlug;
+    company?: string;
     location?: string;
     maxAgeMs?: number;
     now?: Date;
@@ -211,6 +282,7 @@ export const createJobsRepository = (db: Db) => ({
           ? {}
           : { score: { gte: options.minimumScore } }),
         ...(options?.seniority ? { seniority: options.seniority } : {}),
+        ...(options?.company ? { company: { slug: options.company } } : {}),
         ...(options?.location
           ? {
               location: {

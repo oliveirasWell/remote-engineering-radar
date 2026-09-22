@@ -38,6 +38,22 @@ const homeHref = (
   return query ? `/?${query}` : '/';
 };
 
+/** Every job of one company on /jobs, under the same country and focus. */
+const companyJobsHref = (
+  company: string,
+  country: JobCountrySlug | undefined,
+  focus: JobFocusSlug | undefined,
+) => {
+  const params = new URLSearchParams({ company });
+  if (country) {
+    params.set('country', country);
+  }
+  if (focus) {
+    params.set('focus', focus);
+  }
+  return `/jobs?${params.toString()}`;
+};
+
 export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
   const { locale, messages } = useI18n();
   const [sort, setSort] = useState<CompanySort>('default');
@@ -164,7 +180,15 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
                   </div>
                 ) : null}
                 {company.jobs.length > 0 ? (
-                  <CompanyJobs jobs={company.jobs} />
+                  <CompanyJobs
+                    jobs={company.jobs}
+                    totalJobs={company.openEngineeringJobs}
+                    allJobsHref={companyJobsHref(
+                      company.slug,
+                      data.country,
+                      data.focus,
+                    )}
+                  />
                 ) : null}
               </details>
             ))}

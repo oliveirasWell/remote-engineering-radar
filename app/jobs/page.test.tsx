@@ -157,6 +157,7 @@ describe('JobsPage', () => {
       remote: undefined,
       country,
       focus: undefined,
+      company: undefined,
       minimumScore,
       limit: JOBS_PAGE_LIMIT,
     };

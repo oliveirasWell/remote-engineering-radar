@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import {
@@ -11,7 +12,17 @@ import type { ReportJobCard } from '@/lib/report/types';
 import { JobCard } from '../JobCard/JobCard';
 import { JOB_COMPARATORS } from './constants';
 
-export const CompanyJobs = ({ jobs }: { jobs: ReportJobCard[] }) => {
+type CompanyJobsProps = {
+  jobs: ReportJobCard[];
+  totalJobs: number;
+  allJobsHref: string;
+};
+
+export const CompanyJobs = ({
+  jobs,
+  totalJobs,
+  allJobsHref,
+}: CompanyJobsProps) => {
   const { messages } = useI18n();
   const [sort, setSort] = useState<JobSort>(DEFAULT_JOB_SORT);
   const sortedJobs = [...jobs].sort(JOB_COMPARATORS[sort]);
@@ -38,6 +49,14 @@ export const CompanyJobs = ({ jobs }: { jobs: ReportJobCard[] }) => {
       {sortedJobs.map((job) => (
         <JobCard key={job.id} job={job} />
       ))}
+      {totalJobs > jobs.length ? (
+        <Link
+          href={allJobsHref}
+          className="mt-3 inline-flex min-h-[44px] items-center text-sm underline underline-offset-2"
+        >
+          {messages.home.seeAllJobs(totalJobs)}
+        </Link>
+      ) : null}
     </div>
   );
 };

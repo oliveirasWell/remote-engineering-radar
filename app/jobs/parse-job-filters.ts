@@ -15,10 +15,27 @@ export type JobsSearchParams = {
   remote?: string | string[];
   country?: string | string[];
   focus?: string | string[];
+  company?: string | string[];
   minimumScore?: string | string[];
 };
 
 const MAX_SCORE = 100;
+
+const COMPANY_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const MAX_COMPANY_SLUG_LENGTH = 80;
+
+/** Slug-shaped only; an unknown company yields an empty list, not an error. */
+const readCompany = (
+  value: string | string[] | undefined,
+): string | undefined => {
+  const raw =
+    typeof value === 'string' ? value.trim().toLowerCase() : undefined;
+  return raw &&
+    raw.length <= MAX_COMPANY_SLUG_LENGTH &&
+    COMPANY_SLUG_PATTERN.test(raw)
+    ? raw
+    : undefined;
+};
 
 /**
  * Each distinct filter value is its own `use cache` key and therefore its own
@@ -55,6 +72,7 @@ export const parseJobFilters = (params: JobsSearchParams): JobFilters => ({
   ),
   country: parseCountryFilter(params.country),
   focus: parseFocusFilter(params.focus),
+  company: readCompany(params.company),
   minimumScore: readMinimumScore(params.minimumScore),
   limit: JOBS_PAGE_LIMIT,
 });

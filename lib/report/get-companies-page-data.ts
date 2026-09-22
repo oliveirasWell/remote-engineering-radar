@@ -9,7 +9,11 @@ import {
   type JobCountrySlug,
   type JobFocusSlug,
 } from '@/lib/jobs/constants';
-import { COMPANIES_PAGE_LIMIT, REPORT_CACHE_LIFE } from './constants';
+import {
+  COMPANIES_PAGE_LIMIT,
+  COMPANY_JOBS_PREVIEW_LIMIT,
+  REPORT_CACHE_LIFE,
+} from './constants';
 import { logReportError } from './log-report-error';
 import type { ReportCompanyCard, ReportJobCard } from './types';
 
@@ -72,15 +76,15 @@ export const getCompaniesPageData = async (
     });
     const companyIds = companies.map((company) => company.id);
 
-    // Two batched reads instead of one pair per company.
-    const [signals, jobs, updatedAt] = await Promise.all([
+    const jobFilters = { maxAgeMs: JOB_MAX_AGE_MS, now, country, focus };
+    // Batched reads instead of one set per company.
+    const [signals, jobs, jobCounts, updatedAt] = await Promise.all([
       hiringSignalsRepository.listByCompanyIds(companyIds),
       jobsRepository.listCardsByCompanyIds(companyIds, {
-        maxAgeMs: JOB_MAX_AGE_MS,
-        now,
-        country,
-        focus,
+        ...jobFilters,
+        perCompanyLimit: COMPANY_JOBS_PREVIEW_LIMIT,
       }),
+      jobsRepository.countByCompanyIds(companyIds, jobFilters),
       createIngestionRunsRepository(db).getLatestCompletedAt(),
     ]);
 
@@ -103,7 +107,7 @@ export const getCompaniesPageData = async (
             : 'Company is actively expanding engineering hiring.',
         signalDescriptions: companySignals.map((signal) => signal.description),
         websiteUrl: company.websiteUrl,
-        openEngineeringJobs: companyJobs.length,
+        openEngineeringJobs: jobCounts.get(company.id) ?? 0,
         jobs: companyJobs.map((job) => ({
           id: job.id,
           title: job.title,

@@ -73,4 +73,20 @@ describe('parseJobFilters', () => {
       focus: 'cloud-ops',
     });
   });
+
+  it('accepts a slug-shaped company and rejects anything else', () => {
+    expect(parseJobFilters({ company: ' Acme-Robotics ' })).toMatchObject({
+      company: 'acme-robotics',
+    });
+    for (const company of [
+      'acme robotics',
+      '../acme',
+      '-acme',
+      'a'.repeat(81),
+    ]) {
+      expect(parseJobFilters({ company })).toMatchObject({
+        company: undefined,
+      });
+    }
+  });
 });

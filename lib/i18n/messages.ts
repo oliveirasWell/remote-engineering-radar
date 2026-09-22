@@ -24,6 +24,7 @@ export const EN_MESSAGES = {
       'Remote senior companies hiring in React, TypeScript, Node.js, GraphQL and React Native, plus Cloud & Ops.',
     companiesToWatch: 'Companies to watch',
     relevantJobs: 'Relevant jobs',
+    seeAllJobs: (count: number) => `See all ${count} jobs`,
     openRoles: (count: number) =>
       `${count} ${count === 1 ? 'open role' : 'open roles'}`,
     evidence: 'Evidence / sources',
@@ -243,6 +244,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
       'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, além de Cloud & Ops.',
     companiesToWatch: 'Empresas para acompanhar',
     relevantJobs: 'Vagas relevantes',
+    seeAllJobs: (count: number) => `Ver todas as ${count} vagas`,
     openRoles: (count: number) =>
       `${count} ${count === 1 ? 'vaga aberta' : 'vagas abertas'}`,
     evidence: 'Evidências / fontes',

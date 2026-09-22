@@ -26,6 +26,7 @@ const focusHref = (filters: JobFilters, focus: JobFocusSlug | undefined) => {
     ['remote', filters.remote],
     ['country', filters.country],
     ['minimumScore', filters.minimumScore],
+    ['company', filters.company],
     ['focus', focus],
   ];
   const params = new URLSearchParams(
@@ -95,6 +96,9 @@ export const JobsReport = ({
         <form className="grid gap-3 sm:grid-cols-2" method="get">
           {filters.focus ? (
             <input type="hidden" name="focus" value={filters.focus} />
+          ) : null}
+          {filters.company ? (
+            <input type="hidden" name="company" value={filters.company} />
           ) : null}
           {fields.map((field) => (
             <label key={field.name} className="flex flex-col gap-1 text-sm">

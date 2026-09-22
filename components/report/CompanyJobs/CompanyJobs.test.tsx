@@ -16,6 +16,7 @@ import {
 } from './fixtures/jobs';
 
 const PORTUGUESE_LOCALE = 'pt-BR';
+const ALL_JOBS_HREF = '/jobs?company=example-company';
 
 afterEach(() => {
   document.cookie = `${LOCALE_COOKIE}=; path=/; max-age=0`;
@@ -24,7 +25,13 @@ afterEach(() => {
 describe('CompanyJobs', () => {
   it('defaults to newest first, breaks date ties by relevance, and puts undated jobs last', () => {
     const inputOrder = SORTING_JOBS.map((job) => job.id);
-    render(<CompanyJobs jobs={SORTING_JOBS} />);
+    render(
+      <CompanyJobs
+        jobs={SORTING_JOBS}
+        totalJobs={SORTING_JOBS.length}
+        allJobsHref={ALL_JOBS_HREF}
+      />,
+    );
 
     expect(
       screen.getAllByRole('heading').map((heading) => heading.textContent),
@@ -38,8 +45,16 @@ describe('CompanyJobs', () => {
   it('allows each company to switch its ordering independently', () => {
     render(
       <>
-        <CompanyJobs jobs={SORTING_JOBS} />
-        <CompanyJobs jobs={SORTING_JOBS} />
+        <CompanyJobs
+          jobs={SORTING_JOBS}
+          totalJobs={SORTING_JOBS.length}
+          allJobsHref={ALL_JOBS_HREF}
+        />
+        <CompanyJobs
+          jobs={SORTING_JOBS}
+          totalJobs={SORTING_JOBS.length}
+          allJobsHref={ALL_JOBS_HREF}
+        />
       </>,
     );
 
@@ -64,7 +79,11 @@ describe('CompanyJobs', () => {
     document.cookie = `${LOCALE_COOKIE}=${PORTUGUESE_LOCALE}; path=/`;
     render(
       <I18nProvider>
-        <CompanyJobs jobs={SORTING_JOBS} />
+        <CompanyJobs
+          jobs={SORTING_JOBS}
+          totalJobs={SORTING_JOBS.length}
+          allJobsHref={ALL_JOBS_HREF}
+        />
       </I18nProvider>,
     );
 
@@ -78,5 +97,38 @@ describe('CompanyJobs', () => {
         }),
       ).toHaveValue(sort);
     }
+  });
+
+  it('links to every job of the company when it shows only a preview', () => {
+    const totalJobs = SORTING_JOBS.length + 3;
+    render(
+      <CompanyJobs
+        jobs={SORTING_JOBS}
+        totalJobs={totalJobs}
+        allJobsHref={ALL_JOBS_HREF}
+      />,
+    );
+
+    expect(
+      screen.getByRole('link', {
+        name: EN_MESSAGES.home.seeAllJobs(totalJobs),
+      }),
+    ).toHaveAttribute('href', ALL_JOBS_HREF);
+  });
+
+  it('omits the link when every job is already shown', () => {
+    render(
+      <CompanyJobs
+        jobs={SORTING_JOBS}
+        totalJobs={SORTING_JOBS.length}
+        allJobsHref={ALL_JOBS_HREF}
+      />,
+    );
+
+    expect(
+      screen.queryByRole('link', {
+        name: EN_MESSAGES.home.seeAllJobs(SORTING_JOBS.length),
+      }),
+    ).not.toBeInTheDocument();
   });
 });
