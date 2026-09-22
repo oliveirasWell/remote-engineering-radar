@@ -41,6 +41,8 @@ Open:
   starting with Portuguese (two PRs; depends on PR #48)
 - [SPEC-020](020-companies-payload-and-software-track.md) — lighter companies page,
   software-only React Engineering track, fewer obvious non-tech jobs
+- [SPEC-021](021-localized-urls.md) — localized URLs (`/pt-BR/...`) with server-rendered
+  Portuguese, hreflang alternates, and a localized sitemap
 
 ---
 
