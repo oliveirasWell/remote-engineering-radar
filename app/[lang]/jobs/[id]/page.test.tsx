@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { render, screen, within } from '@testing-library/react';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
+import { I18N_TEST } from '../../i18n-fixtures';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { TEST_REPORT_JOB } from '@/components/report/test-fixtures';
 import { LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
@@ -37,6 +39,7 @@ const GENERATED_REASONS = [
   { source: 'Unrelated role', translated: 'Cargo fora do foco' },
 ];
 
+const PORTUGUESE_JOBS_PATH = localizedPath('pt-BR', '/jobs');
 vi.mock('@/lib/report/get-jobs-page-data', () => ({
   getJobDetailData: vi.fn(),
 }));
@@ -47,22 +50,20 @@ afterEach(() => {
 
 describe('JobDetailPage translation', () => {
   it('translates the real not-found boundary and preserves the jobs link', () => {
-    document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
     const { jobs } = messagesFor('pt-BR');
     render(
-      <I18nProvider>
+      <I18nProvider locale="pt-BR">
         <JobNotFound />
       </I18nProvider>,
     );
     expect(screen.getByText(jobs.notFound)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: jobs.backToJobs })).toHaveAttribute(
       'href',
-      '/jobs',
+      PORTUGUESE_JOBS_PATH,
     );
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
   it('translates known generated reasons while preserving technology names and unknown text', async () => {
-    document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
     const unchangedReasons = [...detailJob.technologies, ...detailJob.reasons];
     const reasons = [
       ...GENERATED_REASONS.map(({ source }) => source),
@@ -74,7 +75,11 @@ describe('JobDetailPage translation', () => {
     const page = JobDetailPage({
       params: Promise.resolve({ id: detailJob.id }),
     });
-    render(<I18nProvider>{await resolvePageSection(page)}</I18nProvider>);
+    render(
+      <I18nProvider locale="pt-BR">
+        {await resolvePageSection(page)}
+      </I18nProvider>,
+    );
     const list = within(screen.getByRole('list'));
     expect(
       list.getAllByRole('listitem').map(({ textContent }) => textContent),
@@ -88,15 +93,18 @@ describe('JobDetailPage translation', () => {
     'translates the detail state without altering original content',
     async ({ data }) => {
       const { jobs } = messagesFor('pt-BR');
-      document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
       vi.mocked(getJobDetailData).mockResolvedValue(data);
       const page = JobDetailPage({
         params: Promise.resolve({ id: detailJob.id }),
       });
-      render(<I18nProvider>{await resolvePageSection(page)}</I18nProvider>);
+      render(
+        <I18nProvider locale="pt-BR">
+          {await resolvePageSection(page)}
+        </I18nProvider>,
+      );
       expect(
         screen.getByRole('link', { name: jobs.backToJobs }),
-      ).toHaveAttribute('href', '/jobs');
+      ).toHaveAttribute('href', PORTUGUESE_JOBS_PATH);
       expect(
         screen.getByRole('heading', { level: 1, name: data.job.title }),
       ).toBeInTheDocument();
@@ -150,7 +158,9 @@ describe('JobDetailPage cache boundary', () => {
   );
 
   it('propagates the original failure rather than notFound and recovers on the next request', async () => {
-    const props = { params: Promise.resolve({ id: TEST_JOB_ID }) };
+    const props = {
+      params: Promise.resolve({ id: TEST_JOB_ID, lang: I18N_TEST.english }),
+    };
     vi.mocked(getJobDetailData)
       .mockRejectedValueOnce(new Error(TEST_REPORT_ERROR_MESSAGE))
       .mockResolvedValueOnce({
@@ -188,7 +198,9 @@ describe('JobDetailPage cache boundary', () => {
         expect.any(Function),
       );
       await expect(
-        detailRoute.generateMetadata({ params: Promise.resolve({ id }) }),
+        detailRoute.generateMetadata({
+          params: Promise.resolve({ id, lang: 'en' }),
+        }),
       ).rejects.toMatchObject({ digest: 'NEXT_HTTP_ERROR_FALLBACK;404' });
       expect(getJobDetailData).not.toHaveBeenCalled();
     },
@@ -199,7 +211,9 @@ describe('JobDetailPage cache boundary', () => {
       'generateMetadata',
       expect.any(Function),
     );
-    const props = { params: Promise.resolve({ id: TEST_JOB_ID }) };
+    const props = {
+      params: Promise.resolve({ id: TEST_JOB_ID, lang: I18N_TEST.english }),
+    };
     await expect(detailRoute.generateMetadata(props)).rejects.toMatchObject({
       digest: 'NEXT_HTTP_ERROR_FALLBACK;404',
     });
@@ -215,7 +229,7 @@ describe('JobDetailPage cache boundary', () => {
     );
     vi.mocked(getJobDetailData).mockResolvedValueOnce({ job: detailJob });
     const metadata = await detailRoute.generateMetadata({
-      params: Promise.resolve({ id: TEST_JOB_ID.toUpperCase() }),
+      params: Promise.resolve({ id: TEST_JOB_ID.toUpperCase(), lang: 'en' }),
     });
     expect(metadata).toMatchObject({
       title: `${detailJob.title} at ${detailJob.companyName}`,

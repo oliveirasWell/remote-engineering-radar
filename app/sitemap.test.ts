@@ -20,6 +20,22 @@ vi.mock('@/lib/seo/filter-job-count', () => ({
 }));
 
 const NOW = new Date('2026-09-09T12:00:00Z');
+const LANGUAGE_COUNT = 2;
+const PORTUGUESE_PREFIX = '/pt-BR';
+
+/** Both language versions of a page, each listing both as alternates. */
+const entriesFor = (path: string) => {
+  const english = new URL(path, DEFAULT_SITE_ORIGIN).href;
+  const portuguese = new URL(
+    path === '/' ? PORTUGUESE_PREFIX : `${PORTUGUESE_PREFIX}${path}`,
+    DEFAULT_SITE_ORIGIN,
+  ).href;
+  const alternates = { languages: { en: english, 'pt-BR': portuguese } };
+  return [
+    { url: english, alternates },
+    { url: portuguese, alternates },
+  ];
+};
 const JOBS = Array.from({ length: 105 }, (_, index) => ({
   id: TEST_JOB_ID.replace('abcdef12', index.toString(16).padStart(8, '0')),
 }));
@@ -45,12 +61,11 @@ describe('sitemap', () => {
       return { job: { findMany } } as unknown as ReturnType<typeof getDb>;
     });
 
-    await expect(sitemap()).resolves.toStrictEqual([
-      ...['/', '/jobs', '/about'].map((path) => ({
-        url: new URL(path, DEFAULT_SITE_ORIGIN).href,
-      })),
-      ...JOBS.map(({ id }) => ({ url: `${DEFAULT_SITE_ORIGIN}/jobs/${id}` })),
-    ]);
+    await expect(sitemap()).resolves.toStrictEqual(
+      ['/', '/jobs', '/about', ...JOBS.map(({ id }) => `/jobs/${id}`)].flatMap(
+        entriesFor,
+      ),
+    );
     const cutoff = new Date(NOW.getTime() - JOB_MAX_AGE_MS);
     expect(findMany).toHaveBeenCalledExactlyOnceWith({
       where: {
@@ -87,7 +102,9 @@ describe('sitemap', () => {
       job: { findMany },
     } as unknown as ReturnType<typeof getDb>);
     await expect(sitemap()).rejects.toBe(error);
-    await expect(sitemap()).resolves.toHaveLength(JOBS.length + 3);
+    await expect(sitemap()).resolves.toHaveLength(
+      (JOBS.length + 3) * LANGUAGE_COUNT,
+    );
   });
 
   it('lists the companies and jobs views of every filter with enough jobs', async () => {
@@ -104,10 +121,15 @@ describe('sitemap', () => {
     expect(urls).toStrictEqual(
       [
         '/',
+        '/pt-BR',
         '/jobs',
+        '/pt-BR/jobs',
         '/about',
+        '/pt-BR/about',
         `/?country=${brazil.slug}`,
+        `/pt-BR?country=${brazil.slug}`,
         `/jobs?country=${brazil.slug}`,
+        `/pt-BR/jobs?country=${brazil.slug}`,
       ].map((path) => new URL(path, DEFAULT_SITE_ORIGIN).href),
     );
   });

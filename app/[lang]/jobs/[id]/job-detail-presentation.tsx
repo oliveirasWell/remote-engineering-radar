@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import type { JobDetailData } from '@/lib/report/get-jobs-page-data';
@@ -50,11 +51,11 @@ export const JobDetailReport = ({
 };
 
 export const JobDetailHeading = () => {
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   return (
     <p className="text-sm text-muted-foreground">
       <Link
-        href="/jobs"
+        href={localizedPath(locale, '/jobs')}
         className="text-muted-foreground underline underline-offset-2"
       >
         {messages.jobs.backToJobs}

@@ -1,6 +1,7 @@
 export const LOCALE_COOKIE = 'remote-engineering-radar-locale';
 export const LOCALES = ['en', 'pt-BR'] as const;
 export type Locale = (typeof LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = 'en';
 
 export const EN_MESSAGES = {
   app: {
@@ -63,6 +64,12 @@ export const EN_MESSAGES = {
       newest: 'Newest first',
       relevance: 'Most relevant',
     },
+  },
+  jobDetailMeta: {
+    title: (title: string, company: string | null) =>
+      company ? `${title} at ${company}` : title,
+    description: (title: string, location: string | null) =>
+      `${title}. Remote engineering opportunity${location ? ` in ${location}` : ''}. View the role and original listing.`,
   },
   seo: {
     homeTitle: 'Remote React, Cloud & Product Jobs',
@@ -300,6 +307,12 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
       relevance: 'Maior relevância',
     },
   },
+  jobDetailMeta: {
+    title: (title: string, company: string | null) =>
+      company ? `${title} na ${company}` : title,
+    description: (title: string, location: string | null) =>
+      `${title}. Oportunidade remota de engenharia${location ? ` em ${location}` : ''}. Veja a vaga e o anúncio original.`,
+  },
   seo: {
     homeTitle: 'Vagas remotas em React, Cloud e Produto',
     countryCompaniesTitle: (place: string) =>
@@ -483,5 +496,5 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
 export const isLocale = (value: unknown): value is Locale =>
   LOCALES.some((locale) => locale === value);
 
-export const messagesFor = (locale: Locale = 'en') =>
+export const messagesFor = (locale: Locale = DEFAULT_LOCALE) =>
   locale === 'pt-BR' ? PT_BR_MESSAGES : EN_MESSAGES;

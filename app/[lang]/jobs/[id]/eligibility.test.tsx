@@ -1,3 +1,4 @@
+import { I18N_TEST } from '../../i18n-fixtures';
 import type { Job } from '@/lib/jobs/types';
 import { getDb } from '@/lib/db/client';
 import { JOB_MAX_AGE_MS } from '@/lib/jobs/constants';
@@ -23,7 +24,9 @@ vi.mock('@/lib/report/log-report-error', () => ({ logReportError: vi.fn() }));
 const NOW = new Date('2026-09-09T12:00:00Z');
 const CUTOFF = new Date(NOW.getTime() - JOB_MAX_AGE_MS);
 const EXPIRED = new Date(CUTOFF.getTime() - 1);
-const PROPS = { params: Promise.resolve({ id: TEST_JOB_ID }) };
+const PROPS = {
+  params: Promise.resolve({ id: TEST_JOB_ID, lang: I18N_TEST.english }),
+};
 const readMetadata = () => generateMetadata(PROPS);
 const readPage = () => resolvePageSection(JobDetail(PROPS));
 const createJob = (overrides: Partial<Job> = {}): Job => ({

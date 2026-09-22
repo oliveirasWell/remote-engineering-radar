@@ -1,3 +1,4 @@
+import { EN_ROUTE_PARAMS } from '../i18n-fixtures';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
 import {
   getJobDetailData,
@@ -69,6 +70,7 @@ describe('metadata and page request reads', () => {
     const country = JOB_COUNTRY_FILTER_OPTIONS[0].slug;
     await Promise.all([
       homeMetadata({
+        params: EN_ROUTE_PARAMS,
         searchParams: Promise.resolve({ country: country.toUpperCase() }),
       }),
       resolvePageSection(Home({ searchParams: Promise.resolve({ country }) })),
@@ -79,6 +81,7 @@ describe('metadata and page request reads', () => {
   it('shares normalized job queries, not raw parameter object identity or ignored spellings', async () => {
     await Promise.all([
       jobsMetadata({
+        params: EN_ROUTE_PARAMS,
         searchParams: Promise.resolve({
           minimumScore: '000',
           remote: 'REMOTE',
@@ -88,6 +91,7 @@ describe('metadata and page request reads', () => {
     ]);
     expect(getJobsPageData).toHaveBeenCalledOnce();
     await jobsMetadata({
+      params: EN_ROUTE_PARAMS,
       searchParams: Promise.resolve({
         country: JOB_COUNTRY_FILTER_OPTIONS[0].slug,
       }),
@@ -98,7 +102,7 @@ describe('metadata and page request reads', () => {
   it('shares the complete detail read with metadata even when UUID case differs', async () => {
     await Promise.all([
       detailMetadata({
-        params: Promise.resolve({ id: TEST_JOB_ID.toUpperCase() }),
+        params: Promise.resolve({ id: TEST_JOB_ID.toUpperCase(), lang: 'en' }),
       }),
       resolvePageSection(
         Detail({ params: Promise.resolve({ id: TEST_JOB_ID }) }),
@@ -111,7 +115,10 @@ describe('metadata and page request reads', () => {
     const error = new Error(TEST_REPORT_ERROR_MESSAGE);
     vi.mocked(getJobsPageData).mockRejectedValueOnce(error);
     const results = await Promise.allSettled([
-      jobsMetadata({ searchParams: Promise.resolve({}) }),
+      jobsMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
       resolvePageSection(Jobs({ searchParams: Promise.resolve({}) })),
     ]);
     expect(results).toStrictEqual([
@@ -123,7 +130,10 @@ describe('metadata and page request reads', () => {
       entries.length = 0;
     }
     await expect(
-      jobsMetadata({ searchParams: Promise.resolve({}) }),
+      jobsMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
     ).resolves.toMatchObject({ robots: { index: true, follow: true } });
     expect(getJobsPageData).toHaveBeenCalledTimes(2);
   });

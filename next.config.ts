@@ -1,5 +1,9 @@
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs/config';
+import {
+  LOCALE_REDIRECTS,
+  LOCALE_REWRITES,
+} from './lib/i18n/locale-routes/locale-routes';
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -8,6 +12,12 @@ const nextConfig: NextConfig = {
   htmlLimitedBots: /.*/,
   reactCompiler: true,
   poweredByHeader: false,
+  redirects: async () => LOCALE_REDIRECTS,
+  rewrites: async () => ({
+    beforeFiles: LOCALE_REWRITES,
+    afterFiles: [],
+    fallback: [],
+  }),
   headers: async () => [
     {
       source: '/(.*)',

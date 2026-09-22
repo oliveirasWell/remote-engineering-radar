@@ -20,3 +20,7 @@ export const I18N_TEST = {
   portugueseError: PT_BR_MESSAGES.globalError.title,
   error: new Error('Test rendering failure'),
 } as const;
+
+/** Route params Next passes to every page and metadata function. */
+export const EN_ROUTE_PARAMS = Promise.resolve({ lang: I18N_TEST.english });
+export const PT_ROUTE_PARAMS = Promise.resolve({ lang: I18N_TEST.portuguese });

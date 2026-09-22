@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation';
 import { cache, Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { getJobDetailData } from '@/lib/report/get-jobs-page-data';
+import { messagesFor } from '@/lib/i18n/messages';
+import { routeLocale } from '@/lib/i18n/route-locale/route-locale';
 import { canonicalMetadata } from '@/lib/seo/canonical-metadata/canonical-metadata';
 import { JobDetailHeading, JobDetailReport } from './job-detail-presentation';
 import { parseJobId } from './parse-job-id';
@@ -25,15 +27,17 @@ const readJob = cache(async (jobId: string | undefined) => {
 
 export const generateMetadata = async ({
   params,
-}: JobDetailPageProps): Promise<Metadata> => {
+}: {
+  params: Promise<{ id: string; lang: string }>;
+}): Promise<Metadata> => {
   const job = await readJob(parseJobId((await params).id));
-  const title = job.companyName
-    ? `${job.title} at ${job.companyName}`
-    : job.title;
+  const locale = await routeLocale(params);
+  const { jobDetailMeta } = messagesFor(locale);
+  const title = jobDetailMeta.title(job.title, job.companyName);
   return {
     title,
-    description: `${title}. Remote engineering opportunity${job.location ? ` in ${job.location}` : ''}. View the role and original listing.`,
-    ...canonicalMetadata(`/jobs/${job.id}`),
+    description: jobDetailMeta.description(title, job.location),
+    ...canonicalMetadata(`/jobs/${job.id}`, {}, undefined, locale),
   };
 };
 

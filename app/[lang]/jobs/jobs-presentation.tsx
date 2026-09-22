@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
 import type { JobFilters, JobsPageData } from '@/lib/report/get-jobs-page-data';
@@ -47,7 +48,7 @@ export const JobsReport = ({
   filters: JobFilters;
   hasError?: boolean;
 }) => {
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   const fields = [
     {
       name: 'technology',
@@ -71,7 +72,7 @@ export const JobsReport = ({
         className="flex flex-wrap gap-3 text-sm"
       >
         <Link
-          href={focusHref(filters, undefined)}
+          href={localizedPath(locale, focusHref(filters, undefined))}
           className={filters.focus ? INACTIVE_CHIP : ACTIVE_CHIP}
         >
           {messages.jobs.focusAll}
@@ -79,7 +80,7 @@ export const JobsReport = ({
         {JOB_FOCUS_FILTER_OPTIONS.map((option) => (
           <Link
             key={option.slug}
-            href={focusHref(filters, option.slug)}
+            href={localizedPath(locale, focusHref(filters, option.slug))}
             className={
               filters.focus === option.slug ? ACTIVE_CHIP : INACTIVE_CHIP
             }
@@ -155,12 +156,12 @@ export const JobsReport = ({
 };
 
 export const JobsHeading = () => {
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   return (
     <header className="flex flex-col gap-2">
       <p className="text-sm text-muted-foreground">
         <Link
-          href="/"
+          href={localizedPath(locale, '/')}
           className="text-muted-foreground underline underline-offset-2"
         >
           {messages.app.name}

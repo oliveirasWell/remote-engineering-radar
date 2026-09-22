@@ -76,9 +76,8 @@ describe('CompanyJobs', () => {
   });
 
   it('translates the ordering control to Portuguese', () => {
-    document.cookie = `${LOCALE_COOKIE}=${PORTUGUESE_LOCALE}; path=/`;
     render(
-      <I18nProvider>
+      <I18nProvider locale={PORTUGUESE_LOCALE}>
         <CompanyJobs
           jobs={SORTING_JOBS}
           totalJobs={SORTING_JOBS.length}

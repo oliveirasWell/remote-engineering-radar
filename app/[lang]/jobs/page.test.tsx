@@ -5,7 +5,7 @@ import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
-import { I18N_TEST } from '../i18n-fixtures';
+import { I18N_TEST, EN_ROUTE_PARAMS } from '../i18n-fixtures';
 import { TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import {
   JOB_COUNTRY_FILTER_OPTIONS,
@@ -36,10 +36,9 @@ describe('JobsPage', () => {
   });
 
   it('translates the static heading and streaming fallback', () => {
-    document.cookie = `${LOCALE_COOKIE}=${I18N_TEST.portuguese}; path=/`;
     const page = JobsPage({ searchParams: Promise.resolve({}) });
     render(
-      <I18nProvider>
+      <I18nProvider locale={I18N_TEST.portuguese}>
         {page.props.children[0]}
         {page.props.children[1].props.fallback}
       </I18nProvider>,
@@ -54,9 +53,12 @@ describe('JobsPage', () => {
 
   it('translates every filter option and empty state without changing query values', async () => {
     const messages = messagesFor(I18N_TEST.portuguese);
-    document.cookie = `${LOCALE_COOKIE}=${I18N_TEST.portuguese}; path=/`;
     const page = JobsPage({ searchParams: Promise.resolve(FILTERS) });
-    render(<I18nProvider>{await resolvePageSection(page)}</I18nProvider>);
+    render(
+      <I18nProvider locale={I18N_TEST.portuguese}>
+        {await resolvePageSection(page)}
+      </I18nProvider>,
+    );
 
     expect(
       screen.getByRole('button', { name: messages.jobs.apply }),
@@ -196,6 +198,7 @@ describe('JobsPage', () => {
   it('gates metadata on the same normalized full reader and preserves substantive filter canonicals', async () => {
     expect(jobsRoute).toHaveProperty('generateMetadata', expect.any(Function));
     const metadata = await jobsRoute.generateMetadata({
+      params: EN_ROUTE_PARAMS,
       searchParams: Promise.resolve({
         technology: ` ${TEST_JOB.technologies[0].toLowerCase()} `,
         country: FILTERS.country.toUpperCase(),
@@ -219,7 +222,10 @@ describe('JobsPage', () => {
     const error = new Error(TEST_REPORT_ERROR_MESSAGE);
     vi.mocked(getJobsPageData).mockRejectedValueOnce(error);
     await expect(
-      jobsRoute.generateMetadata({ searchParams: Promise.resolve({}) }),
+      jobsRoute.generateMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
     ).rejects.toBe(error);
   });
 
@@ -239,7 +245,10 @@ describe('JobsPage', () => {
         expect.any(Function),
       );
       await expect(
-        jobsRoute.generateMetadata({ searchParams: Promise.resolve(params) }),
+        jobsRoute.generateMetadata({
+          params: EN_ROUTE_PARAMS,
+          searchParams: Promise.resolve(params),
+        }),
       ).resolves.toMatchObject({
         alternates: { canonical: '/jobs' },
         robots: { index: true, follow: true },

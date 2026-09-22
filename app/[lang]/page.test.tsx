@@ -13,13 +13,14 @@ import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import { APP_DESCRIPTION, APP_NAME, FOCUS_TECHNOLOGIES } from './constants';
 import { HOME_SECTIONS } from './home-constants';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import {
   TEST_REPORT_COMPANY,
   TEST_REPORT_JOB,
 } from '@/components/report/test-fixtures';
 import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
-import { I18N_TEST } from './i18n-fixtures';
+import { I18N_TEST, EN_ROUTE_PARAMS } from './i18n-fixtures';
 import { CompaniesReport } from './home-presentation';
 import Home from './page';
 import * as homeRoute from './page';
@@ -72,11 +73,10 @@ describe('home report copy', () => {
     expect(summary).toHaveClass('-mx-3');
   });
   it('translates the real error boundary and retries without showing internal errors or an empty report', () => {
-    document.cookie = `${LOCALE_COOKIE}=${I18N_TEST.portuguese}; path=/`;
     const { globalError, report } = messagesFor(I18N_TEST.portuguese);
     const retry = vi.fn();
     render(
-      <I18nProvider>
+      <I18nProvider locale={I18N_TEST.portuguese}>
         <PageError error={new Error(TEST_REPORT_ERROR_MESSAGE)} retry={retry} />
       </I18nProvider>,
     );
@@ -95,10 +95,9 @@ describe('home report copy', () => {
     expect(retry).toHaveBeenCalledOnce();
   });
   it('translates the static heading and streaming fallback', () => {
-    document.cookie = `${LOCALE_COOKIE}=${I18N_TEST.portuguese}; path=/`;
     const page = Home({ searchParams: Promise.resolve({}) });
     render(
-      <I18nProvider>
+      <I18nProvider locale={I18N_TEST.portuguese}>
         {page.props.children[0]}
         {page.props.children[1].props.fallback}
       </I18nProvider>,
@@ -126,7 +125,6 @@ describe('home report copy', () => {
 describe('home country tabs', () => {
   it('translates country tabs, timestamps, and the empty report without adding locale to the data request', async () => {
     const messages = messagesFor(I18N_TEST.portuguese);
-    document.cookie = `${LOCALE_COOKIE}=${I18N_TEST.portuguese}; path=/`;
     vi.mocked(getCompaniesPageData).mockResolvedValueOnce({
       companies: [],
       country: undefined,
@@ -137,7 +135,11 @@ describe('home country tabs', () => {
       Parameters<typeof Home>[0],
       (props: Parameters<typeof Home>[0]) => Promise<ReactNode>
     >;
-    render(<I18nProvider>{await section.type(section.props)}</I18nProvider>);
+    render(
+      <I18nProvider locale={I18N_TEST.portuguese}>
+        {await section.type(section.props)}
+      </I18nProvider>,
+    );
 
     expect(
       screen.getByRole('heading', { name: messages.home.companiesToWatch }),
@@ -153,7 +155,10 @@ describe('home country tabs', () => {
     for (const option of JOB_COUNTRY_FILTER_OPTIONS) {
       expect(
         screen.getByRole('link', { name: messages.countries[option.slug] }),
-      ).toHaveAttribute('href', `/?country=${option.slug}`);
+      ).toHaveAttribute(
+        'href',
+        localizedPath(I18N_TEST.portuguese, `/?country=${option.slug}`),
+      );
     }
     expect(getCompaniesPageData).toHaveBeenLastCalledWith({
       country: undefined,
@@ -275,6 +280,7 @@ describe('home focus tabs', () => {
     });
 
     const metadata = await homeRoute.generateMetadata({
+      params: EN_ROUTE_PARAMS,
       searchParams: Promise.resolve({ focus: JOB_FOCUS_PRODUCT }),
     });
 
@@ -398,6 +404,7 @@ describe('Home cache boundary', () => {
     expect(homeRoute).toHaveProperty('generateMetadata', expect.any(Function));
     const country = JOB_COUNTRY_FILTER_OPTIONS[0].slug;
     const metadata = await homeRoute.generateMetadata({
+      params: EN_ROUTE_PARAMS,
       searchParams: Promise.resolve({ country: ` ${country.toUpperCase()} ` }),
     });
     expect(metadata).toMatchObject({
@@ -408,7 +415,10 @@ describe('Home cache boundary', () => {
     const error = new Error(TEST_REPORT_ERROR_MESSAGE);
     vi.mocked(getCompaniesPageData).mockRejectedValueOnce(error);
     await expect(
-      homeRoute.generateMetadata({ searchParams: Promise.resolve({}) }),
+      homeRoute.generateMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
     ).rejects.toBe(error);
   });
 
@@ -421,6 +431,7 @@ describe('Home cache boundary', () => {
       );
       await expect(
         homeRoute.generateMetadata({
+          params: EN_ROUTE_PARAMS,
           searchParams: Promise.resolve({ country }),
         }),
       ).resolves.toMatchObject({

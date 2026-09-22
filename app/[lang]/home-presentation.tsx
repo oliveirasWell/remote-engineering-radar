@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
 import { CompanySummary } from '@/components/report/CompanySummary/CompanySummary';
 import { CompanyJobs } from '@/components/report/CompanyJobs/CompanyJobs';
@@ -66,7 +67,7 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
         className="flex flex-wrap gap-3 text-sm"
       >
         <Link
-          href={homeHref(data.country, undefined)}
+          href={localizedPath(locale, homeHref(data.country, undefined))}
           className={data.focus ? INACTIVE_TAB : ACTIVE_TAB}
         >
           {messages.jobs.focusAll}
@@ -74,7 +75,7 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
         {JOB_FOCUS_FILTER_OPTIONS.map((option) => (
           <Link
             key={option.slug}
-            href={homeHref(data.country, option.slug)}
+            href={localizedPath(locale, homeHref(data.country, option.slug))}
             className={data.focus === option.slug ? ACTIVE_TAB : INACTIVE_TAB}
           >
             {messages.focus[option.slug]}
@@ -86,7 +87,7 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
         className="flex flex-wrap gap-3 text-sm"
       >
         <Link
-          href={homeHref(undefined, data.focus)}
+          href={localizedPath(locale, homeHref(undefined, data.focus))}
           className={data.country ? INACTIVE_TAB : ACTIVE_TAB}
         >
           {messages.home.countryAll}
@@ -94,7 +95,7 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
         {JOB_COUNTRY_FILTER_OPTIONS.map((option) => (
           <Link
             key={option.slug}
-            href={homeHref(option.slug, data.focus)}
+            href={localizedPath(locale, homeHref(option.slug, data.focus))}
             className={data.country === option.slug ? ACTIVE_TAB : INACTIVE_TAB}
           >
             {messages.countries[option.slug]}
@@ -183,10 +184,9 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
                   <CompanyJobs
                     jobs={company.jobs}
                     totalJobs={company.openEngineeringJobs}
-                    allJobsHref={companyJobsHref(
-                      company.slug,
-                      data.country,
-                      data.focus,
+                    allJobsHref={localizedPath(
+                      locale,
+                      companyJobsHref(company.slug, data.country, data.focus),
                     )}
                   />
                 ) : null}

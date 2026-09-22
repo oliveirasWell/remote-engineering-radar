@@ -26,9 +26,8 @@ describe('CompanyCard', () => {
     'translates the generated summary: $source',
     ({ source, translated }) => {
       const { companyCard } = messagesFor('pt-BR');
-      document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
       render(
-        <I18nProvider>
+        <I18nProvider locale="pt-BR">
           <CompanyCard company={{ ...company, summary: source }} />
         </I18nProvider>,
       );
@@ -40,9 +39,8 @@ describe('CompanyCard', () => {
 
   it('translates labels but leaves unknown summaries and persisted evidence untouched', () => {
     const { companyCard } = messagesFor('pt-BR');
-    document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
     render(
-      <I18nProvider>
+      <I18nProvider locale="pt-BR">
         <CompanyCard company={{ ...company, summary: UNKNOWN_SUMMARY }} />
       </I18nProvider>,
     );

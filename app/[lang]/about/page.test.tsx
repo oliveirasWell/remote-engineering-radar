@@ -29,10 +29,9 @@ describe('AboutPage', () => {
   it.each(LOCALES)(
     'explains sources, heuristics, contact, and repository in %s',
     (locale) => {
-      document.cookie = `${LOCALE_COOKIE}=${locale}; path=/`;
       const { about, navigation } = messagesFor(locale);
       render(
-        <I18nProvider>
+        <I18nProvider locale={locale}>
           <AboutPage />
         </I18nProvider>,
       );

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { render, screen } from '@testing-library/react';
-import { HOME_SECTIONS } from '@/app/home-constants';
+import { HOME_SECTIONS } from '@/app/[lang]/home-constants';
 import { COMPANY_KINDS } from '@/lib/companies/constants';
 import { CompanySummary } from './CompanySummary';
 import { COMPANY_CARD_COPY } from '../constants';
@@ -19,9 +19,8 @@ describe('CompanySummary', () => {
     (count) => {
       const locale = 'pt-BR';
       const { home, companyCard } = messagesFor(locale);
-      document.cookie = `${LOCALE_COOKIE}=${locale}; path=/`;
       render(
-        <I18nProvider>
+        <I18nProvider locale={locale}>
           <CompanySummary
             company={{
               ...TEST_REPORT_COMPANY,

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useSyncExternalStore } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import type { ReportJobCard } from '@/lib/report/types';
 import { formatRelativeTime } from '@/lib/report/format';
@@ -41,7 +42,7 @@ export const JobCard = ({ job }: JobCardProps) => {
     <article className="border-b border-border py-5">
       <h3 className="text-lg font-semibold tracking-tight">
         <Link
-          href={`/jobs/${job.id}`}
+          href={localizedPath(locale, `/jobs/${job.id}`)}
           className="text-muted-foreground underline underline-offset-2"
         >
           {job.title}

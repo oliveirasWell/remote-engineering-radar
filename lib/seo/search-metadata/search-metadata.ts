@@ -1,6 +1,6 @@
 import 'server-only';
 import type { Metadata } from 'next';
-import { EN_MESSAGES } from '@/lib/i18n/messages';
+import { messagesFor, type Locale } from '@/lib/i18n/messages';
 import { canonicalMetadata } from '../canonical-metadata/canonical-metadata';
 import { MIN_INDEXABLE_JOBS } from '../constants';
 import { filterJobCount } from '../filter-job-count';
@@ -11,17 +11,21 @@ import {
 
 type SearchView = 'companies' | 'jobs';
 
-const { seo, countries, focus: tracks } = EN_MESSAGES;
+type Messages = ReturnType<typeof messagesFor>;
 
-const BASE_COPY: Record<SearchView, { title: string; description?: string }> = {
-  companies: { title: seo.homeTitle },
-  jobs: {
-    title: EN_MESSAGES.jobs.metaTitle,
-    description: EN_MESSAGES.jobs.subtitle,
-  },
-};
+const baseCopy = (
+  view: SearchView,
+  messages: Messages,
+): { title: string; description?: string } =>
+  view === 'companies'
+    ? { title: messages.seo.homeTitle }
+    : { title: messages.jobs.metaTitle, description: messages.jobs.subtitle };
 
-const filterCopy = (view: SearchView, filter: IndexableFilter) => {
+const filterCopy = (
+  view: SearchView,
+  filter: IndexableFilter,
+  { seo, countries, focus: tracks }: Messages,
+) => {
   if (filter.country) {
     const place = countries[filter.country];
     return view === 'companies'
@@ -47,15 +51,17 @@ const filterCopy = (view: SearchView, filter: IndexableFilter) => {
 };
 
 /**
- * Title, description, canonical, and robots for a report view. The
- * unfiltered view and single country or focus views with enough jobs are
- * indexed; every other combination is noindex.
+ * Title, description, canonical, language alternates, and robots for a
+ * report view. The unfiltered view and single country or focus views with
+ * enough jobs are indexed; every other combination is noindex.
  */
 export const searchMetadata = async (
   view: SearchView,
   path: string,
   filters: Record<string, string | number | undefined>,
+  locale: Locale,
 ): Promise<Metadata> => {
+  const messages = messagesFor(locale);
   const isUnfiltered = Object.values(filters).every(
     (value) => value === undefined,
   );
@@ -66,8 +72,8 @@ export const searchMetadata = async (
       (await filterJobCount(filter)) >= MIN_INDEXABLE_JOBS);
 
   return {
-    ...BASE_COPY[view],
-    ...(filter ? filterCopy(view, filter) : {}),
-    ...canonicalMetadata(path, filters, index),
+    ...baseCopy(view, messages),
+    ...(filter ? filterCopy(view, filter, messages) : {}),
+    ...canonicalMetadata(path, filters, index, locale),
   };
 };

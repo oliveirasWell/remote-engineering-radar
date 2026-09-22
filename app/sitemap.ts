@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { connection } from 'next/server';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
+import { LOCALES } from '@/lib/i18n/messages';
 import { MIN_INDEXABLE_JOBS } from '@/lib/seo/constants';
 import { filterJobCount } from '@/lib/seo/filter-job-count';
 import { INDEXABLE_FILTERS } from '@/lib/seo/indexable-filter/indexable-filter';
@@ -34,9 +36,18 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
     '/about',
     ...indexableFilters.flatMap((query) => [`/?${query}`, `/jobs?${query}`]),
     ...jobs.map(({ id }) => `/jobs/${id}`),
-  ].map((path) => ({
-    url: new URL(path, origin).href,
-  }));
+  ].flatMap((path) => {
+    const languages = Object.fromEntries(
+      LOCALES.map((locale) => [
+        locale,
+        new URL(localizedPath(locale, path), origin).href,
+      ]),
+    );
+    return LOCALES.map((locale) => ({
+      url: languages[locale],
+      alternates: { languages },
+    }));
+  });
 };
 
 export default sitemap;

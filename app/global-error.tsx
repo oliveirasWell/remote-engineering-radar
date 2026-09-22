@@ -1,12 +1,14 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { SiteHeader } from '@/components/site/SiteHeader/SiteHeader';
 import { SiteFooter } from '@/components/site/SiteFooter/SiteFooter';
-import PageError from './error';
+import { localeFromPath } from '@/lib/i18n/localized-path/localized-path';
+import PageError from './[lang]/error';
 import './globals.css';
 
-/** Replaces the root layout, including its locale provider. */
+/** Replaces the root layout, so it reads the locale from the failing URL. */
 const GlobalError = ({
   error,
   retry,
@@ -14,10 +16,11 @@ const GlobalError = ({
   error: Error & { digest?: string };
   retry: () => void;
 }) => {
+  const locale = localeFromPath(usePathname() ?? '/');
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
-        <I18nProvider>
+        <I18nProvider locale={locale}>
           <SiteHeader />
           <PageError error={error} retry={retry} />
           <SiteFooter />
