@@ -4,6 +4,7 @@ import {
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
   RELEVANT_TECHNOLOGY_NAMES,
+  SOFTWARE_ROLE_FOCUS,
   TECHNOLOGY_PATTERNS,
   UNRELATED_STACK_PATTERNS,
 } from './constants';
@@ -108,6 +109,7 @@ const ROLE_FOCUS_ORDER = [
 const classifyRoleFocus = (
   title: string,
   haystack: string,
+  technologies: string[],
 ): JobClassification['roleFocus'] => {
   const roleFocus: JobClassification['roleFocus'] = [];
   if (matchesAny(VOCABULARY.cloudOpsTitle, title)) {
@@ -122,11 +124,17 @@ const classifyRoleFocus = (
   if (matchesAny(VOCABULARY.productTitle, title)) {
     roleFocus.push(PRODUCT_ROLE_FOCUS);
   }
-  roleFocus.push(
-    ...ROLE_FOCUS_ORDER.filter((focus) =>
-      matchesAny(VOCABULARY.roleFocus[focus], haystack),
-    ),
+  const disciplines = ROLE_FOCUS_ORDER.filter((focus) =>
+    matchesAny(VOCABULARY.roleFocus[focus], haystack),
   );
+  roleFocus.push(...disciplines);
+  if (
+    disciplines.length > 0 ||
+    matchesAny(VOCABULARY.softwareTitle, title) ||
+    technologies.some((tech) => RELEVANT_TECHNOLOGY_NAMES.has(tech))
+  ) {
+    roleFocus.push(SOFTWARE_ROLE_FOCUS);
+  }
   return roleFocus;
 };
 
@@ -188,7 +196,7 @@ export const classifyJob = (input: ClassifyJobInput): JobClassification => {
   const title = foldText(input.title);
   const haystack = foldText(buildHaystack(input));
   const technologies = extractTechnologies(input, haystack);
-  const roleFocus = classifyRoleFocus(title, haystack);
+  const roleFocus = classifyRoleFocus(title, haystack, technologies);
 
   return {
     technologies,

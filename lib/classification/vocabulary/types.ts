@@ -33,6 +33,8 @@ export type ClassificationVocabulary = {
   annotationTitle: Patterns;
   annotationText: Patterns;
   productTitle: Patterns;
+  /** A title that names a software job; see `SOFTWARE_ROLE_FOCUS`. */
+  softwareTitle: Patterns;
   unrelatedRoleTitle: Patterns;
   relocation: Patterns;
   geography: Record<'brazil' | 'latam' | 'americas' | 'worldwide', Patterns>;

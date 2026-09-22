@@ -66,6 +66,13 @@ export const PLATFORM_ROLE_FOCUS = 'platform' as const;
 /** The role-focus value that marks the Data Annotation track. */
 export const DATA_ANNOTATION_ROLE_FOCUS = 'annotation' as const;
 
+/**
+ * The role-focus value that marks a software job: a software title, a
+ * frontend/backend/fullstack/mobile focus, or a React-stack technology. The
+ * React Engineering track requires it.
+ */
+export const SOFTWARE_ROLE_FOCUS = 'software' as const;
+
 /** The role-focus value that marks the Product track. */
 export const PRODUCT_ROLE_FOCUS = 'product' as const;
 

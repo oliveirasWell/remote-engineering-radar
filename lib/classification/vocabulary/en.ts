@@ -79,6 +79,17 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
     /\bproduct\s+(?:manager|owner|lead|director)\b(?!\s+(?:engineer|designer|developer)\b)/i,
     /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b(?!\s+(?:engineering|design|designer|marketing|operations)\b)/i,
   ],
+  softwareTitle: [
+    /\bengineer(?:s|ing)?\b/i,
+    /\bdeveloper\b/i,
+    /\bsoftware\b/i,
+    /\bprogrammer\b/i,
+    /\btech(?:nical)?\s+lead\b/i,
+    /\bfront[-\s]?end\b|\bback[-\s]?end\b|\bfull[-\s]?stack\b/i,
+    /\bmobile\b|\bios\b|\bandroid\b/i,
+    /\bweb\b/i,
+    /\bcto\b/i,
+  ],
   unrelatedRoleTitle: [
     /\bsales\s+representative\b/i,
     /\baccount\s+executive\b/i,

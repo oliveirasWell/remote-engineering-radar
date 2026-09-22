@@ -2,6 +2,7 @@ import {
   DATA_ANNOTATION_ROLE_FOCUS,
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
+  SOFTWARE_ROLE_FOCUS,
 } from '@/lib/classification/constants';
 import {
   JOB_FOCUS_CLOUD_OPS,
@@ -328,17 +329,18 @@ describe('createJobsRepository', () => {
     expect(cards.map((card) => card.sourceJobId)).toEqual(['brazil-role']);
   });
 
-  it('splits active jobs into disjoint focus tracks', async () => {
+  it('splits active jobs into disjoint focus tracks and keeps signal-less jobs off React Engineering', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);
     const jobsRepository = createJobsRepository(db);
     const now = new Date('2026-09-08T00:00:00Z');
     const company = await companiesRepository.create(TEST_COMPANY);
     const roleFocusByJobId = {
-      'engineering-role': ['frontend'],
-      'platform-role': [PLATFORM_ROLE_FOCUS],
+      'engineering-role': ['frontend', SOFTWARE_ROLE_FOCUS],
+      'platform-role': [PLATFORM_ROLE_FOCUS, SOFTWARE_ROLE_FOCUS],
       'annotation-role': ['fullstack', DATA_ANNOTATION_ROLE_FOCUS],
       'product-role': [PRODUCT_ROLE_FOCUS],
+      'no-signal-role': [],
     };
 
     for (const [sourceJobId, roleFocus] of Object.entries(roleFocusByJobId)) {

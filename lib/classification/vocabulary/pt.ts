@@ -66,6 +66,12 @@ export const PT_VOCABULARY: ClassificationVocabulary = {
     /\bgestao\s+de\s+produtos?\b/i,
     /\bdono\s+do\s+produto\b/i,
   ],
+  softwareTitle: [
+    /\bdesenvolvedor(?:a|\(a\))?(?=\W|$)/i,
+    /\bprogramador(?:a|\(a\))?(?=\W|$)/i,
+    /\bengenheir[oa]\s+de\s+software\b/i,
+    /\blider\s+tecnic[oa]\b/i,
+  ],
   unrelatedRoleTitle: [
     /\brepresentante\s+comercial\b/i,
     /\bvendedor(?:a|\(a\))?(?=\W|$)/i,

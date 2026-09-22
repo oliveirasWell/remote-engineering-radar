@@ -19,6 +19,7 @@ export type JobClassification = {
     | 'platform'
     | 'annotation'
     | 'product'
+    | 'software'
   >;
   isUnrelatedStack: boolean;
   isUnrelatedRole: boolean;

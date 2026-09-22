@@ -16,6 +16,25 @@ const CLOUD_OPS_DESCRIPTION =
 const PLATFORM_ROLE_FOCUS = 'platform';
 const DATA_ANNOTATION_ROLE_FOCUS = 'annotation';
 const PRODUCT_ROLE_FOCUS = 'product';
+const SOFTWARE_ROLE_FOCUS = 'software';
+const SOFTWARE_TITLES = [
+  'Senior Software Engineer',
+  'Staff Engineer, Payments',
+  'Web Developer',
+  'iOS Developer',
+  'Tech Lead - Growth',
+  'CTO',
+  'Desenvolvedora Pleno',
+  'Programador(a) Full Stack',
+  'Engenheiro de Software Sênior',
+  'Líder Técnico',
+];
+const NON_SOFTWARE_TITLES = [
+  'Tax Manager',
+  'Senior Data Scientist',
+  'Product Designer',
+  'Travel Coordinator',
+];
 const PRODUCT_MANAGER_TITLES = [
   'Senior Product Manager',
   'Technical Product Manager - Payments',
@@ -529,6 +548,27 @@ describe('classifyJob', () => {
       expect(
         shouldPersistClassifiedJob(classifyJob(STONE_FIELD_SALES_JOB)),
       ).toBe(false);
+    });
+  });
+
+  describe('software signal', () => {
+    it.each(SOFTWARE_TITLES)('marks %s as software', (title) => {
+      expect(classifyJob({ title }).roleFocus).toContain(SOFTWARE_ROLE_FOCUS);
+    });
+
+    it.each(NON_SOFTWARE_TITLES)('does not mark %s as software', (title) => {
+      expect(classifyJob({ title }).roleFocus).not.toContain(
+        SOFTWARE_ROLE_FOCUS,
+      );
+    });
+
+    it('marks a role whose body names the React stack as software', () => {
+      expect(
+        classifyJob({
+          title: 'Senior Consultant',
+          description: 'Build internal tools with React and TypeScript.',
+        }).roleFocus,
+      ).toContain(SOFTWARE_ROLE_FOCUS);
     });
   });
 });
