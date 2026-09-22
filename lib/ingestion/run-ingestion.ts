@@ -77,7 +77,6 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
   const countries = resolveJobCountries({
     sourceCountries: job.countries,
     location: job.location,
-    geographies,
   });
 
   return {

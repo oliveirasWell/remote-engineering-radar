@@ -4,11 +4,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Suspense } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
-import { LanguagePicker } from '@/components/i18n/LanguagePicker/LanguagePicker';
+import {
+  LanguageLinks,
+  LanguagePicker,
+} from '@/components/i18n/LanguagePicker/LanguagePicker';
+import {
+  localizedPath,
+  unlocalizedPath,
+} from '@/lib/i18n/localized-path/localized-path';
 import { SiteWordmark } from '@/components/site/SiteWordmark/SiteWordmark';
 
 const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
+  const sharedPath = pathname ? unlocalizedPath(pathname) : undefined;
   const links = [
     { href: '/', label: messages.navigation.companies },
     { href: '/jobs', label: messages.navigation.jobs },
@@ -22,13 +30,13 @@ const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
     >
       {links.map(({ href, label }) => {
         const selected =
-          pathname === href ||
-          (href !== '/' && pathname?.startsWith(`${href}/`));
+          sharedPath === href ||
+          (href !== '/' && sharedPath?.startsWith(`${href}/`));
 
         return (
           <Link
             key={href}
-            href={href}
+            href={localizedPath(locale, href)}
             aria-current={selected ? 'page' : undefined}
             className={
               selected
@@ -46,17 +54,25 @@ const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
 
 const ActiveNavigation = () => <NavigationLinks pathname={usePathname()} />;
 
-export const SiteHeader = () => (
-  <header className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-4 border-b border-border px-6 py-4">
-    <Link href="/" className="inline-flex items-center">
-      <SiteWordmark className="text-base" />
-    </Link>
-    <div className="flex flex-wrap items-center gap-4">
-      {/* Dynamic job routes suspend pathname reads during prerendering. */}
-      <Suspense fallback={<NavigationLinks />}>
-        <ActiveNavigation />
-      </Suspense>
-      <LanguagePicker />
-    </div>
-  </header>
-);
+export const SiteHeader = () => {
+  const { locale } = useI18n();
+  return (
+    <header className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-4 border-b border-border px-6 py-4">
+      <Link
+        href={localizedPath(locale, '/')}
+        className="inline-flex items-center"
+      >
+        <SiteWordmark className="text-base" />
+      </Link>
+      <div className="flex flex-wrap items-center gap-4">
+        {/* Dynamic job routes suspend pathname reads during prerendering. */}
+        <Suspense fallback={<NavigationLinks />}>
+          <ActiveNavigation />
+        </Suspense>
+        <Suspense fallback={<LanguageLinks sharedPath="/" />}>
+          <LanguagePicker />
+        </Suspense>
+      </div>
+    </header>
+  );
+};

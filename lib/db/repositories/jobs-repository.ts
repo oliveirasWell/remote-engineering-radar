@@ -1,20 +1,16 @@
 import { Prisma, type Job as PrismaJob } from '@prisma/client';
-import {
-  DATA_ANNOTATION_ROLE_FOCUS,
-  PLATFORM_ROLE_FOCUS,
-} from '@/lib/classification/constants';
 import type { JobGeography } from '@/lib/classification/types';
 import {
-  JOB_FOCUS_CLOUD_OPS,
-  JOB_FOCUS_DATA_ANNOTATION,
-  JOB_FOCUS_ENGINEERING,
   JOB_MAX_AGE_MS,
   REMOTE_POLICY_REMOTE,
+  type JobCountrySlug,
   type JobFocusSlug,
   type JobSort,
 } from '@/lib/jobs/constants';
 import type { Job, JobCard, NewJob } from '@/lib/jobs/types';
 import type { Db } from '../client';
+import { countryFilter } from './country-filter';
+import { focusFilter } from './focus-filter';
 import { coalescedPostedAtFilter } from './posted-at-filter';
 import { JOB_ORDER_BY } from './constants';
 
@@ -79,31 +75,122 @@ const toJob = (row: PrismaJob): Job => ({
   updatedAt: row.updatedAt,
 });
 
-const containsRoleFocus = (roleFocus: string): Prisma.JobWhereInput => ({
-  roleFocus: { array_contains: [roleFocus] },
-});
+type CompanyJobsOptions = {
+  maxAgeMs?: number;
+  now?: Date;
+  activeOnly?: boolean;
+  country?: JobCountrySlug;
+  focus?: JobFocusSlug;
+};
 
-const TRACK_ROLE_FOCUS = {
-  [JOB_FOCUS_CLOUD_OPS]: PLATFORM_ROLE_FOCUS,
-  [JOB_FOCUS_DATA_ANNOTATION]: DATA_ANNOTATION_ROLE_FOCUS,
-} as const;
+const companyJobsWhere = (
+  companyIds: string[],
+  options?: CompanyJobsOptions,
+): Prisma.JobWhereInput => {
+  const freshness = (): Prisma.JobWhereInput => {
+    if (options?.maxAgeMs !== undefined) {
+      const now = options.now ?? new Date();
+      return {
+        isActive: true,
+        remotePolicy: REMOTE_POLICY_REMOTE,
+        ...coalescedPostedAtFilter(
+          'gte',
+          new Date(now.getTime() - options.maxAgeMs),
+        ),
+      };
+    }
+    return options?.activeOnly ? { isActive: true } : {};
+  };
 
-/**
- * Cloud & Ops and Data Annotation are each the presence of their role focus;
- * the React track is the absence of both, so the chips partition the active
- * jobs.
- */
-const focusFilter = (focus: JobFocusSlug | undefined): Prisma.JobWhereInput => {
-  if (focus === undefined) {
-    return {};
+  return {
+    companyId: { in: companyIds },
+    AND: [
+      freshness(),
+      countryFilter(options?.country),
+      focusFilter(options?.focus),
+    ],
+  };
+};
+
+type RankedJob = {
+  id: string;
+  companyId: string;
+  postedAt: Date | null;
+  firstSeenAt: Date;
+  score: number;
+};
+
+/** Most recently posted first, then the higher score. */
+const newestFirst = (left: RankedJob, right: RankedJob): number => {
+  const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
+  const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
+  if (rightMs !== leftMs) {
+    return rightMs - leftMs;
   }
-  return focus === JOB_FOCUS_ENGINEERING
-    ? { NOT: Object.values(TRACK_ROLE_FOCUS).map(containsRoleFocus) }
-    : containsRoleFocus(TRACK_ROLE_FOCUS[focus]);
+  return right.score - left.score;
+};
+
+const keepPerCompany = (sorted: RankedJob[], limit: number): string[] => {
+  const kept = new Map<string, number>();
+  return sorted
+    .filter((job) => {
+      const count = kept.get(job.companyId) ?? 0;
+      kept.set(job.companyId, count + 1);
+      return count < limit;
+    })
+    .map((job) => job.id);
 };
 
 const escapeLikePattern = (value: string): string =>
   value.replaceAll('\\', '\\\\').replaceAll('%', '\\%').replaceAll('_', '\\_');
+
+type ActiveJobsOptions = {
+  minimumScore?: number;
+  technology?: string;
+  seniority?: string;
+  remotePolicy?: string;
+  country?: JobCountrySlug;
+  focus?: JobFocusSlug;
+  company?: string;
+  location?: string;
+  maxAgeMs?: number;
+  now?: Date;
+};
+
+/** The jobs the site lists; one definition for the list and its count. */
+const activeJobsWhere = (options?: ActiveJobsOptions): Prisma.JobWhereInput => {
+  const now = options?.now ?? new Date();
+  return {
+    isActive: true,
+    remotePolicy: options?.remotePolicy ?? REMOTE_POLICY_REMOTE,
+    ...(options?.minimumScore === undefined
+      ? {}
+      : { score: { gte: options.minimumScore } }),
+    ...(options?.seniority ? { seniority: options.seniority } : {}),
+    ...(options?.company ? { company: { slug: options.company } } : {}),
+    ...(options?.location
+      ? {
+          location: {
+            contains: escapeLikePattern(options.location),
+            mode: 'insensitive' as const,
+          },
+        }
+      : {}),
+    ...(options?.technology
+      ? { technologies: { array_contains: [options.technology] } }
+      : {}),
+    AND: [
+      countryFilter(options?.country),
+      focusFilter(options?.focus),
+      options?.maxAgeMs === undefined
+        ? {}
+        : coalescedPostedAtFilter(
+            'gte',
+            new Date(now.getTime() - options.maxAgeMs),
+          ),
+    ],
+  };
+};
 
 const createData = (
   input: NewJob,
@@ -167,103 +254,73 @@ export const createJobsRepository = (db: Db) => ({
 
   listCardsByCompanyIds: async (
     companyIds: string[],
-    options?: {
-      maxAgeMs?: number;
-      now?: Date;
-      activeOnly?: boolean;
-      country?: string;
-    },
+    options?: CompanyJobsOptions & { perCompanyLimit?: number },
   ): Promise<JobCard[]> => {
     if (companyIds.length === 0) {
       return [];
     }
 
-    const freshnessFilter = (): Prisma.JobWhereInput => {
-      if (options?.maxAgeMs !== undefined) {
-        const now = options.now ?? new Date();
-        return {
-          isActive: true,
-          remotePolicy: REMOTE_POLICY_REMOTE,
-          ...coalescedPostedAtFilter(
-            'gte',
-            new Date(now.getTime() - options.maxAgeMs),
-          ),
-        };
-      }
-      return options?.activeOnly ? { isActive: true } : {};
-    };
+    const where = companyJobsWhere(companyIds, options);
+    const perCompanyLimit = options?.perCompanyLimit;
+    // Prisma cannot take N rows per group, so rank on a few narrow columns
+    // first and load full cards only for the rows that are kept.
+    const keptIds =
+      perCompanyLimit === undefined
+        ? undefined
+        : keepPerCompany(
+            (
+              await db.job.findMany({
+                where,
+                select: {
+                  id: true,
+                  companyId: true,
+                  postedAt: true,
+                  firstSeenAt: true,
+                  score: true,
+                },
+              })
+            ).sort(newestFirst),
+            perCompanyLimit,
+          );
 
     const rows = await db.job.findMany({
-      where: {
-        companyId: { in: companyIds },
-        ...freshnessFilter(),
-        ...(options?.country
-          ? { countries: { array_contains: [options.country] } }
-          : {}),
-      },
+      where: keptIds ? { id: { in: keptIds } } : where,
       select: jobCardColumns,
     });
 
-    return rows.map(toJobCard).sort((left, right) => {
-      const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
-      const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
-      if (rightMs !== leftMs) {
-        return rightMs - leftMs;
-      }
-      return right.score - left.score;
-    });
+    return rows.map(toJobCard).sort(newestFirst);
   },
 
-  listActiveByScore: async (options?: {
-    limit?: number;
-    sort?: JobSort;
-    minimumScore?: number;
-    technology?: string;
-    seniority?: string;
-    remotePolicy?: string;
-    country?: string;
-    focus?: JobFocusSlug;
-    location?: string;
-    maxAgeMs?: number;
-    now?: Date;
-  }): Promise<JobCard[]> => {
-    const now = options?.now ?? new Date();
+  countByCompanyIds: async (
+    companyIds: string[],
+    options?: CompanyJobsOptions,
+  ): Promise<Map<string, number>> => {
+    if (companyIds.length === 0) {
+      return new Map();
+    }
+
+    const groups = await db.job.groupBy({
+      by: ['companyId'],
+      where: companyJobsWhere(companyIds, options),
+      _count: { _all: true },
+    });
+    return new Map(groups.map((group) => [group.companyId, group._count._all]));
+  },
+
+  listActiveByScore: async (
+    options?: ActiveJobsOptions & { limit?: number; sort?: JobSort },
+  ): Promise<JobCard[]> => {
     const rows = await db.job.findMany({
-      where: {
-        isActive: true,
-        remotePolicy: options?.remotePolicy ?? REMOTE_POLICY_REMOTE,
-        ...(options?.minimumScore === undefined
-          ? {}
-          : { score: { gte: options.minimumScore } }),
-        ...(options?.seniority ? { seniority: options.seniority } : {}),
-        ...(options?.country
-          ? { countries: { array_contains: [options.country] } }
-          : {}),
-        ...focusFilter(options?.focus),
-        ...(options?.location
-          ? {
-              location: {
-                contains: escapeLikePattern(options.location),
-                mode: 'insensitive' as const,
-              },
-            }
-          : {}),
-        ...(options?.technology
-          ? { technologies: { array_contains: [options.technology] } }
-          : {}),
-        ...(options?.maxAgeMs === undefined
-          ? {}
-          : coalescedPostedAtFilter(
-              'gte',
-              new Date(now.getTime() - options.maxAgeMs),
-            )),
-      },
+      where: activeJobsWhere(options),
       select: jobCardColumns,
       orderBy: JOB_ORDER_BY[options?.sort ?? 'relevance'],
       ...(options?.limit === undefined ? {} : { take: options.limit }),
     });
     return rows.map(toJobCard);
   },
+
+  countActive: async (options?: ActiveJobsOptions): Promise<number> =>
+    db.job.count({ where: activeJobsWhere(options) }),
 
   updateScore: async (id: string, score: number): Promise<Job | null> => {
     const [row] = await db.job.updateManyAndReturn({

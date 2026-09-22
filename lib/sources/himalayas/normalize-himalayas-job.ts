@@ -1,7 +1,10 @@
 import type { NormalizedJob } from '../types';
 import { stripHtml } from '../strip-html';
 import { isSafeExternalUrl } from '../../urls/external-url';
-import { HIMALAYAS_SOURCE_NAME } from './constants';
+import {
+  HIMALAYAS_SOURCE_NAME,
+  HIMALAYAS_UNRESTRICTED_COUNTRIES,
+} from './constants';
 
 export type HimalayasJobRecord = {
   guid?: unknown;
@@ -69,7 +72,7 @@ export const normalizeHimalayasJob = (
     return null;
   }
 
-  const countries = readStrings(record.locationRestrictions);
+  const restrictions = readStrings(record.locationRestrictions);
 
   return {
     source: HIMALAYAS_SOURCE_NAME,
@@ -77,11 +80,14 @@ export const normalizeHimalayasJob = (
     company: { name: companyName },
     title,
     url,
-    location: countries.length > 0 ? countries.join(', ') : 'Remote',
+    location: restrictions.length > 0 ? restrictions.join(', ') : 'Remote',
     remotePolicy: 'remote',
     description: readDescription(record.description),
     technologies: [],
-    countries,
+    countries:
+      restrictions.length > 0
+        ? restrictions
+        : [...HIMALAYAS_UNRESTRICTED_COUNTRIES],
     seniority: readStrings(record.seniority)[0],
     postedAt: readPostedAt(record.pubDate),
   };

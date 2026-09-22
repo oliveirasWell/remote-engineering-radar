@@ -4,9 +4,13 @@ import { render, screen, within } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
 import { messagesFor } from '@/lib/i18n/messages';
 import { TEST_JOB_ID } from '@/lib/report/test-fixtures';
+import { LANGUAGE_OPTIONS } from '@/components/i18n/LanguagePicker/constants';
 import { SiteHeader } from './SiteHeader';
 
-vi.mock('next/navigation', () => ({ usePathname: vi.fn() }));
+vi.mock('next/navigation', () => ({
+  usePathname: vi.fn(),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+}));
 
 const { navigation } = messagesFor();
 const LINKS = [
@@ -86,6 +90,10 @@ describe('SiteHeader navigation tabs', () => {
         'aria-current',
       );
     }
-    expect(screen.getAllByRole('button')).toHaveLength(2);
+    expect(
+      within(
+        screen.getByRole('group', { name: navigation.language }),
+      ).getAllByRole('link'),
+    ).toHaveLength(LANGUAGE_OPTIONS.length);
   });
 });

@@ -11,7 +11,6 @@ import { createHimalayasAdapter } from '../lib/sources/himalayas/himalayas-adapt
 import { createJobicyAdapter } from '../lib/sources/jobicy/jobicy-adapter';
 import { createLeverAdapter } from '../lib/sources/lever/lever-adapter';
 import { createQuaveAdapter } from '../lib/sources/quave/quave-adapter';
-import { createVagasRemotasAdapter } from '../lib/sources/vagasremotas/vagasremotas-adapter';
 import { createYCombinatorAdapter } from '../lib/sources/ycombinator/ycombinator-adapter';
 
 const splitList = (value: string | undefined): string[] =>
@@ -89,7 +88,6 @@ const main = async () => {
     createJobicyAdapter(),
     createFrontendBrAdapter({ token: process.env.GITHUB_TOKEN }),
     createQuaveAdapter({ token: process.env.GITHUB_TOKEN }),
-    createVagasRemotasAdapter(),
     createYCombinatorAdapter(),
   ];
 

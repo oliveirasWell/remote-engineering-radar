@@ -13,7 +13,9 @@
     "lib/hiring-signals/**/*.ts",
     "lib/report/**/*.ts",
     "components/report/**/*.{ts,tsx}",
-    "lib/ingestion/**/*.ts"
+    "lib/ingestion/**/*.ts",
+    "scripts/replay-classification.ts",
+    "scripts/reclassify-active-jobs.ts"
   ],
   "project": ["{app,components,lib,scripts}/**/*.{ts,tsx,css}"]
 }

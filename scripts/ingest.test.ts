@@ -49,8 +49,8 @@ describe('ingest Sentry reporting', () => {
     reportIngestionSourceFailures(
       [
         {
-          name: 'vagasremotas',
-          error: 'Vagas Remotas request failed (page 1): 403',
+          name: 'getonbrd',
+          error: 'GetOnBrd request failed (page 1): 403',
         },
         { name: 'ashby', error: 'Ashby request failed: 500' },
       ],
@@ -62,11 +62,11 @@ describe('ingest Sentry reporting', () => {
       1,
       expect.objectContaining({
         message:
-          'Source vagasremotas failed: Vagas Remotas request failed (page 1): 403',
+          'Source getonbrd failed: GetOnBrd request failed (page 1): 403',
       }),
       {
-        tags: { job: 'ingest', source: 'vagasremotas' },
-        fingerprint: ['ingest-source-failure', 'vagasremotas'],
+        tags: { job: 'ingest', source: 'getonbrd' },
+        fingerprint: ['ingest-source-failure', 'getonbrd'],
       },
     );
     expect(mocks.captureException).toHaveBeenNthCalledWith(

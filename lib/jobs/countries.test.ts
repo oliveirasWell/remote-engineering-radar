@@ -17,7 +17,21 @@ const LOCALIZED_COUNTRY_LOCATIONS = [
     location: 'Remote - Egito',
     country: 'egypt',
   },
+  {
+    sourceCountries: ['Pakistan', 'PK', 'PAK'],
+    location: 'Remote - Paquistão',
+    country: 'pakistan',
+  },
 ] as const;
+const LATAM_LOCATIONS = [
+  'LATAM',
+  'Latin America',
+  'América Latina',
+  'Remote - LatAm',
+] as const;
+const LATAM_REGION = 'latam';
+const WORLDWIDE_LOCATION = 'Anywhere';
+const WORLDWIDE_REGION = 'worldwide';
 
 describe('normalizeCountryName', () => {
   it.each(INHERITED_COUNTRY_NAMES)(
@@ -38,6 +52,16 @@ describe('normalizeCountryName', () => {
 });
 
 describe('resolveJobCountries', () => {
+  it.each(LATAM_LOCATIONS)('resolves %s as the LATAM region', (location) => {
+    expect(resolveJobCountries({ location })).toEqual([LATAM_REGION]);
+  });
+
+  it('resolves an explicit anywhere location as worldwide', () => {
+    expect(resolveJobCountries({ location: WORLDWIDE_LOCATION })).toEqual([
+      WORLDWIDE_REGION,
+    ]);
+  });
+
   it.each(LOCALIZED_COUNTRY_LOCATIONS)(
     'combines $country country codes and localized locations into one country',
     ({ sourceCountries, location, country }) => {
@@ -45,7 +69,6 @@ describe('resolveJobCountries', () => {
         resolveJobCountries({
           sourceCountries: [...sourceCountries],
           location,
-          geographies: [],
         }),
       ).toEqual([country]);
     },
@@ -56,18 +79,16 @@ describe('resolveJobCountries', () => {
       resolveJobCountries({
         sourceCountries: [...INHERITED_COUNTRY_NAMES],
         location: INHERITED_COUNTRY_NAMES.join(', '),
-        geographies: [],
       }),
     ).toEqual(INHERITED_COUNTRY_NAMES);
   });
 
-  it('merges source countries, location, and geographies', () => {
+  it('merges source countries and location', () => {
     expect(
       resolveJobCountries({
         sourceCountries: ['Brazil'],
         location: 'Remote - Chile',
-        geographies: ['worldwide'],
       }),
-    ).toEqual(expect.arrayContaining(['brazil', 'chile', 'worldwide']));
+    ).toEqual(['brazil', 'chile']);
   });
 });

@@ -13,10 +13,6 @@ import {
 } from '@/lib/sources/jobicy/constants';
 import jobicyPage from '@/lib/sources/jobicy/fixtures/jobs-page-1.json';
 import type { JobSource, NormalizedJob } from '@/lib/sources/types';
-import { createVagasRemotasAdapter } from '@/lib/sources/vagasremotas/vagasremotas-adapter';
-import { VAGAS_REMOTAS_SOURCE_NAME } from '@/lib/sources/vagasremotas/constants';
-import vagasRemotasPage from '@/lib/sources/vagasremotas/fixtures/jobs-page-1.json';
-import { EXPECTED_BRAZIL_JOB } from '@/lib/sources/vagasremotas/fixtures/expected-jobs';
 import { asFetch, jsonResponse } from '@/test/http';
 import { Prisma } from '@prisma/client';
 import { INGESTION_TRANSACTION_TIMEOUT_MS } from './constants';
@@ -57,39 +53,6 @@ const makeJob = (
 });
 
 describe('runIngestion', () => {
-  it('persists Vagas Remotas jobs with their own country eligibility', async () => {
-    const db = await createTestDb();
-    const source = createVagasRemotasAdapter({
-      fetch: asFetch(async () => jsonResponse(vagasRemotasPage)),
-    });
-
-    const result = await runIngestion({
-      db,
-      sources: [source],
-      now: () => new Date(`${vagasRemotasPage[0].date_gmt}Z`),
-    });
-
-    expect(result.sources).toEqual([
-      {
-        name: VAGAS_REMOTAS_SOURCE_NAME,
-        fetched: vagasRemotasPage.length,
-        persisted: vagasRemotasPage.length,
-      },
-    ]);
-    const jobsRepository = createJobsRepository(db);
-    const brazilJobs = await jobsRepository.listActiveByScore({
-      country: EXPECTED_BRAZIL_JOB.country,
-    });
-    expect(brazilJobs.map((job) => job.sourceJobId)).toEqual([
-      String(vagasRemotasPage[0].id),
-    ]);
-    expect(brazilJobs[0]).toMatchObject({
-      title: EXPECTED_BRAZIL_JOB.title,
-      countries: [EXPECTED_BRAZIL_JOB.country],
-      url: vagasRemotasPage[0].link,
-    });
-  });
-
   it('uses an ingestion-only ten-minute transaction timeout without overriding maxWait', async () => {
     const db = await createTestDb();
     const transaction = vi.spyOn(db, '$transaction');
@@ -808,6 +771,34 @@ describe('runIngestion', () => {
     await expect(
       createJobsRepository(db).findBySourceJobId('greenhouse', 'remote-1'),
     ).resolves.toMatchObject({ isActive: true, remotePolicy: 'remote' });
+  });
+
+  it('tags countries only from the explicit location, not the description', async () => {
+    const db = await createTestDb();
+    const location = 'Pakistan';
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => ({
+        complete: true,
+        jobs: [
+          makeJob({
+            source: 'greenhouse',
+            sourceJobId: 'pk-1',
+            title: 'Senior Frontend Engineer',
+            url: 'https://example.com/jobs/pk-1',
+            location,
+            description:
+              'Senior React engineer. Remote. Our worldwide customers span Brazil, Latin America, and the United States.',
+          }),
+        ],
+      }),
+    };
+
+    await runIngestion({ db, sources: [source] });
+
+    await expect(
+      createJobsRepository(db).findBySourceJobId('greenhouse', 'pk-1'),
+    ).resolves.toMatchObject({ countries: [location.toLowerCase()] });
   });
 
   it('skips Sales Representative and other unrelated roles', async () => {

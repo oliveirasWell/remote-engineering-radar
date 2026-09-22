@@ -1,4 +1,4 @@
-import type { JobGeography } from '@/lib/classification/types';
+import { foldText } from '@/lib/text/fold-text/fold-text';
 
 const COUNTRY_ALIASES: Readonly<Record<string, string>> = {
   brazil: 'brazil',
@@ -31,16 +31,20 @@ const COUNTRY_ALIASES: Readonly<Record<string, string>> = {
   eg: 'egypt',
   egy: 'egypt',
   egito: 'egypt',
+  pakistan: 'pakistan',
+  pk: 'pakistan',
+  pak: 'pakistan',
+  paquistao: 'pakistan',
+  latam: 'latam',
+  'latin america': 'latam',
+  'america latina': 'latam',
   worldwide: 'worldwide',
   global: 'worldwide',
+  anywhere: 'worldwide',
 };
 
 export const normalizeCountryName = (value: string): string | undefined => {
-  const key = value
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '');
+  const key = foldText(value.trim());
 
   if (!key || key === 'remote') {
     return undefined;
@@ -60,7 +64,6 @@ export const normalizeCountryName = (value: string): string | undefined => {
 export const resolveJobCountries = (input: {
   sourceCountries?: string[];
   location?: string;
-  geographies: JobGeography[];
 }): string[] => {
   const countries = new Set<string>();
 
@@ -78,17 +81,6 @@ export const resolveJobCountries = (input: {
         countries.add(normalized);
       }
     }
-  }
-
-  if (input.geographies.includes('brazil')) {
-    countries.add('brazil');
-  }
-  if (input.geographies.includes('worldwide')) {
-    countries.add('worldwide');
-  }
-  if (input.geographies.includes('americas')) {
-    countries.add('united-states');
-    countries.add('canada');
   }
 
   return [...countries];

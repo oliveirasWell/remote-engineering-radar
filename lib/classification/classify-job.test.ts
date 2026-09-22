@@ -1,6 +1,10 @@
 import { classifyJob, shouldPersistClassifiedJob } from './classify-job';
 
 const GEOGRAPHY_JOB_TITLE = 'Senior React Engineer';
+const ACCENTED_SENIORITY_TITLES = [
+  { title: 'Desenvolvedor Sênior React', seniority: 'senior' },
+  { title: 'Desenvolvedora Júnior Front-end', seniority: 'junior' },
+] as const;
 const BRAZIL_LOCATIONS = ['Brazil', 'Brasil', 'Sao Paulo', 'LATAM - Brazil'];
 const BRAZIL_GEOGRAPHY = 'brazil';
 const LATAM_GEOGRAPHY = 'latam';
@@ -11,11 +15,235 @@ const CLOUD_OPS_DESCRIPTION =
   'Own our AWS footprint, run Kubernetes in production, and manage infrastructure as code with Terraform. Docker experience required.';
 const PLATFORM_ROLE_FOCUS = 'platform';
 const DATA_ANNOTATION_ROLE_FOCUS = 'annotation';
+const PRODUCT_ROLE_FOCUS = 'product';
+const SOFTWARE_ROLE_FOCUS = 'software';
+const SOFTWARE_TITLES = [
+  'Senior Software Engineer',
+  'Staff Engineer, Payments',
+  'Web Developer',
+  'iOS Developer',
+  'Tech Lead - Growth',
+  'CTO',
+  'Desenvolvedora Pleno',
+  'Programador(a) Full Stack',
+  'Engenheiro de Software Sênior',
+  'Líder Técnico',
+];
+const NON_TECH_TITLES = [
+  'Registered Nurse (RN) - Telehealth',
+  'Senior Accountant',
+  'Tax Manager',
+  'Paralegal',
+  'Spanish Interpreter',
+  'Online Math Tutor',
+  'CDL Truck Driver',
+  'Warehouse Associate',
+  'Enfermeira Assistencial',
+  'Advogada Trabalhista',
+  'Professor de Inglês',
+  'Contador(a) Sênior',
+];
+const GUARDED_TECH_TITLES = [
+  'Clinical Software Engineer',
+  'Tax Software Developer',
+  'Nurse Informatics Developer',
+  'Device Driver Engineer',
+  'Product Manager, Tax Platform',
+  'AI Trainer - Registered Nurse',
+  'SAP Business Warehouse and SAP Business Objects',
+  'Tutor de QA LATAM',
+  'Teacher/Lehrer (m/w/d) AWS Solutions Architect',
+  'High School Computer Science Teacher',
+];
+const AI_EVALUATION_TITLES = [
+  'Primary Care Physician - AI Evaluator',
+  'AI Tutor - Malay',
+  'QLD Senior English Teacher - AI Content Reviewer',
+];
+const NON_SOFTWARE_TITLES = [
+  'Tax Manager',
+  'Senior Data Scientist',
+  'Product Designer',
+  'Travel Coordinator',
+];
+const PRODUCT_MANAGER_TITLES = [
+  'Senior Product Manager',
+  'Technical Product Manager - Payments',
+  'Product Owner',
+  'Group Product Manager',
+  'Head of Product',
+  'Director of Product Management',
+];
+const NON_PRODUCT_MANAGEMENT_TITLES = [
+  'Product Marketing Manager',
+  'Senior Product Engineer',
+  'Head of Product Engineering',
+  'Director of Product Design',
+  'VP of Product Operations',
+  'Product Lead Engineer',
+];
+const SENIOR_ENGINEER_TITLE = 'Senior Software Engineer';
+const STONE_BENEFITS =
+  'Benefícios: vale refeição, 🏠 auxílio home office (apenas para contratos híbridos ou remotos) e plano de saúde.';
+const STONE_FIELD_SALES_JOB = {
+  title: 'Agente Stone - Consultor(a) Comercial Externo',
+  location: 'Varginha, Minas Gerais, Brasil',
+  description: `Rotina presencial e externa, visitando clientes. ${STONE_BENEFITS} #LI-Onsite (presencial)`,
+};
+const QUINTOANDAR_WFA_PERK =
+  'Flexibilidade: auxílio home office e programa work from anywhere (WFA), que permite trabalhar remotamente de qualquer lugar do mundo por até 30 dias.';
+const SAP_PO_TITLE =
+  'SAP Process Integration (PI) Process Orchestration (PO) Integration Engineer';
+const PORTUGUESE_CASES = [
+  {
+    name: 'reads a Remoto location as remote',
+    input: { title: 'Senior Software Engineer GO', location: 'Remoto' },
+    expected: { remotePolicy: 'remote' },
+  },
+  {
+    name: 'reads a home office title as remote',
+    input: { title: 'Desenvolvedor React (Home Office)', location: 'Brasil' },
+    expected: { remotePolicy: 'remote' },
+  },
+  {
+    name: 'reads a híbrido title as hybrid',
+    input: {
+      title: '[GenAI] Sênior Software Engineer - híbrido Florianópolis',
+      location: 'Florianopolis, Santa Catarina, Brasil',
+    },
+    expected: { remotePolicy: 'hybrid' },
+  },
+  {
+    name: 'ignores the home office benefit and reads #LI-Onsite as onsite',
+    input: STONE_FIELD_SALES_JOB,
+    expected: { remotePolicy: 'onsite' },
+  },
+  {
+    name: 'treats a work-from-anywhere perk on a hybrid job as hybrid',
+    input: {
+      title: SENIOR_ENGINEER_TITLE,
+      location: 'Brasil',
+      description: `${QUINTOANDAR_WFA_PERK} Modelo de trabalho híbrido, com presença no escritório em São Paulo.`,
+    },
+    expected: { remotePolicy: 'hybrid' },
+  },
+  {
+    name: 'reads an explicit remote work model in the body as remote',
+    input: {
+      title: SENIOR_ENGINEER_TITLE,
+      location: 'Brasil',
+      description:
+        'Modelo de trabalho: 100% remoto, de qualquer lugar do Brasil.',
+    },
+    expected: { remotePolicy: 'remote' },
+  },
+  {
+    name: 'lets a body hybrid marker beat a remote mention',
+    input: {
+      title: SENIOR_ENGINEER_TITLE,
+      description:
+        'We are a remote-friendly company. This role is hybrid, three days in our office.',
+    },
+    expected: { remotePolicy: 'hybrid' },
+  },
+  {
+    name: 'reads #LI-Remote over a hybrid-culture benefit',
+    input: {
+      title: 'Banco de Talentos - Inclusão de Pessoas com Deficiência',
+      location: 'Rio de Janeiro; São Paulo',
+      description:
+        'Benefícios: horário flexível e cultura de trabalho híbrido. #LI-Remote',
+    },
+    expected: { remotePolicy: 'remote' },
+  },
+  {
+    name: 'reads a stated onsite location over a remote-work stipend',
+    input: {
+      title: 'Clinical Product Manager, AI',
+      location: 'San Francisco, CA',
+      description:
+        'Location: Onsite – San Francisco, CA (M/Tu/Thurs in office). Benefits: remote work support and home office stipend.',
+    },
+    expected: { remotePolicy: 'onsite' },
+  },
+  {
+    name: 'reads Pleno in the title as mid',
+    input: { title: 'Desenvolvedor Pleno React' },
+    expected: { seniority: 'mid' },
+  },
+  {
+    name: 'reads Estágio in the title as junior',
+    input: { title: 'Estágio em Desenvolvimento Front-end' },
+    expected: { seniority: 'junior' },
+  },
+  {
+    name: 'ignores pleno and estágio as ordinary words in the body',
+    input: {
+      title: 'Desenvolvedor Sênior React',
+      description:
+        'Buscamos pleno domínio de React para apoiar o estágio de maturidade do negócio.',
+    },
+    expected: { seniority: 'senior' },
+  },
+  {
+    name: 'ignores principal as an ordinary word in the body',
+    input: {
+      title: 'Analista Sênior de Dados',
+      description: 'Sua atividade principal é apoiar o time de produto.',
+    },
+    expected: { seniority: 'senior' },
+  },
+  {
+    name: 'reads relocação as relocation',
+    input: {
+      title: SENIOR_ENGINEER_TITLE,
+      description: 'Oferecemos pacote de relocação para Lisboa.',
+    },
+    expected: { requiresRelocation: true },
+  },
+  {
+    name: 'reads América Latina as LATAM',
+    input: {
+      title: SENIOR_ENGINEER_TITLE,
+      description: 'Vaga aberta para toda a América Latina.',
+    },
+    expected: { geography: expect.arrayContaining(['latam']) },
+  },
+];
+const PORTUGUESE_ROLE_FOCUS_CASES = [
+  { title: 'Engenheira de Plataforma Sênior', roleFocus: PLATFORM_ROLE_FOCUS },
+  { title: 'Engenheiro de Confiabilidade', roleFocus: PLATFORM_ROLE_FOCUS },
+  {
+    title: 'Anotador de Dados (Português)',
+    roleFocus: DATA_ANNOTATION_ROLE_FOCUS,
+  },
+  { title: 'Treinadora de IA', roleFocus: DATA_ANNOTATION_ROLE_FOCUS },
+  { title: 'Coordenadora de Produto', roleFocus: PRODUCT_ROLE_FOCUS },
+  { title: 'Head de Produto', roleFocus: PRODUCT_ROLE_FOCUS },
+  {
+    title: 'PO - Especialista de Gestão de Produtos Digitais',
+    roleFocus: PRODUCT_ROLE_FOCUS,
+  },
+  { title: 'Dono do Produto', roleFocus: PRODUCT_ROLE_FOCUS },
+] as const;
+const PORTUGUESE_UNRELATED_ROLE_TITLES = [
+  'Consultora Comercial',
+  'Executivo de Vendas',
+  'Recrutadora Tech',
+  'Analista de Sucesso do Cliente',
+];
 const QUAVE_ANNOTATION_TITLE = 'Senior Full-Stack Engineer';
 const QUAVE_ANNOTATION_DESCRIPTION =
   'Work with a US client developing AI training and evaluation data for coding agents. React, TypeScript, and Node.js.';
 
 describe('classifyJob', () => {
+  it.each(ACCENTED_SENIORITY_TITLES)(
+    'reads $seniority from the accented title $title',
+    ({ title, seniority }) => {
+      expect(classifyJob({ title }).seniority).toBe(seniority);
+    },
+  );
+
   it.each(BRAZIL_LOCATIONS)('recognizes Brazil in %s', (location) => {
     expect(
       classifyJob({ title: GEOGRAPHY_JOB_TITLE, location }).geography,
@@ -297,5 +525,102 @@ describe('classifyJob', () => {
 
     expect(result.isUnrelatedStack).toBe(false);
     expect(shouldPersistClassifiedJob(result)).toBe(true);
+  });
+
+  it.each(PRODUCT_MANAGER_TITLES)('puts %s on the product track', (title) => {
+    expect(classifyJob({ title }).roleFocus).toContain(PRODUCT_ROLE_FOCUS);
+  });
+
+  it.each(NON_PRODUCT_MANAGEMENT_TITLES)(
+    'keeps %s off the product track',
+    (title) => {
+      expect(classifyJob({ title }).roleFocus).not.toContain(
+        PRODUCT_ROLE_FOCUS,
+      );
+    },
+  );
+
+  it('keeps a product role whose body mentions a competing language', () => {
+    const result = classifyJob({
+      title: 'Senior Product Manager',
+      description: 'Partner with our Java and Kotlin platform teams.',
+    });
+
+    expect(result.isUnrelatedStack).toBe(false);
+    expect(shouldPersistClassifiedJob(result)).toBe(true);
+  });
+
+  describe('Portuguese postings', () => {
+    it.each(PORTUGUESE_CASES)('$name', ({ input, expected }) => {
+      expect(classifyJob(input)).toMatchObject(expected);
+    });
+
+    it.each(PORTUGUESE_ROLE_FOCUS_CASES)(
+      'puts $title on the $roleFocus track',
+      ({ title, roleFocus }) => {
+        expect(classifyJob({ title }).roleFocus).toContain(roleFocus);
+      },
+    );
+
+    it.each(PORTUGUESE_UNRELATED_ROLE_TITLES)(
+      'flags %s as an unrelated role',
+      (title) => {
+        expect(classifyJob({ title }).isUnrelatedRole).toBe(true);
+      },
+    );
+
+    it('keeps SAP PI/PO integration titles off the product track', () => {
+      expect(classifyJob({ title: SAP_PO_TITLE }).roleFocus).not.toContain(
+        PRODUCT_ROLE_FOCUS,
+      );
+    });
+
+    it('does not persist a field-sales job whose benefits mention home office', () => {
+      expect(
+        shouldPersistClassifiedJob(classifyJob(STONE_FIELD_SALES_JOB)),
+      ).toBe(false);
+    });
+  });
+
+  describe('software signal', () => {
+    it.each(SOFTWARE_TITLES)('marks %s as software', (title) => {
+      expect(classifyJob({ title }).roleFocus).toContain(SOFTWARE_ROLE_FOCUS);
+    });
+
+    it.each(NON_SOFTWARE_TITLES)('does not mark %s as software', (title) => {
+      expect(classifyJob({ title }).roleFocus).not.toContain(
+        SOFTWARE_ROLE_FOCUS,
+      );
+    });
+
+    it('marks a role whose body names the React stack as software', () => {
+      expect(
+        classifyJob({
+          title: 'Senior Consultant',
+          description: 'Build internal tools with React and TypeScript.',
+        }).roleFocus,
+      ).toContain(SOFTWARE_ROLE_FOCUS);
+    });
+  });
+
+  describe('obvious non-tech titles', () => {
+    it.each(NON_TECH_TITLES)('does not persist %s', (title) => {
+      const result = classifyJob({ title });
+      expect(result.isUnrelatedRole).toBe(true);
+      expect(shouldPersistClassifiedJob(result)).toBe(false);
+    });
+
+    it.each(GUARDED_TECH_TITLES)(
+      'keeps %s despite a non-tech word in the title',
+      (title) => {
+        expect(classifyJob({ title }).isUnrelatedRole).toBe(false);
+      },
+    );
+  });
+
+  it.each(AI_EVALUATION_TITLES)('puts %s on the annotation track', (title) => {
+    const result = classifyJob({ title });
+    expect(result.roleFocus).toContain(DATA_ANNOTATION_ROLE_FOCUS);
+    expect(result.isUnrelatedRole).toBe(false);
   });
 });

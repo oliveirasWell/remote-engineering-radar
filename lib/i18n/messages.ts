@@ -1,6 +1,7 @@
 export const LOCALE_COOKIE = 'remote-engineering-radar-locale';
 export const LOCALES = ['en', 'pt-BR'] as const;
 export type Locale = (typeof LOCALES)[number];
+export const DEFAULT_LOCALE: Locale = 'en';
 
 export const EN_MESSAGES = {
   app: {
@@ -8,7 +9,7 @@ export const EN_MESSAGES = {
     focusStack:
       'React, TypeScript, Node.js, GraphQL, React Native, and Cloud & Ops',
     description:
-      'Automated job intelligence for remote senior engineering roles: React, TypeScript, Node.js, GraphQL and React Native, plus Cloud & Ops.',
+      'Remote senior tech jobs and the companies hiring for them: React Engineering (React, TypeScript, Node.js, GraphQL, React Native), Cloud & Ops, Product, and Data Annotation, with Brazil and LATAM filters.',
   },
   navigation: {
     label: 'Main navigation',
@@ -21,9 +22,10 @@ export const EN_MESSAGES = {
   },
   home: {
     subtitle:
-      'Remote senior companies hiring in React, TypeScript, Node.js, GraphQL and React Native, plus Cloud & Ops.',
+      'Companies hiring remote senior talent in React, TypeScript, Node.js, GraphQL and React Native, Cloud & Ops, Product, and Data Annotation.',
     companiesToWatch: 'Companies to watch',
     relevantJobs: 'Relevant jobs',
+    seeAllJobs: (count: number) => `See all ${count} jobs`,
     openRoles: (count: number) =>
       `${count} ${count === 1 ? 'open role' : 'open roles'}`,
     evidence: 'Evidence / sources',
@@ -40,9 +42,8 @@ export const EN_MESSAGES = {
   jobs: {
     title: 'Jobs',
     subtitle:
-      'Search remote senior openings across two tracks: React, TypeScript, Node.js, GraphQL and React Native, or Cloud & Ops.',
-    metaTitle:
-      'Jobs in React, TypeScript, Node.js, GraphQL, React Native, and Cloud & Ops',
+      'Search remote senior openings in React, TypeScript, Node.js, GraphQL and React Native, Cloud & Ops, Product, and Data Annotation.',
+    metaTitle: 'Remote React, Cloud, Product & AI Annotation Jobs',
     filtersHeading: 'Filters',
     focusLabel: 'Focus area',
     focusAll: 'All roles',
@@ -64,10 +65,34 @@ export const EN_MESSAGES = {
       relevance: 'Most relevant',
     },
   },
+  jobDetailMeta: {
+    title: (title: string, company: string | null) =>
+      company ? `${title} at ${company}` : title,
+    description: (title: string, location: string | null) =>
+      `${title}. Remote engineering opportunity${location ? ` in ${location}` : ''}. View the role and original listing.`,
+  },
+  seo: {
+    homeTitle: 'Remote React, Cloud & Product Jobs',
+    countryCompaniesTitle: (place: string) =>
+      `Remote tech companies hiring – ${place}`,
+    countryCompaniesDescription: (place: string) =>
+      `Companies with open remote senior roles in React Engineering, Cloud & Ops, Product, and Data Annotation – ${place}. Updated daily.`,
+    focusCompaniesTitle: (track: string) =>
+      `Companies hiring remote ${track} roles`,
+    focusCompaniesDescription: (track: string) =>
+      `Companies with open remote senior ${track} roles, ranked by hiring signal. Updated daily.`,
+    countryJobsTitle: (place: string) => `Remote tech jobs – ${place}`,
+    countryJobsDescription: (place: string) =>
+      `Remote senior React Engineering, Cloud & Ops, Product, and Data Annotation jobs – ${place}. Updated daily.`,
+    focusJobsTitle: (track: string) => `Remote ${track} jobs`,
+    focusJobsDescription: (track: string) =>
+      `Remote senior ${track} jobs from public job boards. Updated daily.`,
+  },
   focus: {
-    engineering: 'React & Product',
+    engineering: 'React Engineering',
     'cloud-ops': 'Cloud & Ops',
     'data-annotation': 'Data Annotation',
+    product: 'Product',
   },
   countries: {
     brazil: 'Brazil',
@@ -79,6 +104,8 @@ export const EN_MESSAGES = {
     ukraine: 'Ukraine',
     india: 'India',
     egypt: 'Egypt',
+    pakistan: 'Pakistan',
+    latam: 'LATAM',
     worldwide: 'Worldwide',
   },
   seniority: {
@@ -190,11 +217,6 @@ export const EN_MESSAGES = {
         description: 'Open issues from the quavedev/join GitHub repository.',
       },
       {
-        name: 'Vagas Remotas',
-        description:
-          'WordPress job-listings API filtered to engineering roles.',
-      },
-      {
         name: 'Y Combinator',
         description:
           'Public Work at a Startup listing pages for remote software-engineering roles.',
@@ -209,7 +231,7 @@ export const EN_MESSAGES = {
     scoring:
       'Scores are heuristics over public text — not endorsements of a company or role.',
     scoringJob:
-      'The radar tracks three focus areas. React & Product and Cloud & Ops are scored on equal footing: React & Product favors React, TypeScript, Node.js, GraphQL, and React Native; Cloud & Ops favors AWS, Kubernetes, Terraform, Docker, Azure, and GCP. Data Annotation groups AI training, data labeling, and RLHF roles. All three favor senior/staff titles, remote work, and Brazil/LATAM/Americas geography. Junior, onsite-only, relocation-required, and unrelated stacks are heavily down-ranked.',
+      'The radar tracks four focus areas. React Engineering and Cloud & Ops are scored on equal footing: React Engineering favors React, TypeScript, Node.js, GraphQL, and React Native; Cloud & Ops favors AWS, Kubernetes, Terraform, Docker, Azure, and GCP. Data Annotation groups AI training, data labeling, and RLHF roles. Product groups product manager and product owner roles. All four favor senior/staff titles, remote work, and Brazil/LATAM/Americas geography. Junior, onsite-only, relocation-required, and unrelated stacks are heavily down-ranked.',
     scoringCompany:
       'Company hiring score aggregates active engineering openings, recent posting bursts, relevant tech matches, and leadership roles — again from public listings only.',
     applications:
@@ -229,7 +251,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     focusStack:
       'React, TypeScript, Node.js, GraphQL, React Native e Cloud & Ops',
     description:
-      'Inteligência automatizada de vagas remotas sênior de engenharia: React, TypeScript, Node.js, GraphQL e React Native, além de Cloud & Ops.',
+      'Vagas remotas sênior de tecnologia e as empresas que estão contratando: Engenharia React (React, TypeScript, Node.js, GraphQL, React Native), Cloud & Ops, Produto e Anotação de Dados, com filtros para Brasil e LATAM.',
   },
   navigation: {
     label: 'Navegação principal',
@@ -242,9 +264,10 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   },
   home: {
     subtitle:
-      'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, além de Cloud & Ops.',
+      'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, Cloud & Ops, Produto e Anotação de Dados.',
     companiesToWatch: 'Empresas para acompanhar',
     relevantJobs: 'Vagas relevantes',
+    seeAllJobs: (count: number) => `Ver todas as ${count} vagas`,
     openRoles: (count: number) =>
       `${count} ${count === 1 ? 'vaga aberta' : 'vagas abertas'}`,
     evidence: 'Evidências / fontes',
@@ -261,9 +284,8 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   jobs: {
     title: 'Vagas',
     subtitle:
-      'Busque vagas remotas sênior em duas trilhas: React, TypeScript, Node.js, GraphQL e React Native, ou Cloud & Ops.',
-    metaTitle:
-      'Vagas em React, TypeScript, Node.js, GraphQL, React Native e Cloud & Ops',
+      'Busque vagas remotas sênior em React, TypeScript, Node.js, GraphQL e React Native, Cloud & Ops, Produto e Anotação de Dados.',
+    metaTitle: 'Vagas remotas em React, Cloud, Produto e Anotação de IA',
     filtersHeading: 'Filtros',
     focusLabel: 'Área de foco',
     focusAll: 'Todas as áreas',
@@ -285,10 +307,35 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
       relevance: 'Maior relevância',
     },
   },
+  jobDetailMeta: {
+    title: (title: string, company: string | null) =>
+      company ? `${title} na ${company}` : title,
+    description: (title: string, location: string | null) =>
+      `${title}. Oportunidade remota de engenharia${location ? ` em ${location}` : ''}. Veja a vaga e o anúncio original.`,
+  },
+  seo: {
+    homeTitle: 'Vagas remotas em React, Cloud e Produto',
+    countryCompaniesTitle: (place: string) =>
+      `Empresas de tecnologia contratando remoto – ${place}`,
+    countryCompaniesDescription: (place: string) =>
+      `Empresas com vagas remotas sênior em Engenharia React, Cloud & Ops, Produto e Anotação de Dados – ${place}. Atualizado diariamente.`,
+    focusCompaniesTitle: (track: string) =>
+      `Empresas contratando remoto em ${track}`,
+    focusCompaniesDescription: (track: string) =>
+      `Empresas com vagas remotas sênior em ${track}, ordenadas por sinal de contratação. Atualizado diariamente.`,
+    countryJobsTitle: (place: string) =>
+      `Vagas remotas de tecnologia – ${place}`,
+    countryJobsDescription: (place: string) =>
+      `Vagas remotas sênior em Engenharia React, Cloud & Ops, Produto e Anotação de Dados – ${place}. Atualizado diariamente.`,
+    focusJobsTitle: (track: string) => `Vagas remotas de ${track}`,
+    focusJobsDescription: (track: string) =>
+      `Vagas remotas sênior de ${track} em fontes públicas. Atualizado diariamente.`,
+  },
   focus: {
-    engineering: 'React & Produto',
+    engineering: 'Engenharia React',
     'cloud-ops': 'Cloud & Ops',
     'data-annotation': 'Anotação de Dados',
+    product: 'Produto',
   },
   countries: {
     brazil: 'Brasil',
@@ -300,6 +347,8 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     ukraine: 'Ucrânia',
     india: 'Índia',
     egypt: 'Egito',
+    pakistan: 'Paquistão',
+    latam: 'América Latina',
     worldwide: 'Mundo todo',
   },
   seniority: {
@@ -415,11 +464,6 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
         description: 'Issues abertas do repositório quavedev/join no GitHub.',
       },
       {
-        name: 'Vagas Remotas',
-        description:
-          'API WordPress de job-listings filtrada para papéis de engenharia.',
-      },
-      {
         name: 'Y Combinator',
         description:
           'Páginas públicas do Work at a Startup com vagas remotas de software engineering.',
@@ -434,7 +478,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     scoring:
       'As pontuações são heurísticas sobre texto público — não uma recomendação de empresa ou vaga.',
     scoringJob:
-      'O radar acompanha três áreas de foco. React & Produto e Cloud & Ops são pontuadas em pé de igualdade: React & Produto favorece React, TypeScript, Node.js, GraphQL e React Native; Cloud & Ops favorece AWS, Kubernetes, Terraform, Docker, Azure e GCP. Anotação de Dados reúne vagas de treinamento de IA, rotulagem de dados e RLHF. As três favorecem títulos senior/staff, remoto e geografia Brasil/LATAM/Américas. Junior, apenas presencial, relocação obrigatória e stacks sem relação são fortemente penalizados.',
+      'O radar acompanha quatro áreas de foco. Engenharia React e Cloud & Ops são pontuadas em pé de igualdade: Engenharia React favorece React, TypeScript, Node.js, GraphQL e React Native; Cloud & Ops favorece AWS, Kubernetes, Terraform, Docker, Azure e GCP. Anotação de Dados reúne vagas de treinamento de IA, rotulagem de dados e RLHF. Produto reúne vagas de product manager e product owner. As quatro favorecem títulos senior/staff, remoto e geografia Brasil/LATAM/Américas. Junior, apenas presencial, relocação obrigatória e stacks sem relação são fortemente penalizados.',
     scoringCompany:
       'A nota da empresa agrega vagas de engenharia ativas, rajadas recentes de publicações, matches de tech relevante e papéis de liderança — sempre a partir de listagens públicas.',
     applications:
@@ -452,5 +496,5 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
 export const isLocale = (value: unknown): value is Locale =>
   LOCALES.some((locale) => locale === value);
 
-export const messagesFor = (locale: Locale = 'en') =>
+export const messagesFor = (locale: Locale = DEFAULT_LOCALE) =>
   locale === 'pt-BR' ? PT_BR_MESSAGES : EN_MESSAGES;

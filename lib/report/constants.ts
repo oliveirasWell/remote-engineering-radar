@@ -2,6 +2,9 @@ import { EN_MESSAGES } from '@/lib/i18n/messages';
 
 export const COMPANIES_PAGE_LIMIT = 100;
 
+/** Jobs rendered under each company; the rest are one link away. */
+export const COMPANY_JOBS_PREVIEW_LIMIT = 5;
+
 /**
  * Ingest writes once a day from GitHub Actions, which cannot reach the Next
  * runtime to revalidate, so this window is what bounds staleness.

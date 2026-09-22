@@ -1,62 +1,37 @@
 'use client';
 
+import { createContext, useContext, type ReactNode } from 'react';
 import {
-  createContext,
-  useContext,
-  useEffect,
-  useSyncExternalStore,
-  type ReactNode,
-} from 'react';
-import {
-  isLocale,
+  DEFAULT_LOCALE,
   LOCALE_COOKIE,
   messagesFor,
   type Locale,
 } from '@/lib/i18n/messages';
-import { LOCALE_CHANGE_EVENT } from './constants';
 
-const setLocale = (locale: Locale) => {
+/** Remembers a reader's choice so unprefixed URLs redirect them back. */
+const rememberLocale = (locale: Locale) => {
   document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; SameSite=Lax`;
-  document.documentElement.lang = locale;
-  window.dispatchEvent(new Event(LOCALE_CHANGE_EVENT));
 };
 
 const I18nContext = createContext({
-  locale: 'en' as Locale,
+  locale: DEFAULT_LOCALE,
   messages: messagesFor(),
-  setLocale,
+  rememberLocale,
 });
 
-const subscribe = (onChange: () => void) => {
-  window.addEventListener(LOCALE_CHANGE_EVENT, onChange);
-  return () => window.removeEventListener(LOCALE_CHANGE_EVENT, onChange);
-};
-
-const readLocale = (): Locale => {
-  const value = document.cookie
-    .split(';')
-    .map((cookie) => cookie.trim())
-    .find((cookie) => cookie.startsWith(`${LOCALE_COOKIE}=`))
-    ?.slice(LOCALE_COOKIE.length + 1);
-  return isLocale(value) ? value : 'en';
-};
-
-export const I18nProvider = ({ children }: { children: ReactNode }) => {
-  const locale = useSyncExternalStore(
-    subscribe,
-    readLocale,
-    () => 'en' as const,
-  );
-
-  useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
-
-  return (
-    <I18nContext value={{ locale, messages: messagesFor(locale), setLocale }}>
-      {children}
-    </I18nContext>
-  );
-};
+/** The locale comes from the URL, so the server renders the right language. */
+export const I18nProvider = ({
+  locale = DEFAULT_LOCALE,
+  children,
+}: {
+  locale?: Locale;
+  children: ReactNode;
+}) => (
+  <I18nContext
+    value={{ locale, messages: messagesFor(locale), rememberLocale }}
+  >
+    {children}
+  </I18nContext>
+);
 
 export const useI18n = () => useContext(I18nContext);

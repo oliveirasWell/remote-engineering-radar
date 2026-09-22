@@ -12,7 +12,12 @@ describe.each([
   {
     operation: 'companies',
     read: () => getCompaniesPageData(),
-    empty: { companies: [], country: undefined, updatedAt: null },
+    empty: {
+      companies: [],
+      country: undefined,
+      focus: undefined,
+      updatedAt: null,
+    },
   },
   {
     operation: 'jobs',

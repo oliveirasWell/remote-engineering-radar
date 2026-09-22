@@ -23,10 +23,9 @@ describe('JobCard', () => {
   it('translates actions, confirmation, and relative time without translating job data', () => {
     const locale = 'pt-BR';
     const { jobCard, remote } = messagesFor(locale);
-    document.cookie = `${LOCALE_COOKIE}=${locale}; path=/`;
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     render(
-      <I18nProvider>
+      <I18nProvider locale={locale}>
         <JobCard job={job} />
       </I18nProvider>,
     );
@@ -56,9 +55,8 @@ describe('JobCard', () => {
   it.each(Object.entries(messagesFor('pt-BR').remote))(
     'translates the recognized remote policy %s without changing location',
     (policy, label) => {
-      document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
       render(
-        <I18nProvider>
+        <I18nProvider locale="pt-BR">
           <JobCard job={{ ...job, remotePolicy: policy }} />
         </I18nProvider>,
       );
@@ -71,9 +69,8 @@ describe('JobCard', () => {
   it.each([UNKNOWN_REMOTE_POLICY, null])(
     'preserves unknown remote policy %s and the original location',
     (policy) => {
-      document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
       render(
-        <I18nProvider>
+        <I18nProvider locale="pt-BR">
           <JobCard job={{ ...job, remotePolicy: policy }} />
         </I18nProvider>,
       );
@@ -86,9 +83,8 @@ describe('JobCard', () => {
   it.each(['en', 'pt-BR'] as const)(
     'renders the missing-company fallback in %s',
     (locale) => {
-      document.cookie = `${LOCALE_COOKIE}=${locale}; path=/`;
       render(
-        <I18nProvider>
+        <I18nProvider locale={locale}>
           <JobCard job={{ ...job, companyName: null }} />
         </I18nProvider>,
       );
@@ -99,9 +95,8 @@ describe('JobCard', () => {
   );
 
   it('preserves an actual company named like the English fallback', () => {
-    document.cookie = `${LOCALE_COOKIE}=pt-BR; path=/`;
     render(
-      <I18nProvider>
+      <I18nProvider locale="pt-BR">
         <JobCard job={{ ...job, companyName: COMPANY_NAME_FALLBACK.en }} />
       </I18nProvider>,
     );

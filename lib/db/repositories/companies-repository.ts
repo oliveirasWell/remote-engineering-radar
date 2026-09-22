@@ -5,8 +5,15 @@ import {
   type CompanyKind,
 } from '@/lib/companies/constants';
 import type { Company, NewCompany } from '@/lib/companies/types';
-import { REMOTE_POLICY_REMOTE } from '@/lib/jobs/constants';
+import {
+  REMOTE_POLICY_REMOTE,
+  type JobCountrySlug,
+  type JobFocusSlug,
+} from '@/lib/jobs/constants';
 import type { Db } from '../client';
+import { countryFilter } from './country-filter';
+import { focusFilter } from './focus-filter';
+import { coalescedPostedAtFilter } from './posted-at-filter';
 
 const toCompanyKind = (value: string): CompanyKind => {
   if (value === 'consultancy' || value === 'staffing' || value === 'product') {
@@ -30,14 +37,6 @@ const toCompany = (row: PrismaCompany): Company => ({
 
 const resolveKindForInput = (input: NewCompany): CompanyKind =>
   input.kind ?? resolveCompanyKind(input.slug);
-
-/** Mirrors `coalesce(posted_at, first_seen_at) >= cutoff`. */
-const postedSinceFilter = (cutoff: Date): Prisma.JobWhereInput => ({
-  OR: [
-    { postedAt: { gte: cutoff } },
-    { postedAt: null, firstSeenAt: { gte: cutoff } },
-  ],
-});
 
 export const createCompaniesRepository = (db: Db) => ({
   create: async (input: NewCompany): Promise<Company> =>
@@ -77,7 +76,8 @@ export const createCompaniesRepository = (db: Db) => ({
   listByHiringScore: async (options?: {
     limit?: number;
     minimumHiringScore?: number;
-    country?: string;
+    country?: JobCountrySlug;
+    focus?: JobFocusSlug;
     maxJobAgeMs?: number;
     now?: Date;
   }): Promise<Company[]> => {
@@ -95,10 +95,11 @@ export const createCompaniesRepository = (db: Db) => ({
           some: {
             isActive: true,
             remotePolicy: REMOTE_POLICY_REMOTE,
-            ...(cutoff ? postedSinceFilter(cutoff) : {}),
-            ...(options?.country
-              ? { countries: { array_contains: [options.country] } }
-              : {}),
+            AND: [
+              cutoff ? coalescedPostedAtFilter('gte', cutoff) : {},
+              countryFilter(options?.country),
+              focusFilter(options?.focus),
+            ],
           },
         },
       },
