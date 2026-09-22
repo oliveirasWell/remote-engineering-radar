@@ -39,6 +39,8 @@ Open:
   TypeScript 6 (7 blocked by typescript-eslint), Vitest 5
 - [SPEC-019](019-multilingual-classification.md) — multilingual job classification,
   starting with Portuguese (two PRs; depends on PR #48)
+- [SPEC-020](020-companies-payload-and-software-track.md) — lighter companies page,
+  software-only React Engineering track, fewer obvious non-tech jobs
 
 ---
 
