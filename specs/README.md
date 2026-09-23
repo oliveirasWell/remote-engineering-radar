@@ -43,6 +43,8 @@ Open:
   software-only React Engineering track, fewer obvious non-tech jobs
 - [SPEC-021](021-localized-urls.md) — localized URLs (`/pt-BR/...`) with server-rendered
   Portuguese, hreflang alternates, and a localized sitemap
+- [SPEC-022](022-lane-strategies.md) — lane strategies (React chip is not `software`;
+  Mobile; title-anchor / veto; classification adapters, not source adapters)
 
 ---
 
