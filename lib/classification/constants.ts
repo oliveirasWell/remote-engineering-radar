@@ -68,13 +68,60 @@ export const DATA_ANNOTATION_ROLE_FOCUS = 'annotation' as const;
 
 /**
  * The role-focus value that marks a software job: a software title, a
- * frontend/backend/fullstack/mobile focus, or a React-stack technology. The
- * React Engineering track requires it.
+ * frontend/backend/fullstack/mobile focus, or a React-stack technology.
+ * Stored jobs without the React-track basket stay under All roles.
  */
 export const SOFTWARE_ROLE_FOCUS = 'software' as const;
 
+/**
+ * The role-focus value that marks the React Engineering track. A software
+ * job still needs the React-term basket to reach this.
+ */
+export const REACT_ROLE_FOCUS = 'react' as const;
+
 /** The role-focus value that marks the Product track. */
 export const PRODUCT_ROLE_FOCUS = 'product' as const;
+
+/**
+ * React-track basket. React / React Native each clear the threshold alone;
+ * Jest, Material UI, and Tailwind are supporting hits that must combine.
+ */
+export const REACT_TRACK_TERMS = [
+  {
+    name: 'React',
+    weight: 0.5,
+    titlePattern: /\breact\b/i,
+    bodyPattern:
+      /\breact(?:\.js|js|\s+apps?|\s+applications?|\s+components?|\s+hooks?|\s+router|\s+query|\s+redux)\b|\breact\s*[,/|]|\b(?:with|using|in)\s+react\b(?!\s+engineers?\b)/i,
+  },
+  {
+    name: 'React Native',
+    weight: 0.5,
+    titlePattern: /\breact\s*native\b/i,
+    bodyPattern: /\breact\s*native\b/i,
+  },
+  {
+    name: 'Jest',
+    weight: 0.2,
+    titlePattern: /\bjest\b/i,
+    bodyPattern: /\bjest\b/i,
+  },
+  {
+    name: 'Material',
+    weight: 0.2,
+    titlePattern: /\bmaterial[\s-]?ui\b|\bmui\b/i,
+    bodyPattern: /\bmaterial[\s-]?ui\b|\bmui\b/i,
+  },
+  {
+    name: 'Tailwind',
+    weight: 0.2,
+    titlePattern: /\btailwind(?:\s*css)?\b/i,
+    bodyPattern: /\btailwind(?:\s*css)?\b/i,
+  },
+] as const;
+
+/** Share of the weighted basket a job must reach to join React Engineering. */
+export const REACT_TRACK_THRESHOLD = 0.4;
 
 export const UNRELATED_STACK_PATTERNS = [
   /\bdata engineer\b|\betl\b|\bspark\b|\bairflow\b/i,

@@ -1,4 +1,5 @@
 import { classifyJob, shouldPersistClassifiedJob } from './classify-job';
+import { REACT_ROLE_FOCUS } from './constants';
 
 const GEOGRAPHY_JOB_TITLE = 'Senior React Engineer';
 const ACCENTED_SENIORITY_TITLES = [
@@ -235,6 +236,16 @@ const PORTUGUESE_UNRELATED_ROLE_TITLES = [
 const QUAVE_ANNOTATION_TITLE = 'Senior Full-Stack Engineer';
 const QUAVE_ANNOTATION_DESCRIPTION =
   'Work with a US client developing AI training and evaluation data for coding agents. React, TypeScript, and Node.js.';
+const EWOR_DATA_ENGINEERING_TITLE =
+  'Renewable Energy Head of Data Engineering (100 % remote) (m/f/d)';
+const EWOR_DATA_ENGINEERING_DESCRIPTION =
+  'You will lead and execute core 0-to-1 initiatives in cutting-edge domains such as Renewable Energy. You will architect scalable solutions and drive critical milestones.';
+const DESIGNER_REACT_TEAM =
+  'Work with our React engineers to ship the design system.';
+const REACT_VERB_BODY = 'We react quickly to customer needs.';
+const JEST_ONLY_BODY = 'Write unit tests with Jest.';
+const SUPPORTING_REACT_STACK = 'Jest, Material UI, and Tailwind CSS.';
+const REACT_APPLICATIONS_BODY = 'Build React applications with TypeScript.';
 
 describe('classifyJob', () => {
   it.each(ACCENTED_SENIORITY_TITLES)(
@@ -579,6 +590,83 @@ describe('classifyJob', () => {
       expect(
         shouldPersistClassifiedJob(classifyJob(STONE_FIELD_SALES_JOB)),
       ).toBe(false);
+    });
+  });
+
+  describe('React Engineering track', () => {
+    it('puts a React title on the React track', () => {
+      expect(
+        classifyJob({ title: 'Senior React Engineer' }).roleFocus,
+      ).toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('puts a software title whose body names React applications on the React track', () => {
+      expect(
+        classifyJob({
+          title: SENIOR_ENGINEER_TITLE,
+          description: REACT_APPLICATIONS_BODY,
+        }).roleFocus,
+      ).toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('puts React Native on the React track', () => {
+      expect(
+        classifyJob({ title: 'Senior React Native Engineer' }).roleFocus,
+      ).toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('puts a software title with Jest, Material UI, and Tailwind on the React track', () => {
+      expect(
+        classifyJob({
+          title: SENIOR_ENGINEER_TITLE,
+          description: SUPPORTING_REACT_STACK,
+        }).roleFocus,
+      ).toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('keeps Head of Data Engineering off the React track', () => {
+      expect(
+        classifyJob({
+          title: EWOR_DATA_ENGINEERING_TITLE,
+          description: EWOR_DATA_ENGINEERING_DESCRIPTION,
+        }).roleFocus,
+      ).not.toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('keeps a Product Designer who works with React engineers off the React track', () => {
+      expect(
+        classifyJob({
+          title: 'Product Designer',
+          description: DESIGNER_REACT_TEAM,
+        }).roleFocus,
+      ).not.toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('keeps the English verb react off the React track', () => {
+      expect(
+        classifyJob({
+          title: SENIOR_ENGINEER_TITLE,
+          description: REACT_VERB_BODY,
+        }).roleFocus,
+      ).not.toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('keeps Jest alone off the React track', () => {
+      expect(
+        classifyJob({
+          title: SENIOR_ENGINEER_TITLE,
+          description: JEST_ONLY_BODY,
+        }).roleFocus,
+      ).not.toContain(REACT_ROLE_FOCUS);
+    });
+
+    it('keeps a Cloud & Ops title off the React track even when the body names React', () => {
+      expect(
+        classifyJob({
+          title: CLOUD_OPS_JOB_TITLE,
+          description: REACT_APPLICATIONS_BODY,
+        }).roleFocus,
+      ).not.toContain(REACT_ROLE_FOCUS);
     });
   });
 

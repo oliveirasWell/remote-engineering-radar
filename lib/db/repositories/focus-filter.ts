@@ -3,7 +3,7 @@ import {
   DATA_ANNOTATION_ROLE_FOCUS,
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
-  SOFTWARE_ROLE_FOCUS,
+  REACT_ROLE_FOCUS,
 } from '@/lib/classification/constants';
 import {
   JOB_FOCUS_CLOUD_OPS,
@@ -25,9 +25,9 @@ const TRACK_ROLE_FOCUS = {
 
 /**
  * Cloud & Ops, Data Annotation, and Product are each the presence of their
- * role focus. React Engineering is a software job on none of those tracks, so
- * the chips are disjoint; jobs with no signal at all appear only under
- * "All roles".
+ * role focus. React Engineering is the React-term basket on none of those
+ * tracks, so the chips stay disjoint; software jobs that miss the basket
+ * appear only under "All roles".
  */
 export const focusFilter = (
   focus: JobFocusSlug | undefined,
@@ -37,7 +37,7 @@ export const focusFilter = (
   }
   return focus === JOB_FOCUS_ENGINEERING
     ? {
-        ...containsRoleFocus(SOFTWARE_ROLE_FOCUS),
+        ...containsRoleFocus(REACT_ROLE_FOCUS),
         NOT: Object.values(TRACK_ROLE_FOCUS).map(containsRoleFocus),
       }
     : containsRoleFocus(TRACK_ROLE_FOCUS[focus]);

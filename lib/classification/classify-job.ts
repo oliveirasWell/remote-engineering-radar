@@ -3,12 +3,14 @@ import {
   DATA_ANNOTATION_ROLE_FOCUS,
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
+  REACT_ROLE_FOCUS,
   RELEVANT_TECHNOLOGY_NAMES,
   SOFTWARE_ROLE_FOCUS,
   TECHNOLOGY_PATTERNS,
   UNRELATED_STACK_PATTERNS,
 } from './constants';
 import type { JobClassification, JobRemotePolicy } from './types';
+import { meetsReactTrackThreshold } from './react-track/react-track';
 import { VOCABULARY } from './vocabulary/vocabulary';
 
 export type ClassifyJobInput = {
@@ -134,6 +136,17 @@ const classifyRoleFocus = (
     technologies.some((tech) => RELEVANT_TECHNOLOGY_NAMES.has(tech))
   ) {
     roleFocus.push(SOFTWARE_ROLE_FOCUS);
+  }
+  const onOtherTrack =
+    roleFocus.includes(PLATFORM_ROLE_FOCUS) ||
+    roleFocus.includes(DATA_ANNOTATION_ROLE_FOCUS) ||
+    roleFocus.includes(PRODUCT_ROLE_FOCUS);
+  if (
+    !onOtherTrack &&
+    (disciplines.length > 0 || matchesAny(VOCABULARY.softwareTitle, title)) &&
+    meetsReactTrackThreshold(title, haystack)
+  ) {
+    roleFocus.push(REACT_ROLE_FOCUS);
   }
   return roleFocus;
 };

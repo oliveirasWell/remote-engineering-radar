@@ -2,6 +2,7 @@ import {
   DATA_ANNOTATION_ROLE_FOCUS,
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
+  REACT_ROLE_FOCUS,
   SOFTWARE_ROLE_FOCUS,
 } from '@/lib/classification/constants';
 import {
@@ -336,7 +337,8 @@ describe('createJobsRepository', () => {
     const now = new Date('2026-09-08T00:00:00Z');
     const company = await companiesRepository.create(TEST_COMPANY);
     const roleFocusByJobId = {
-      'engineering-role': ['frontend', SOFTWARE_ROLE_FOCUS],
+      'engineering-role': ['frontend', SOFTWARE_ROLE_FOCUS, REACT_ROLE_FOCUS],
+      'software-only-role': ['frontend', SOFTWARE_ROLE_FOCUS],
       'platform-role': [PLATFORM_ROLE_FOCUS, SOFTWARE_ROLE_FOCUS],
       'annotation-role': ['fullstack', DATA_ANNOTATION_ROLE_FOCUS],
       'product-role': [PRODUCT_ROLE_FOCUS],
