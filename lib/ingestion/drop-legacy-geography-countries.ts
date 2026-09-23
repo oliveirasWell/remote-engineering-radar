@@ -2,18 +2,11 @@ import { Prisma } from '@prisma/client';
 import { classifyJob } from '@/lib/classification/classify-job';
 import type { RootDb } from '@/lib/db/client';
 import { resolveJobCountries } from '@/lib/jobs/countries';
-import { FRONTENDBR_SOURCE_NAME } from '@/lib/sources/frontendbr/constants';
 import {
   LEGACY_GEOGRAPHY_COUNTRIES,
   LEGACY_GEOGRAPHY_COUNTRIES_CUTOFF,
 } from './constants';
-
-const LEGACY: ReadonlySet<string> = new Set(LEGACY_GEOGRAPHY_COUNTRIES);
-
-const readCountries = (value: Prisma.JsonValue): string[] =>
-  Array.isArray(value)
-    ? value.filter((entry): entry is string => typeof entry === 'string')
-    : [];
+import { readStringArray } from './reclassify-active-jobs';
 
 /**
  * What the location itself backs: countries it names, plus a region its own
@@ -33,7 +26,9 @@ const keptCountries = (
   return named.length === 0
     ? [...countries]
     : countries.filter(
-        (country) => !LEGACY.has(country) || backed.has(country),
+        (country) =>
+          !LEGACY_GEOGRAPHY_COUNTRIES.includes(country as never) ||
+          backed.has(country),
       );
 };
 
@@ -50,8 +45,6 @@ export const dropLegacyGeographyCountries = async (
   const rows = await db.job.findMany({
     where: {
       lastSeenAt: { lt: LEGACY_GEOGRAPHY_COUNTRIES_CUTOFF },
-      // The board is Brazil-only; its normalizer sets `brazil` itself.
-      source: { not: FRONTENDBR_SOURCE_NAME },
       OR: LEGACY_GEOGRAPHY_COUNTRIES.map((country) => ({
         countries: { array_contains: [country] },
       })),
@@ -60,14 +53,10 @@ export const dropLegacyGeographyCountries = async (
   });
   const updates = rows
     .map((row) => {
-      const before = readCountries(row.countries);
+      const before = readStringArray(row.countries);
       return { id: row.id, before, after: keptCountries(before, row.location) };
     })
     .filter(({ before, after }) => after.length !== before.length);
-
-  if (updates.length === 0) {
-    return 0;
-  }
 
   await db.$executeRaw(Prisma.sql`
     UPDATE jobs SET countries = t.countries::jsonb, updated_at = now()

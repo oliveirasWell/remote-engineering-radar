@@ -2,7 +2,6 @@ import { createCompaniesRepository } from '@/lib/db/repositories/companies-repos
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { TEST_COMPANY, TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import { createTestDb } from '@/lib/db/test/create-test-db';
-import { FRONTENDBR_SOURCE_NAME } from '@/lib/sources/frontendbr/constants';
 import { LEGACY_GEOGRAPHY_COUNTRIES_CUTOFF } from './constants';
 import { dropLegacyGeographyCountries } from './drop-legacy-geography-countries';
 
@@ -13,8 +12,6 @@ const UNRESTRICTED_LOCATION = 'Remote';
 const SAO_PAULO_LOCATION = 'São Paulo';
 const SAO_PAULO = 'sao-paulo';
 const BRAZIL = 'brazil';
-const FRONTENDBR_LOCATION = 'Remoto';
-const REMOTO = 'remoto';
 const BEFORE_CUTOFF = new Date(
   LEGACY_GEOGRAPHY_COUNTRIES_CUTOFF.getTime() - 1000,
 );
@@ -28,7 +25,6 @@ const seedJob = async (
     location: string;
     countries: string[];
     lastSeenAt: Date;
-    source?: string;
   },
 ) => {
   const db = await createTestDb();
@@ -91,17 +87,5 @@ describe('dropLegacyGeographyCountries', () => {
 
     await expect(dropLegacyGeographyCountries(db)).resolves.toBe(0);
     await expect(countriesOf(db, id)).resolves.toEqual([SAO_PAULO, BRAZIL]);
-  });
-
-  it('leaves a Brazil-only board whose source sets the country itself', async () => {
-    const { db, id } = await seedJob('frontendbr', {
-      source: FRONTENDBR_SOURCE_NAME,
-      location: FRONTENDBR_LOCATION,
-      countries: [BRAZIL, REMOTO],
-      lastSeenAt: BEFORE_CUTOFF,
-    });
-
-    await expect(dropLegacyGeographyCountries(db)).resolves.toBe(0);
-    await expect(countriesOf(db, id)).resolves.toEqual([BRAZIL, REMOTO]);
   });
 });
