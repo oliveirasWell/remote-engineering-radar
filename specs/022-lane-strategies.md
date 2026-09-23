@@ -127,9 +127,17 @@ pick a chip.
 
 ## Existing rows
 
-Run [scripts/reclassify-active-jobs.ts](scripts/reclassify-active-jobs.ts) after
-the classifier lands. It rewrites `roleFocus` / score and deactivates rows
-`shouldPersistClassifiedJob` rejects. No wipe.
+A Prisma SQL migration cannot run `classifyJob`. The backfill is a TypeScript
+data migration, invoked from [scripts/migrate-deploy.ts](scripts/migrate-deploy.ts)
+after `prisma migrate deploy`, recorded in `data_migrations` so it runs once.
+
+The lane implementation PR adds one registry entry that calls the same
+`reclassifyActiveJobs` path as [scripts/reclassify-active-jobs.ts](scripts/reclassify-active-jobs.ts):
+rewrite `roleFocus` / score, deactivate what `shouldPersistClassifiedJob`
+rejects. Do not register that entry before the new classifier exists — it
+would apply the old rules and never run again.
+
+The CLI script stays for `--dry-run` / `--audit`. No wipe.
 
 Dead Himalayas URLs (308 → `/jobs`) are out of scope. The Himalayas adapter is
 `complete: false` and does not check link liveness.
@@ -154,6 +162,9 @@ RED → GREEN → REFACTOR.
 - `focusFilter({ focus: engineering })` matches `react`, not `software`
 - Adding a sixth lane is one factory call plus one table row; no new branch in
   `classifyJob` or `focusFilter` beyond the slug
+- `migrate deploy` runs pending TypeScript data migrations after schema migrate
+- The `022-lane-strategies` data migration is not registered until this
+  classifier ships
 
 `pnpm test` and `pnpm check` stay green.
 
