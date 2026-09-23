@@ -6,17 +6,25 @@ ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS geographies jsonb DEFAULT '[]':
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS countries jsonb DEFAULT '[]'::jsonb NOT NULL;
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS role_focus jsonb DEFAULT '[]'::jsonb NOT NULL;
 
+-- Created here, and revoked below with the application tables: a legacy
+-- database may still carry permissive default privileges for new tables.
+CREATE TABLE IF NOT EXISTS public.data_migrations (
+    name text NOT NULL,
+    applied_at timestamptz(6) DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT data_migrations_pkey PRIMARY KEY (name)
+);
+
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs FROM anon;
+        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations FROM anon;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE ALL ON TABLES FROM anon;
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
         END IF;
     END IF;
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs FROM authenticated;
+        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations FROM authenticated;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE ALL ON TABLES FROM authenticated;
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM authenticated;

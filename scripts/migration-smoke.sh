@@ -84,9 +84,12 @@ docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbn
   ALTER DEFAULT PRIVILEGES FOR ROLE postgres GRANT ALL ON TABLES TO anon, authenticated;
   ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
 "
+# Columns the classifier owns are excluded: the 022-lane-strategies data
+# migration rewrites them on deploy by design. Everything else, including every
+# row's identity, must survive untouched.
 snapshot_query="SELECT jsonb_build_object(
   'companies', (SELECT jsonb_agg(to_jsonb(c) - 'kind' ORDER BY id) FROM companies c),
-  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' - 'role_focus' ORDER BY id) FROM jobs j),
+  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' - 'role_focus' - 'technologies' - 'seniority' - 'score' - 'is_active' - 'updated_at' ORDER BY id) FROM jobs j),
   'hiring_signals', (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM hiring_signals s),
   'ingestion_runs', (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM ingestion_runs r),
   'drizzle', (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM drizzle.__drizzle_migrations m)
@@ -118,8 +121,18 @@ DATABASE_MIGRATION_URL="$legacy_url" pnpm db:deploy
 DATABASE_MIGRATION_URL="$legacy_url" pnpm db:status
 after="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$legacy_database_name" --tuples-only --no-align --command "$snapshot_query")"
 test "$before" = "$after"
-preserved="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$legacy_database_name" --tuples-only --no-align --command "SELECT kind = 'consultancy' AND geographies = '[\"LATAM\"]'::jsonb AND countries = '[\"BR\"]'::jsonb FROM companies JOIN jobs ON jobs.company_id = companies.id")"
+# `geographies` is classifier output and the 022-lane-strategies backfill
+# rewrites it. `countries` is not: the backfill must leave it alone, which is
+# what this asserts.
+preserved="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$legacy_database_name" --tuples-only --no-align --command "SELECT kind = 'consultancy' AND countries = '[\"BR\"]'::jsonb FROM companies JOIN jobs ON jobs.company_id = companies.id")"
 test "$preserved" = 't'
 migration_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$legacy_database_name" --tuples-only --no-align --command 'SELECT count(*) FROM "_prisma_migrations" WHERE finished_at IS NOT NULL')"
 test "$migration_count" = "$expected_migration_count"
+
+# Both deploys ran, so a data migration recorded once proves it is not replayed.
+for data_migration_database in "$database_name" "$legacy_database_name"; do
+  data_migration_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$data_migration_database" --tuples-only --no-align --command "SELECT count(*) FROM data_migrations WHERE name = '022-lane-strategies'")"
+  test "$data_migration_count" = '1'
+done
+
 echo 'Fresh deploy and legacy preparation/check/resolve/deploy passed without data loss.'
