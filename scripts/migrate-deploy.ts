@@ -7,8 +7,6 @@ import {
   DIRECT_URL_ENV,
   PRISMA_BASELINE,
 } from '../lib/db/constants';
-import { createDb, disconnectDb } from '../lib/db/client';
-import { runPendingDataMigrations } from '../lib/db/data-migrations/run-data-migrations';
 import {
   databasePoolConfig,
   databaseSslMode,
@@ -52,7 +50,7 @@ const verifyBaselineState = async (connectionString: string): Promise<void> => {
       SELECT count(*)::integer AS count
       FROM information_schema.tables
       WHERE table_schema = 'public'
-        AND table_name IN ('companies', 'jobs', 'hiring_signals', 'data_migrations')
+        AND table_name IN ('companies', 'jobs', 'hiring_signals')
     `);
     const applicationTableCount = tableResult.rows[0]?.count ?? 0;
 
@@ -131,7 +129,7 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
       SELECT EXISTS (
         SELECT 1
         FROM pg_roles role
-        CROSS JOIN unnest(ARRAY['companies', 'jobs', 'hiring_signals', 'data_migrations', '_prisma_migrations']) AS table_name
+        CROSS JOIN unnest(ARRAY['companies', 'jobs', 'hiring_signals', '_prisma_migrations']) AS table_name
         WHERE role.rolname IN ('anon', 'authenticated')
           AND to_regclass('public.' || table_name) IS NOT NULL
           AND (
@@ -166,7 +164,7 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
             WHERE relation.relowner = defaults.defaclrole
               AND relation.relnamespace = 'public'::regnamespace
               AND relation.relkind IN ('r', 'p')
-              AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', '_prisma_migrations')
+              AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', '_prisma_migrations')
           ) AS owner_owns_radar_tables,
           owner.rolname = 'postgres' AS owner_is_postgres,
           -- USAGE matches the effective role privileges needed to alter default ACLs.
@@ -185,7 +183,7 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
               WHERE relation.relowner = defaults.defaclrole
                 AND relation.relnamespace = 'public'::regnamespace
                 AND relation.relkind IN ('r', 'p')
-                AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', '_prisma_migrations')
+                AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', '_prisma_migrations')
             )
           )
           AND (
@@ -241,12 +239,6 @@ export const migrateDeploy = async (): Promise<void> => {
   );
   await verifySchemaParity(connectionString);
   await verifyPrivileges(connectionString);
-  const db = createDb(connectionString);
-  try {
-    await runPendingDataMigrations(db);
-  } finally {
-    await disconnectDb(db);
-  }
 };
 
 if (

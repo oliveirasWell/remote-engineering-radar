@@ -14,9 +14,6 @@ const mocks = vi.hoisted(() => ({
   spawn: vi.fn(),
   query: vi.fn(),
   end: vi.fn(),
-  createDb: vi.fn(),
-  disconnectDb: vi.fn(),
-  runPendingDataMigrations: vi.fn(),
 }));
 
 vi.mock('node:child_process', () => ({ spawn: mocks.spawn }));
@@ -27,13 +24,6 @@ vi.mock('pg', () => ({
       end = mocks.end;
     },
   ),
-}));
-vi.mock('../lib/db/client', () => ({
-  createDb: mocks.createDb,
-  disconnectDb: mocks.disconnectDb,
-}));
-vi.mock('../lib/db/data-migrations/run-data-migrations', () => ({
-  runPendingDataMigrations: mocks.runPendingDataMigrations,
 }));
 
 describe('migration deployment safety', () => {
@@ -91,9 +81,6 @@ describe('explicit baseline preparation', () => {
     process.env.DATABASE_MIGRATION_URL = migrationUrl;
     process.env.DIRECT_URL = 'postgresql://other@direct.example.com/radar';
     process.env.DATABASE_URL = 'postgresql://runtime@pooler.example.com/radar';
-    mocks.createDb.mockReturnValue({});
-    mocks.disconnectDb.mockResolvedValue(undefined);
-    mocks.runPendingDataMigrations.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -240,8 +227,6 @@ describe('explicit baseline preparation', () => {
       .mockResolvedValueOnce({ rows: [{ exists: false }] });
     await expect(migrateDeploy()).rejects.toThrow('pnpm db:resolve-baseline');
     expect(mocks.spawn).not.toHaveBeenCalled();
-    expect(mocks.createDb).not.toHaveBeenCalled();
-    expect(mocks.runPendingDataMigrations).not.toHaveBeenCalled();
     expect(mocks.end).toHaveBeenCalledOnce();
   });
 
@@ -254,9 +239,6 @@ describe('explicit baseline preparation', () => {
       ['migrate', 'deploy'],
       ['migrate', 'diff'],
     ]);
-    expect(mocks.createDb).toHaveBeenCalledWith(migrationUrl);
-    expect(mocks.runPendingDataMigrations).toHaveBeenCalledOnce();
-    expect(mocks.disconnectDb).toHaveBeenCalledOnce();
   });
 });
 
