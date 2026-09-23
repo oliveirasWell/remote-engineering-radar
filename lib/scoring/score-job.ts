@@ -16,16 +16,13 @@ type ScoreJobInput = ClassifyJobInput & { seniority?: string };
 const scoringSeniority = (
   seniority: string | undefined,
 ): JobClassification['seniority'] => {
-  if (
-    seniority === 'junior' ||
+  return seniority === 'junior' ||
     seniority === 'mid' ||
     seniority === 'senior' ||
     seniority === 'staff' ||
     seniority === 'principal'
-  ) {
-    return seniority;
-  }
-  return undefined;
+    ? seniority
+    : undefined;
 };
 
 const normalizeScore = (rawScore: number): number =>

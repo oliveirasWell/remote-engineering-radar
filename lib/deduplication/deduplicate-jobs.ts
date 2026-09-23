@@ -20,14 +20,10 @@ const preferCanonical = (
     return { ...current, url: candidate.url };
   }
 
-  if (
-    currentHttps === candidateHttps &&
+  return currentHttps === candidateHttps &&
     candidate.url.length > current.url.length
-  ) {
-    return { ...current, url: candidate.url };
-  }
-
-  return current;
+    ? { ...current, url: candidate.url }
+    : current;
 };
 
 const strongCrossSourceKey = (job: NormalizedJob): string | undefined => {
@@ -42,11 +38,9 @@ const strongCrossSourceKey = (job: NormalizedJob): string | undefined => {
     return `app:${company}|${title}|${applicationUrl}`;
   }
 
-  if (job.company.websiteUrl) {
-    return `site:${company}|${title}|${normalizeUrl(job.company.websiteUrl)}`;
-  }
-
-  return undefined;
+  return job.company.websiteUrl
+    ? `site:${company}|${title}|${normalizeUrl(job.company.websiteUrl)}`
+    : undefined;
 };
 
 export const deduplicateJobs = (

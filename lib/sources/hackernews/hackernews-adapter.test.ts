@@ -79,10 +79,9 @@ describe('createHackerNewsAdapter', () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = new URL(String(input));
       const tags = url.searchParams.get('tags') ?? '';
-      if (tags.includes('author_whoishiring')) {
-        return jsonResponse(story);
-      }
-      return jsonResponse(malformed);
+      return tags.includes('author_whoishiring')
+        ? jsonResponse(story)
+        : jsonResponse(malformed);
     });
 
     const adapter = createHackerNewsAdapter({

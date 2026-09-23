@@ -49,11 +49,9 @@ const readRemotePolicy = (record: AshbyJobRecord): string | undefined => {
     return 'hybrid';
   }
 
-  if (workplaceType === 'onsite' || workplaceType === 'office') {
-    return 'onsite';
-  }
-
-  return workplaceType;
+  return workplaceType === 'onsite' || workplaceType === 'office'
+    ? 'onsite'
+    : workplaceType;
 };
 
 const readPostedAt = (record: AshbyJobRecord): Date | undefined => {

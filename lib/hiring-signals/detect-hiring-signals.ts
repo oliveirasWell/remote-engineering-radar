@@ -50,6 +50,21 @@ const jobTimestamp = (job: HiringSignalJobInput): Date | undefined =>
 const evidenceUrl = (jobs: HiringSignalJobInput[]): string | undefined =>
   jobs.find((job) => job.sourceUrl)?.sourceUrl;
 
+/** First threshold the score clears wins, strongest first. */
+const HIRING_SUMMARIES = [
+  { minimumScore: 40, summary: 'Strong hiring signal' },
+  {
+    minimumScore: 1,
+    summary: 'Company is actively expanding engineering hiring.',
+  },
+] as const;
+
+const NO_HIRING_SUMMARY = 'No strong engineering hiring signal detected.';
+
+const summaryFor = (hiringScore: number): string =>
+  HIRING_SUMMARIES.find(({ minimumScore }) => hiringScore >= minimumScore)
+    ?.summary ?? NO_HIRING_SUMMARY;
+
 export const detectHiringSignals = (input: {
   companyName: string;
   jobs: HiringSignalJobInput[];
@@ -71,10 +86,9 @@ export const detectHiringSignals = (input: {
 
   const recentJobs = engineeringJobs.filter((job) => {
     const timestamp = jobTimestamp(job);
-    if (!timestamp) {
-      return false;
-    }
-    return now.getTime() - timestamp.getTime() <= RECENT_HIRING_WINDOW_MS;
+    return timestamp
+      ? now.getTime() - timestamp.getTime() <= RECENT_HIRING_WINDOW_MS
+      : false;
   });
 
   if (recentJobs.length >= RECENT_OPENINGS_THRESHOLD) {
@@ -128,12 +142,5 @@ export const detectHiringSignals = (input: {
     (total, signal) => total + signal.score,
     0,
   );
-  const summary =
-    hiringScore >= 40
-      ? 'Strong hiring signal'
-      : hiringScore > 0
-        ? 'Company is actively expanding engineering hiring.'
-        : 'No strong engineering hiring signal detected.';
-
-  return { signals, hiringScore, summary };
+  return { signals, hiringScore, summary: summaryFor(hiringScore) };
 };

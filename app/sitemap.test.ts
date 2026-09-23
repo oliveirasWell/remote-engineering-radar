@@ -13,7 +13,7 @@ import { DEFAULT_SITE_ORIGIN, MIN_INDEXABLE_JOBS } from '@/lib/seo/constants';
 import { filterJobCount } from '@/lib/seo/filter-job-count';
 import sitemap from './sitemap';
 
-vi.mock('next/server', () => ({ connection: vi.fn(async () => undefined) }));
+vi.mock('next/server', () => ({ connection: vi.fn(async () => {}) }));
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
 vi.mock('@/lib/seo/filter-job-count', () => ({
   filterJobCount: vi.fn(async () => 0),

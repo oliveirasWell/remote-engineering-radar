@@ -44,13 +44,11 @@ const isRemoteLocation = (location: string): boolean =>
   /\bremote\b/i.test(location);
 
 const readSkills = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((entry) => asString(entry))
-    .filter((entry): entry is string => Boolean(entry));
+  return Array.isArray(value)
+    ? value
+        .map((entry) => asString(entry))
+        .filter((entry): entry is string => Boolean(entry))
+    : [];
 };
 
 export const normalizeYCombinatorJob = (

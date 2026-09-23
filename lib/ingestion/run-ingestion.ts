@@ -57,10 +57,9 @@ const isPostedBeyondMaxAge = (
   now: Date,
   maxAgeMs: number,
 ): boolean => {
-  if (!job.postedAt) {
-    return false;
-  }
-  return now.getTime() - job.postedAt.getTime() > maxAgeMs;
+  return job.postedAt
+    ? now.getTime() - job.postedAt.getTime() > maxAgeMs
+    : false;
 };
 
 const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
@@ -103,7 +102,7 @@ export const runIngestion = async (options: {
   now?: () => Date;
 }): Promise<IngestionResult> => {
   const logger = options.logger ?? {
-    info: (message: string) => console.log(message),
+    info: (message: string) => console.info(message),
     error: (message: string) => console.error(message),
   };
   const now = options.now?.() ?? new Date();

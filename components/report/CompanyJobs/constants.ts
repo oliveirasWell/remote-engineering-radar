@@ -8,10 +8,7 @@ const comparePublicationDates = (
   if (!a.postedAt) {
     return b.postedAt ? 1 : 0;
   }
-  if (!b.postedAt) {
-    return -1;
-  }
-  return b.postedAt.getTime() - a.postedAt.getTime();
+  return b.postedAt ? b.postedAt.getTime() - a.postedAt.getTime() : -1;
 };
 
 export const JOB_COMPARATORS: Record<

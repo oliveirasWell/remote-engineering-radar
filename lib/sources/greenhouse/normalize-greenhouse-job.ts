@@ -37,19 +37,15 @@ const asNumberId = (value: unknown): string | undefined => {
     return String(value);
   }
 
-  if (typeof value === 'string' && value.trim().length > 0) {
-    return value.trim();
-  }
-
-  return undefined;
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : undefined;
 };
 
 const readLocation = (value: unknown): string | undefined => {
-  if (!value || typeof value !== 'object') {
-    return undefined;
-  }
-
-  return asString((value as { name?: unknown }).name);
+  return !value || typeof value !== 'object'
+    ? undefined
+    : asString((value as { name?: unknown }).name);
 };
 
 const readPostedAt = (record: GreenhouseJobRecord): Date | undefined => {

@@ -68,19 +68,28 @@ export const DATA_ANNOTATION_ROLE_FOCUS = 'annotation' as const;
 
 /**
  * The role-focus value that marks a software job: a software title, a
- * frontend/backend/fullstack/mobile focus, or a React-stack technology. The
- * React Engineering track requires it.
+ * frontend/backend/fullstack focus, or a React-stack technology. It is a
+ * signal, not a track: it keeps an obviously technical title off the
+ * unrelated-role list, and no chip is built on it.
  */
 export const SOFTWARE_ROLE_FOCUS = 'software' as const;
 
 /** The role-focus value that marks the Product track. */
 export const PRODUCT_ROLE_FOCUS = 'product' as const;
 
+/** The role-focus value that marks the React Engineering track. */
+export const REACT_ROLE_FOCUS = 'react' as const;
+
+/** The role-focus value that marks the Mobile track. */
+export const MOBILE_ROLE_FOCUS = 'mobile' as const;
+
 export const UNRELATED_STACK_PATTERNS = [
-  /\bdata engineer\b|\betl\b|\bspark\b|\bairflow\b/i,
+  /\bdata engineer(?:ing)?\b|\betl\b|\bspark\b|\bairflow\b/i,
   /\bqa engineer\b|\bquality assurance\b|\btest automation engineer\b/i,
-  /\bandroid\b(?!.*(react native|expo))/i,
-  /\bios\b(?!.*(react native|expo))/i,
+  // No mobile-framework exception here: a posting that names iOS or Android
+  // is on the Mobile track, and a track is never judged by its stack.
+  /\bandroid\b/i,
+  /\bios\b/i,
   /\bswift\b|\bkotlin\b|\bjava\b(?!script)/i,
   /\bruby on rails\b|\b\.net\b|\bc#\b|\bgolang\b|\bgo engineer\b/i,
 ] as const;

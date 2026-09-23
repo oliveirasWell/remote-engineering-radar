@@ -52,14 +52,12 @@ const readDescription = (value: unknown): string | undefined => {
 
 /** `jobGeo` holds a comma-separated list, e.g. "Germany,  Ireland,  UK". */
 const readCountries = (geo: string | undefined): string[] => {
-  if (!geo || geo === JOBICY_ANYWHERE_GEO) {
-    return [];
-  }
-
-  return geo
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0 && entry !== JOBICY_ANYWHERE_GEO);
+  return !geo || geo === JOBICY_ANYWHERE_GEO
+    ? []
+    : geo
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0 && entry !== JOBICY_ANYWHERE_GEO);
 };
 
 export const normalizeJobicyJob = (

@@ -32,21 +32,17 @@ const asString = (value: unknown): string | undefined => {
 };
 
 const readStrings = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((entry) => asString(entry))
-    .filter((entry): entry is string => Boolean(entry));
+  return Array.isArray(value)
+    ? value
+        .map((entry) => asString(entry))
+        .filter((entry): entry is string => Boolean(entry))
+    : [];
 };
 
 const readPostedAt = (value: unknown): Date | undefined => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return undefined;
-  }
-
-  return new Date(value * 1000);
+  return typeof value !== 'number' || !Number.isFinite(value)
+    ? undefined
+    : new Date(value * 1000);
 };
 
 const readDescription = (value: unknown): string | undefined => {

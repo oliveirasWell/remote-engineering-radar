@@ -68,9 +68,12 @@ export const JOB_FOCUS_DATA_ANNOTATION = 'data-annotation' as const;
 
 export const JOB_FOCUS_PRODUCT = 'product' as const;
 
+export const JOB_FOCUS_MOBILE = 'mobile' as const;
+
 export const JOB_FOCUS_FILTER_OPTIONS = [
   { slug: JOB_FOCUS_ENGINEERING },
   { slug: JOB_FOCUS_CLOUD_OPS },
+  { slug: JOB_FOCUS_MOBILE },
   { slug: JOB_FOCUS_DATA_ANNOTATION },
   { slug: JOB_FOCUS_PRODUCT },
 ] as const;

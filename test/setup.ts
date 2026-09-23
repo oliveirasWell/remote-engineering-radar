@@ -7,6 +7,6 @@ import '@testing-library/jest-dom/vitest';
  */
 vi.mock('next/cache', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/cache')>()),
-  cacheLife: () => undefined,
-  cacheTag: () => undefined,
+  cacheLife: () => {},
+  cacheTag: () => {},
 }));

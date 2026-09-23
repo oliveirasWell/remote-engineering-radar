@@ -1,44 +1,37 @@
 import type { Prisma } from '@prisma/client';
 import {
   DATA_ANNOTATION_ROLE_FOCUS,
+  MOBILE_ROLE_FOCUS,
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
-  SOFTWARE_ROLE_FOCUS,
+  REACT_ROLE_FOCUS,
 } from '@/lib/classification/constants';
+import type { LaneRoleFocus } from '@/lib/classification/lanes/types';
 import {
   JOB_FOCUS_CLOUD_OPS,
   JOB_FOCUS_DATA_ANNOTATION,
   JOB_FOCUS_ENGINEERING,
+  JOB_FOCUS_MOBILE,
   JOB_FOCUS_PRODUCT,
   type JobFocusSlug,
 } from '@/lib/jobs/constants';
 
-const containsRoleFocus = (roleFocus: string): Prisma.JobWhereInput => ({
-  roleFocus: { array_contains: [roleFocus] },
-});
-
-const TRACK_ROLE_FOCUS = {
+/**
+ * Every chip is the presence of its lane's role focus, and a job is on at
+ * most one lane, so the chips are disjoint. Jobs no lane claimed appear only
+ * under "All roles".
+ */
+const TRACK_ROLE_FOCUS: Readonly<Record<JobFocusSlug, LaneRoleFocus>> = {
+  [JOB_FOCUS_ENGINEERING]: REACT_ROLE_FOCUS,
   [JOB_FOCUS_CLOUD_OPS]: PLATFORM_ROLE_FOCUS,
+  [JOB_FOCUS_MOBILE]: MOBILE_ROLE_FOCUS,
   [JOB_FOCUS_DATA_ANNOTATION]: DATA_ANNOTATION_ROLE_FOCUS,
   [JOB_FOCUS_PRODUCT]: PRODUCT_ROLE_FOCUS,
-} as const;
+};
 
-/**
- * Cloud & Ops, Data Annotation, and Product are each the presence of their
- * role focus. React Engineering is a software job on none of those tracks, so
- * the chips are disjoint; jobs with no signal at all appear only under
- * "All roles".
- */
 export const focusFilter = (
   focus: JobFocusSlug | undefined,
-): Prisma.JobWhereInput => {
-  if (focus === undefined) {
-    return {};
-  }
-  return focus === JOB_FOCUS_ENGINEERING
-    ? {
-        ...containsRoleFocus(SOFTWARE_ROLE_FOCUS),
-        NOT: Object.values(TRACK_ROLE_FOCUS).map(containsRoleFocus),
-      }
-    : containsRoleFocus(TRACK_ROLE_FOCUS[focus]);
-};
+): Prisma.JobWhereInput =>
+  focus === undefined
+    ? {}
+    : { roleFocus: { array_contains: [TRACK_ROLE_FOCUS[focus]] } };

@@ -8,6 +8,18 @@ import { TEST_JOB_ID, TEST_REPORT_ERROR_MESSAGE } from './test-fixtures';
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
 vi.mock('./log-report-error', () => ({ logReportError: vi.fn() }));
 
+const spyOnQuery = (
+  db: Awaited<ReturnType<typeof createTestDb>>,
+  operation: string,
+) => {
+  if (operation === 'companies') {
+    return vi.spyOn(db.company, 'findMany');
+  }
+  return operation === 'jobs'
+    ? vi.spyOn(db.job, 'findMany')
+    : vi.spyOn(db.job, 'findUnique');
+};
+
 describe.each([
   {
     operation: 'companies',
@@ -49,12 +61,7 @@ describe.each([
     const db = await createTestDb();
     vi.mocked(getDb).mockReturnValue(db);
     const error = new Error(TEST_REPORT_ERROR_MESSAGE);
-    const query =
-      operation === 'companies'
-        ? vi.spyOn(db.company, 'findMany')
-        : operation === 'jobs'
-          ? vi.spyOn(db.job, 'findMany')
-          : vi.spyOn(db.job, 'findUnique');
+    const query = spyOnQuery(db, operation);
     query.mockRejectedValueOnce(error);
 
     try {

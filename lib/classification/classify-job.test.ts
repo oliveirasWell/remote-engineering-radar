@@ -17,6 +17,7 @@ const PLATFORM_ROLE_FOCUS = 'platform';
 const DATA_ANNOTATION_ROLE_FOCUS = 'annotation';
 const PRODUCT_ROLE_FOCUS = 'product';
 const SOFTWARE_ROLE_FOCUS = 'software';
+const REACT_ROLE_FOCUS = 'react';
 const SOFTWARE_TITLES = [
   'Senior Software Engineer',
   'Staff Engineer, Payments',
@@ -210,21 +211,49 @@ const PORTUGUESE_CASES = [
     expected: { geography: expect.arrayContaining(['latam']) },
   },
 ];
+const PORTUGUESE_CLOUD_DESCRIPTION =
+  'Voce vai cuidar da nossa infraestrutura na AWS e operar Kubernetes em producao.';
 const PORTUGUESE_ROLE_FOCUS_CASES = [
-  { title: 'Engenheira de Plataforma Sênior', roleFocus: PLATFORM_ROLE_FOCUS },
-  { title: 'Engenheiro de Confiabilidade', roleFocus: PLATFORM_ROLE_FOCUS },
+  {
+    title: 'Engenheira de Plataforma Sênior',
+    description: PORTUGUESE_CLOUD_DESCRIPTION,
+    roleFocus: PLATFORM_ROLE_FOCUS,
+  },
+  {
+    title: 'Engenheiro de Confiabilidade',
+    description: PORTUGUESE_CLOUD_DESCRIPTION,
+    roleFocus: PLATFORM_ROLE_FOCUS,
+  },
   {
     title: 'Anotador de Dados (Português)',
+    description: undefined,
     roleFocus: DATA_ANNOTATION_ROLE_FOCUS,
   },
-  { title: 'Treinadora de IA', roleFocus: DATA_ANNOTATION_ROLE_FOCUS },
-  { title: 'Coordenadora de Produto', roleFocus: PRODUCT_ROLE_FOCUS },
-  { title: 'Head de Produto', roleFocus: PRODUCT_ROLE_FOCUS },
   {
-    title: 'PO - Especialista de Gestão de Produtos Digitais',
+    title: 'Treinadora de IA',
+    description: undefined,
+    roleFocus: DATA_ANNOTATION_ROLE_FOCUS,
+  },
+  {
+    title: 'Coordenadora de Produto',
+    description: undefined,
     roleFocus: PRODUCT_ROLE_FOCUS,
   },
-  { title: 'Dono do Produto', roleFocus: PRODUCT_ROLE_FOCUS },
+  {
+    title: 'Head de Produto',
+    description: undefined,
+    roleFocus: PRODUCT_ROLE_FOCUS,
+  },
+  {
+    title: 'PO - Especialista de Gestão de Produtos Digitais',
+    description: undefined,
+    roleFocus: PRODUCT_ROLE_FOCUS,
+  },
+  {
+    title: 'Dono do Produto',
+    description: undefined,
+    roleFocus: PRODUCT_ROLE_FOCUS,
+  },
 ] as const;
 const PORTUGUESE_UNRELATED_ROLE_TITLES = [
   'Consultora Comercial',
@@ -295,7 +324,7 @@ describe('classifyJob', () => {
 
     expect(result.seniority).toBe('senior');
     expect(result.technologies).toContain('React Native');
-    expect(result.roleFocus).toContain('mobile');
+    expect(result.roleFocus).toContain(REACT_ROLE_FOCUS);
   });
 
   it('classifies Mid-level React', () => {
@@ -449,14 +478,17 @@ describe('classifyJob', () => {
     'Cloud Engineer',
     'Infrastructure Engineer',
     'Senior SRE',
-  ])('classifies %s as a platform focus', (title) => {
-    expect(classifyJob({ title }).roleFocus).toContain(PLATFORM_ROLE_FOCUS);
+  ])('classifies %s carrying cloud tooling as a platform focus', (title) => {
+    expect(
+      classifyJob({ title, description: CLOUD_OPS_DESCRIPTION }).roleFocus,
+    ).toContain(PLATFORM_ROLE_FOCUS);
   });
 
   it('keeps a platform role whose body mentions a competing language', () => {
     const result = classifyJob({
       title: CLOUD_OPS_JOB_TITLE,
-      description: 'Automate deploys for our Java and Kotlin services on GCP.',
+      description:
+        'Automate deploys for our Java and Kotlin services on GCP with Terraform.',
     });
 
     expect(result.isUnrelatedStack).toBe(false);
@@ -557,8 +589,10 @@ describe('classifyJob', () => {
 
     it.each(PORTUGUESE_ROLE_FOCUS_CASES)(
       'puts $title on the $roleFocus track',
-      ({ title, roleFocus }) => {
-        expect(classifyJob({ title }).roleFocus).toContain(roleFocus);
+      ({ title, description, roleFocus }) => {
+        expect(classifyJob({ title, description }).roleFocus).toContain(
+          roleFocus,
+        );
       },
     );
 
