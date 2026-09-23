@@ -93,6 +93,9 @@ importers:
       eslint-import-resolver-typescript:
         specifier: 4.4.5
         version: 4.4.5(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
+      eslint-plugin-functional:
+        specifier: 10.0.1
+        version: 10.0.1(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       eslint-plugin-import:
         specifier: 2.32.0
         version: 2.32.0(@typescript-eslint/parser@8.67.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3))(eslint-import-resolver-typescript@4.4.5)(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
@@ -2784,6 +2787,10 @@ packages:
     resolution: {integrity: sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==}
     engines: {node: '>=10'}
 
+  escape-string-regexp@5.0.0:
+    resolution: {integrity: sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==}
+    engines: {node: '>=12'}
+
   escodegen@2.1.0:
     resolution: {integrity: sha512-2NlIDTwUWJN0mRPQOdtQBzbUHvdGY2P1VXSyU83Q3xKxM7WHX2Ql8dKq782Q9TgQUNOLEzEYu9bzLNj1q88I5w==}
     engines: {node: '>=6.0'}
@@ -2855,6 +2862,16 @@ packages:
       eslint-import-resolver-typescript:
         optional: true
       eslint-import-resolver-webpack:
+        optional: true
+
+  eslint-plugin-functional@10.0.1:
+    resolution: {integrity: sha512-clkYpLx2NmBnJYZNdmFUV0uBOVOcaNSAsz050FLVeX3mDl8JB9dbJBGFXDwiWeE1vG90S4OwLB+xevAsD/cr5w==}
+    engines: {node: '>=v20.0.0'}
+    peerDependencies:
+      eslint: ^9.0.0 || ^10.0.0
+      typescript: '>=4.7.4'
+    peerDependenciesMeta:
+      typescript:
         optional: true
 
   eslint-plugin-import@2.32.0:
@@ -3312,6 +3329,12 @@ packages:
   is-glob@4.0.3:
     resolution: {integrity: sha512-xelSayHH36ZgE7ZWhli7pW34hNbNl8Ojv5KVmkJD4hBdD3th8Tfk9vYasLM+mXWOZhFkgZfxhLSnrwRr4elSSg==}
     engines: {node: '>=0.10.0'}
+
+  is-immutable-type@5.0.4:
+    resolution: {integrity: sha512-tDf0vB9dJJt/1USS2nvHJb8UsIAhs+pF6z8UZLNdhrzB+PKMrdcN45je9jhuFpaJOjJpoRhueFmFrRs5g/TNMA==}
+    peerDependencies:
+      eslint: '*'
+      typescript: '>=4.7.4'
 
   is-interactive@1.0.0:
     resolution: {integrity: sha512-2HvIEKRoqS62guEC+qBjpvRubdX910WCMuJTZ+I9yvqKU2/12eSL549HMwtabb4oupdj2sMP50k+XJfB/8JE6w==}
@@ -4652,6 +4675,11 @@ packages:
     engines: {node: '>=18.12'}
     peerDependencies:
       typescript: '>=4.8.4'
+
+  ts-declaration-location@1.0.7:
+    resolution: {integrity: sha512-EDyGAwH1gO0Ausm9gV6T2nUvBgXT5kGoCMJPllOaooZ+4VvJiKBdZE7wK18N1deEowhcUptS+5GXZK8U/fvpwA==}
+    peerDependencies:
+      typescript: '>=4.0.0'
 
   ts-graphviz@2.1.6:
     resolution: {integrity: sha512-XyLVuhBVvdJTJr2FJJV2L1pc4MwSjMhcunRVgDE9k4wbb2ee7ORYnPewxMWUav12vxyfUM686MSGsqnVRIInuw==}
@@ -7471,6 +7499,8 @@ snapshots:
 
   escape-string-regexp@4.0.0: {}
 
+  escape-string-regexp@5.0.0: {}
+
   escodegen@2.1.0:
     dependencies:
       esprima: 4.0.1
@@ -7563,6 +7593,20 @@ snapshots:
       eslint: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
       eslint-import-resolver-node: 0.3.10(supports-color@8.1.1)
       eslint-import-resolver-typescript: 4.4.5(eslint-plugin-import@2.32.0)(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)
+    transitivePeerDependencies:
+      - supports-color
+
+  eslint-plugin-functional@10.0.1(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3):
+    dependencies:
+      '@typescript-eslint/utils': 8.67.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      deepmerge-ts: 8.0.0
+      escape-string-regexp: 5.0.0
+      eslint: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
+      is-immutable-type: 5.0.4(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      ts-api-utils: 2.5.0(typescript@6.0.3)
+      ts-declaration-location: 1.0.7(typescript@6.0.3)
+    optionalDependencies:
+      typescript: 6.0.3
     transitivePeerDependencies:
       - supports-color
 
@@ -8156,6 +8200,16 @@ snapshots:
   is-glob@4.0.3:
     dependencies:
       is-extglob: 2.1.1
+
+  is-immutable-type@5.0.4(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3):
+    dependencies:
+      '@typescript-eslint/type-utils': 8.67.0(eslint@9.39.5(jiti@2.7.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
+      eslint: 9.39.5(jiti@2.7.0)(supports-color@8.1.1)
+      ts-api-utils: 2.5.0(typescript@6.0.3)
+      ts-declaration-location: 1.0.7(typescript@6.0.3)
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
 
   is-interactive@1.0.0: {}
 
@@ -9488,6 +9542,11 @@ snapshots:
 
   ts-api-utils@2.5.0(typescript@6.0.3):
     dependencies:
+      typescript: 6.0.3
+
+  ts-declaration-location@1.0.7(typescript@6.0.3):
+    dependencies:
+      picomatch: 4.0.7
       typescript: 6.0.3
 
   ts-graphviz@2.1.6:

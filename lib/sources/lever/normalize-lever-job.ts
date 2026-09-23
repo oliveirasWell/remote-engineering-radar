@@ -50,11 +50,10 @@ const readCountries = (record: LeverJobRecord): string[] => {
   return [...countries];
 };
 
-const readPostedAt = (value: unknown): Date | undefined => {
-  return typeof value !== 'number' || !Number.isFinite(value)
+const readPostedAt = (value: unknown): Date | undefined =>
+  typeof value !== 'number' || !Number.isFinite(value)
     ? undefined
     : new Date(value);
-};
 
 export const normalizeLeverJob = (
   record: LeverJobRecord,

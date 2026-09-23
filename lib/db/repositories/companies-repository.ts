@@ -15,11 +15,10 @@ import { countryFilter } from './country-filter';
 import { focusFilter } from './focus-filter';
 import { coalescedPostedAtFilter } from './posted-at-filter';
 
-const toCompanyKind = (value: string): CompanyKind => {
-  return value === 'consultancy' || value === 'staffing' || value === 'product'
+const toCompanyKind = (value: string): CompanyKind =>
+  value === 'consultancy' || value === 'staffing' || value === 'product'
     ? value
     : DEFAULT_COMPANY_KIND;
-};
 
 const toCompany = (row: PrismaCompany): Company => ({
   id: row.id,

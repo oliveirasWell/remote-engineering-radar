@@ -88,8 +88,8 @@ const asString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const readLabelNames = (value: unknown): string[] => {
-  return Array.isArray(value)
+const readLabelNames = (value: unknown): string[] =>
+  Array.isArray(value)
     ? value
         .map((label) =>
           typeof label === 'string'
@@ -99,7 +99,6 @@ const readLabelNames = (value: unknown): string[] => {
         .filter((name): name is string => Boolean(name))
         .map((name) => name.toLowerCase())
     : [];
-};
 
 const highestRanked = (
   labelNames: string[],

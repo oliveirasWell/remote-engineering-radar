@@ -13,13 +13,11 @@ export const canonicalMetadata = (
   index?: boolean,
   locale: Locale = DEFAULT_LOCALE,
 ): Metadata => {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined) {
-      query.set(key, String(value));
-    }
-  }
-  const search = query.toString();
+  const search = new URLSearchParams(
+    Object.entries(filters)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => [key, String(value)]),
+  ).toString();
   const sharedPath = search ? `${path}?${search}` : path;
   return {
     alternates: {

@@ -15,7 +15,9 @@ export const REACT_BODY_ANCHORS = [
   /\breact\s*native\b/i,
   /\breact\s*[+/,]/i,
   /\breact\s+and\b/i,
-  /\b(?:with|in|using)\s+react\b(?!\s+(?:engineers?|developers?|devs?|teams?))/i,
+  // "work with React engineers" describes the neighbours, not the job.
+  /\b(?:with|in|using)\s+react\b(?!\s+(?:engineers?|developers?))/i,
+  /\b(?:with|in|using)\s+react\b(?!\s+(?:devs?|teams?))/i,
   /\breact\s+(?:application|applications|app|apps|component|components|codebase|ecosystem|hooks|stack)\b/i,
 ] as const;
 

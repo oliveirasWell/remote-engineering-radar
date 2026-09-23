@@ -42,11 +42,10 @@ const asNumberId = (value: unknown): string | undefined => {
     : undefined;
 };
 
-const readLocation = (value: unknown): string | undefined => {
-  return !value || typeof value !== 'object'
+const readLocation = (value: unknown): string | undefined =>
+  !value || typeof value !== 'object'
     ? undefined
     : asString((value as { name?: unknown }).name);
-};
 
 const readPostedAt = (record: GreenhouseJobRecord): Date | undefined => {
   const raw = asString(record.first_published) ?? asString(record.updated_at);
