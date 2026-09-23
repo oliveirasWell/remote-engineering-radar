@@ -23,10 +23,9 @@ export const singleIndexableFilter = (
   filters: Record<string, string | number | undefined>,
 ): IndexableFilter | undefined => {
   const { country, focus, ...rest } = filters;
-  if (Object.values(rest).some((value) => value !== undefined)) {
-    return undefined;
-  }
-  return INDEXABLE_FILTERS.find(
-    (filter) => filter.country === country && filter.focus === focus,
-  );
+  return Object.values(rest).some((value) => value !== undefined)
+    ? undefined
+    : INDEXABLE_FILTERS.find(
+        (filter) => filter.country === country && filter.focus === focus,
+      );
 };

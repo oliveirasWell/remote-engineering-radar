@@ -69,6 +69,13 @@ model HiringSignal {
   @@map("hiring_signals")
 }
 
+model DataMigration {
+  name      String   @id @db.Text
+  appliedAt DateTime @default(now()) @map("applied_at") @db.Timestamptz(6)
+
+  @@map("data_migrations")
+}
+
 model IngestionRun {
   id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   completedAt      DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)

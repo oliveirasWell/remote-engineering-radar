@@ -149,7 +149,7 @@ describe('readJsonResponse', () => {
         },
         cancel() {
           canceled = true;
-          return new Promise<void>(() => undefined);
+          return new Promise<void>(() => {});
         },
       }),
       { headers: { 'content-length': '2' } },

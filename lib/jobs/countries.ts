@@ -54,11 +54,9 @@ export const normalizeCountryName = (value: string): string | undefined => {
     return COUNTRY_ALIASES[key];
   }
 
-  if (/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key)) {
-    return key;
-  }
-
-  return key.replace(/\s+/g, '-');
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key)
+    ? key
+    : key.replaceAll(/\s+/g, '-');
 };
 
 export const resolveJobCountries = (input: {

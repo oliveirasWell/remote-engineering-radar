@@ -51,11 +51,9 @@ const readCountries = (record: LeverJobRecord): string[] => {
 };
 
 const readPostedAt = (value: unknown): Date | undefined => {
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    return undefined;
-  }
-
-  return new Date(value);
+  return typeof value !== 'number' || !Number.isFinite(value)
+    ? undefined
+    : new Date(value);
 };
 
 export const normalizeLeverJob = (

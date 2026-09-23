@@ -5,7 +5,7 @@ const decodeBasicEntities = (value: string): string =>
     .replaceAll('&amp;', '&')
     .replaceAll('&quot;', '"')
     .replaceAll('&nbsp;', ' ')
-    .replace(/&#(x[0-9a-f]+|\d+);/gi, (entity, digits: string) => {
+    .replaceAll(/&#(x[0-9a-f]+|\d+);/gi, (entity, digits: string) => {
       const codePoint = digits.toLowerCase().startsWith('x')
         ? Number.parseInt(digits.slice(1), 16)
         : Number(digits);

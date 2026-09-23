@@ -126,9 +126,9 @@ export const JobsReport = ({
               min={0}
               max={100}
               defaultValue={
-                filters.minimumScore !== undefined
-                  ? String(filters.minimumScore)
-                  : ''
+                filters.minimumScore === undefined
+                  ? ''
+                  : String(filters.minimumScore)
               }
               className="rounded border border-border bg-card px-3 py-2 disabled:opacity-50"
             />

@@ -48,11 +48,7 @@ const splitTitle = (rawTitle: string): { title: string } | null => {
 
   const title = asString(rawTitle.slice(0, index));
   const remainder = asString(rawTitle.slice(index + 4));
-  if (!title || !remainder || !/quave/i.test(remainder)) {
-    return null;
-  }
-
-  return { title };
+  return !title || !remainder || !/quave/i.test(remainder) ? null : { title };
 };
 
 const readSeniority = (title: string): string | undefined => {
@@ -60,11 +56,9 @@ const readSeniority = (title: string): string | undefined => {
     return 'senior';
   }
 
-  if (/\b(tech lead|lead|expert|staff|principal)\b/i.test(title)) {
-    return 'staff';
-  }
-
-  return undefined;
+  return /\b(tech lead|lead|expert|staff|principal)\b/i.test(title)
+    ? 'staff'
+    : undefined;
 };
 
 export const normalizeQuaveIssue = (

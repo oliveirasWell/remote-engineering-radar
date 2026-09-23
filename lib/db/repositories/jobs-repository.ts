@@ -124,10 +124,7 @@ type RankedJob = {
 const newestFirst = (left: RankedJob, right: RankedJob): number => {
   const leftMs = (left.postedAt ?? left.firstSeenAt).getTime();
   const rightMs = (right.postedAt ?? right.firstSeenAt).getTime();
-  if (rightMs !== leftMs) {
-    return rightMs - leftMs;
-  }
-  return right.score - left.score;
+  return rightMs === leftMs ? right.score - left.score : rightMs - leftMs;
 };
 
 const keepPerCompany = (sorted: RankedJob[], limit: number): string[] => {

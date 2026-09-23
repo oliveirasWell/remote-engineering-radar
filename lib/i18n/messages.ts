@@ -91,6 +91,7 @@ export const EN_MESSAGES = {
   focus: {
     engineering: 'React Engineering',
     'cloud-ops': 'Cloud & Ops',
+    mobile: 'Mobile',
     'data-annotation': 'Data Annotation',
     product: 'Product',
   },
@@ -334,6 +335,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   focus: {
     engineering: 'Engenharia React',
     'cloud-ops': 'Cloud & Ops',
+    mobile: 'Mobile',
     'data-annotation': 'Anotação de Dados',
     product: 'Produto',
   },

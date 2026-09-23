@@ -7,4 +7,4 @@ export const foldText = (value: string): string =>
   value
     .toLowerCase()
     .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '');
+    .replaceAll(/\p{Diacritic}/gu, '');

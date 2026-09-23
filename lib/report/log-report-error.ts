@@ -1,5 +1,5 @@
 const redactConnectionStrings = (message: string): string =>
-  message.replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted database URL]');
+  message.replaceAll(/postgres(?:ql)?:\/\/\S+/gi, '[redacted database URL]');
 
 const errorChain = (error: unknown): string => {
   const messages: string[] = [];

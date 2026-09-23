@@ -89,18 +89,16 @@ const asString = (value: unknown): string | undefined => {
 };
 
 const readLabelNames = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value
-    .map((label) =>
-      typeof label === 'string'
-        ? label
-        : asString((label as { name?: unknown })?.name),
-    )
-    .filter((name): name is string => Boolean(name))
-    .map((name) => name.toLowerCase());
+  return Array.isArray(value)
+    ? value
+        .map((label) =>
+          typeof label === 'string'
+            ? label
+            : asString((label as { name?: unknown })?.name),
+        )
+        .filter((name): name is string => Boolean(name))
+        .map((name) => name.toLowerCase())
+    : [];
 };
 
 const highestRanked = (
@@ -124,16 +122,14 @@ const readRemotePolicyFromLocation = (
 ): string | undefined => {
   const normalized = location
     ?.normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
+    .replaceAll(/\p{Diacritic}/gu, '')
     .toLowerCase();
 
-  if (!normalized) {
-    return undefined;
-  }
-
-  return REMOTE_POLICY_LOCATION_RULES.find((rule) =>
-    rule.locationPattern.test(normalized),
-  )?.value;
+  return normalized
+    ? REMOTE_POLICY_LOCATION_RULES.find((rule) =>
+        rule.locationPattern.test(normalized),
+      )?.value
+    : undefined;
 };
 
 /**
@@ -178,11 +174,9 @@ const splitTitle = (
   const trailingParenthesis = remainder.match(/^(.+?)\s*\(([^()]+)\)\s*$/);
   const title = asString(trailingParenthesis?.[1]);
   const company = asString(trailingParenthesis?.[2]);
-  if (title && company && !TECHNOLOGY_NAMES.has(company.toLowerCase())) {
-    return { location, title, company };
-  }
-
-  return null;
+  return title && company && !TECHNOLOGY_NAMES.has(company.toLowerCase())
+    ? { location, title, company }
+    : null;
 };
 
 const readPostedAt = (value: unknown): Date | undefined => {

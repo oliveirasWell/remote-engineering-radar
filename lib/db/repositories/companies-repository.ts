@@ -16,10 +16,9 @@ import { focusFilter } from './focus-filter';
 import { coalescedPostedAtFilter } from './posted-at-filter';
 
 const toCompanyKind = (value: string): CompanyKind => {
-  if (value === 'consultancy' || value === 'staffing' || value === 'product') {
-    return value;
-  }
-  return DEFAULT_COMPANY_KIND;
+  return value === 'consultancy' || value === 'staffing' || value === 'product'
+    ? value
+    : DEFAULT_COMPANY_KIND;
 };
 
 const toCompany = (row: PrismaCompany): Company => ({

@@ -1,13 +1,11 @@
 import { foldText } from '@/lib/text/fold-text/fold-text';
 import {
-  DATA_ANNOTATION_ROLE_FOCUS,
-  PLATFORM_ROLE_FOCUS,
-  PRODUCT_ROLE_FOCUS,
   RELEVANT_TECHNOLOGY_NAMES,
   SOFTWARE_ROLE_FOCUS,
   TECHNOLOGY_PATTERNS,
   UNRELATED_STACK_PATTERNS,
 } from './constants';
+import { LANE_ROLE_FOCUS_VALUES, laneRoleFocus } from './lanes/lane-strategies';
 import type { JobClassification, JobRemotePolicy } from './types';
 import { VOCABULARY } from './vocabulary/vocabulary';
 
@@ -70,26 +68,22 @@ const classifyRemotePolicy = (
   input: ClassifyJobInput,
 ): JobClassification['remotePolicy'] => {
   const explicit = input.remotePolicy?.toLowerCase();
-  if (explicit === 'remote' || explicit === 'hybrid' || explicit === 'onsite') {
-    return explicit;
-  }
-
-  return (
-    firstPolicy(
-      TITLE_POLICY_ORDER,
-      VOCABULARY.remote.title,
-      foldText(
-        [input.title, input.location, input.remotePolicy]
-          .filter(Boolean)
-          .join('\n'),
-      ),
-    ) ??
-    firstPolicy(
-      BODY_POLICY_ORDER,
-      VOCABULARY.remote.body,
-      stripBenefitNoise(foldText(input.description ?? '')),
-    )
-  );
+  return explicit === 'remote' || explicit === 'hybrid' || explicit === 'onsite'
+    ? explicit
+    : (firstPolicy(
+        TITLE_POLICY_ORDER,
+        VOCABULARY.remote.title,
+        foldText(
+          [input.title, input.location, input.remotePolicy]
+            .filter(Boolean)
+            .join('\n'),
+        ),
+      ) ??
+        firstPolicy(
+          BODY_POLICY_ORDER,
+          VOCABULARY.remote.body,
+          stripBenefitNoise(foldText(input.description ?? '')),
+        ));
 };
 
 const GEOGRAPHY_ORDER = ['brazil', 'latam', 'americas', 'worldwide'] as const;
@@ -99,43 +93,31 @@ const classifyGeography = (haystack: string): JobClassification['geography'] =>
     matchesAny(VOCABULARY.geography[region], haystack),
   );
 
-const ROLE_FOCUS_ORDER = [
-  'frontend',
-  'fullstack',
-  'backend',
-  'mobile',
-] as const;
+/**
+ * Scored disciplines, not chips. `mobile` is absent on purpose: it is a lane
+ * value now, and a body that says "mobile" must not claim the Mobile chip.
+ */
+const DISCIPLINE_ORDER = ['frontend', 'fullstack', 'backend'] as const;
 
 const classifyRoleFocus = (
   title: string,
   haystack: string,
   technologies: string[],
 ): JobClassification['roleFocus'] => {
-  const roleFocus: JobClassification['roleFocus'] = [];
-  if (matchesAny(VOCABULARY.cloudOpsTitle, title)) {
-    roleFocus.push(PLATFORM_ROLE_FOCUS);
-  }
-  if (
-    matchesAny(VOCABULARY.annotationTitle, title) ||
-    matchesAny(VOCABULARY.annotationText, haystack)
-  ) {
-    roleFocus.push(DATA_ANNOTATION_ROLE_FOCUS);
-  }
-  if (matchesAny(VOCABULARY.productTitle, title)) {
-    roleFocus.push(PRODUCT_ROLE_FOCUS);
-  }
-  const disciplines = ROLE_FOCUS_ORDER.filter((focus) =>
+  const lane = laneRoleFocus({ title, haystack });
+  const disciplines = DISCIPLINE_ORDER.filter((focus) =>
     matchesAny(VOCABULARY.roleFocus[focus], haystack),
   );
-  roleFocus.push(...disciplines);
-  if (
+  const isSoftware =
     disciplines.length > 0 ||
     matchesAny(VOCABULARY.softwareTitle, title) ||
-    technologies.some((tech) => RELEVANT_TECHNOLOGY_NAMES.has(tech))
-  ) {
-    roleFocus.push(SOFTWARE_ROLE_FOCUS);
-  }
-  return roleFocus;
+    technologies.some((tech) => RELEVANT_TECHNOLOGY_NAMES.has(tech));
+
+  return [
+    ...(lane ? [lane] : []),
+    ...disciplines,
+    ...(isSoftware ? [SOFTWARE_ROLE_FOCUS] : []),
+  ];
 };
 
 const extractTechnologies = (
@@ -163,33 +145,25 @@ const isUnrelatedStack = (
   technologies: string[],
   haystack: string,
 ): boolean => {
-  // Platform, annotation, and product roles are on their own tracks: the
-  // languages a platform role deploys, an annotator reviews, or a product
-  // manager's teams write say nothing about whether the job belongs here.
-  if (
-    roleFocus.includes(PLATFORM_ROLE_FOCUS) ||
-    roleFocus.includes(DATA_ANNOTATION_ROLE_FOCUS) ||
-    roleFocus.includes(PRODUCT_ROLE_FOCUS)
-  ) {
+  // A job on a lane is on its own track: the languages a platform role
+  // deploys, an annotator reviews, or a product manager's teams write say
+  // nothing about whether the job belongs here.
+  if (LANE_ROLE_FOCUS_VALUES.some((lane) => roleFocus.includes(lane))) {
     return false;
   }
 
   const hasRelevantTech = technologies.some((tech) =>
     RELEVANT_TECHNOLOGY_NAMES.has(tech),
   );
-  if (hasRelevantTech) {
-    return false;
-  }
-
-  return UNRELATED_STACK_PATTERNS.some((pattern) => pattern.test(haystack));
+  return hasRelevantTech
+    ? false
+    : UNRELATED_STACK_PATTERNS.some((pattern) => pattern.test(haystack));
 };
 
 /** Any of these means the title's non-tech word describes the domain, not the job. */
 const TECH_SIGNAL_ROLE_FOCUS = [
   SOFTWARE_ROLE_FOCUS,
-  PRODUCT_ROLE_FOCUS,
-  PLATFORM_ROLE_FOCUS,
-  DATA_ANNOTATION_ROLE_FOCUS,
+  ...LANE_ROLE_FOCUS_VALUES,
 ] as const;
 
 const isUnrelatedRole = (

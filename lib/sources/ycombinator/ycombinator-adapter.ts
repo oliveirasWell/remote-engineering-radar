@@ -24,11 +24,11 @@ const DATA_PAGE_PATTERN = /data-page=(["'])([\s\S]*?)\1/;
 
 const decodeHtmlEntities = (value: string): string =>
   value
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
+    .replaceAll('&amp;', '&')
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>');
 
 const isJobRecord = (value: unknown): value is YCombinatorJobRecord =>
   Boolean(value && typeof value === 'object');

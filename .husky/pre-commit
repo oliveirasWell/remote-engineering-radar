@@ -1,1 +1,10 @@
+# Git hooks do not inherit the shell's nvm setup, so they would run the
+# system Node instead of the one .nvmrc pins.
+NVM_SH="${NVM_DIR:-$HOME/.nvm}/nvm.sh"
+if [ -s "$NVM_SH" ]; then
+  . "$NVM_SH"
+  nvm use --silent
+fi
+
 pnpm exec lint-staged
+pnpm lint

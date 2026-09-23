@@ -15,9 +15,9 @@ type CompanySummaryProps = {
 export const CompanySummary = ({ company }: CompanySummaryProps) => {
   const { messages } = useI18n();
   const kindLabel =
-    company.kind !== COMPANY_KINDS.product
-      ? messages.companyCard.kindLabels[company.kind]
-      : null;
+    company.kind === COMPANY_KINDS.product
+      ? null
+      : messages.companyCard.kindLabels[company.kind];
 
   return (
     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">

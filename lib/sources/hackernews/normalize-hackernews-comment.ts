@@ -49,10 +49,7 @@ const detectRemotePolicy = (
   if (/\bonsite\b|\bon-site\b/.test(haystack)) {
     return 'onsite';
   }
-  if (/\bhybrid\b/.test(haystack)) {
-    return 'hybrid';
-  }
-  return undefined;
+  return /\bhybrid\b/.test(haystack) ? 'hybrid' : undefined;
 };
 
 const readPostedAt = (value: unknown): Date | undefined => {

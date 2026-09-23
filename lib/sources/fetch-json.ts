@@ -129,7 +129,7 @@ export const fetchWithRetry = async (
       }
 
       clearTimeout(timeout);
-      void response.body?.cancel().catch(() => undefined);
+      void response.body?.cancel().catch(() => {});
       await wait(delay);
     } catch (error) {
       if (attempt === SOURCE_MAX_ATTEMPTS - 1) {
@@ -152,7 +152,7 @@ export const discardResponse = async (response: Response): Promise<void> => {
     clearTimeout(deadline.timeout);
     responseDeadlines.delete(response);
   }
-  await response.body?.cancel().catch(() => undefined);
+  await response.body?.cancel().catch(() => {});
 };
 
 export const readTextResponse = async (response: Response): Promise<string> => {
@@ -196,7 +196,7 @@ export const readTextResponse = async (response: Response): Promise<string> => {
       clearTimeout(deadline.timeout);
       responseDeadlines.delete(response);
     }
-    void reader?.cancel().catch(() => undefined);
+    void reader?.cancel().catch(() => {});
   }
 };
 
