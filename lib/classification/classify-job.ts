@@ -123,22 +123,14 @@ const classifyRoleFocus = (
 const extractTechnologies = (
   input: ClassifyJobInput,
   haystack: string,
-): string[] => {
-  const found = new Set<string>(input.technologies ?? []);
-
-  for (const entry of TECHNOLOGY_PATTERNS) {
-    if (entry.pattern.test(haystack)) {
-      found.add(entry.name);
-    }
-  }
-
-  // Prefer React Native over bare React when both match RN text.
-  if (found.has('React Native')) {
-    // keep React if explicitly present beyond RN; pattern already excludes RN for React
-  }
-
-  return [...found];
-};
+): string[] => [
+  ...new Set([
+    ...(input.technologies ?? []),
+    ...TECHNOLOGY_PATTERNS.filter((entry) => entry.pattern.test(haystack)).map(
+      (entry) => entry.name,
+    ),
+  ]),
+];
 
 const isUnrelatedStack = (
   roleFocus: JobClassification['roleFocus'],

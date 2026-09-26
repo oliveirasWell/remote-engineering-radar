@@ -47,19 +47,17 @@ const asString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const readCountries = (value: unknown): string[] => {
-  return Array.isArray(value)
+const readCountries = (value: unknown): string[] =>
+  Array.isArray(value)
     ? value
         .map((entry) => asString(entry))
         .filter((entry): entry is string => Boolean(entry))
     : [];
-};
 
-const readPostedAt = (value: unknown): Date | undefined => {
-  return typeof value !== 'number' || !Number.isFinite(value)
+const readPostedAt = (value: unknown): Date | undefined =>
+  typeof value !== 'number' || !Number.isFinite(value)
     ? undefined
     : new Date(value * 1000);
-};
 
 const readDescription = (
   record: NonNullable<GetOnBrdJobRecord['attributes']>,

@@ -1,14 +1,16 @@
 import 'server-only';
 import { DEFAULT_SITE_ORIGIN, SITE_URL_ERROR } from '../constants';
 
-export const siteOrigin = (): URL => {
-  const value = process.env.SITE_URL?.trim() || DEFAULT_SITE_ORIGIN;
-  let url: URL;
+const parseOrigin = (value: string): URL => {
   try {
-    url = new URL(value);
+    return new URL(value);
   } catch {
     throw new Error(SITE_URL_ERROR);
   }
+};
+
+export const siteOrigin = (): URL => {
+  const url = parseOrigin(process.env.SITE_URL?.trim() || DEFAULT_SITE_ORIGIN);
   if (
     !['http:', 'https:'].includes(url.protocol) ||
     url.username ||

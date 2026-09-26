@@ -36,18 +36,7 @@ export type CompaniesPageOptions = {
 
 const groupByCompanyId = <T extends { companyId: string }>(
   rows: T[],
-): Map<string, T[]> => {
-  const grouped = new Map<string, T[]>();
-  for (const row of rows) {
-    const existing = grouped.get(row.companyId);
-    if (existing) {
-      existing.push(row);
-    } else {
-      grouped.set(row.companyId, [row]);
-    }
-  }
-  return grouped;
-};
+): Map<string, T[]> => Map.groupBy(rows, (row) => row.companyId);
 
 const STRONG_HIRING_SCORE = 40;
 
