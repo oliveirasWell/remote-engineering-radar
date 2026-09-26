@@ -136,21 +136,6 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    // Imperative by nature or by age: paginated source adapters, CLI scripts,
-    // the union-find in deduplication, and the score accumulator. Functional
-    // style is required of everything else.
-    files: [
-      'lib/sources/**/*.ts',
-      'scripts/**/*.ts',
-      'lib/deduplication/deduplicate-jobs.ts',
-      'lib/scoring/score-job.ts',
-    ],
-    rules: {
-      'functional/no-let': 'off',
-      'no-restricted-syntax': ['error', ...BANNED_CONTROL_FLOW],
-    },
-  },
-  {
     files: ['lib/db/**/*.ts'],
     rules: {
       'no-restricted-imports': [
