@@ -24,6 +24,7 @@ Completed:
 - [SPEC-013](013-automated-ingestion.md) — automated ingestion
 - [SPEC-014](014-observability.md) — observability (GA4, Sentry, UptimeRobot)
 - [SPEC-016](016-cloud-ops-focus.md) — Cloud & Ops as a second tracked focus
+- [SPEC-023](023-rolesense-source.md) — why RoleSense is not ingestible
 
 Open:
 
