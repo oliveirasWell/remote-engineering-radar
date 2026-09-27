@@ -10,3 +10,9 @@ export const LANE_STRATEGIES_DATA_MIGRATION = '022-lane-strategies';
  */
 export const LEGACY_GEOGRAPHY_COUNTRIES_DATA_MIGRATION =
   '023-drop-legacy-geography-countries';
+
+/**
+ * Rewrites every active job's roleFocus with the rule-list lanes from
+ * SPEC-023, so jobs that only mentioned iOS or Android leave Mobile.
+ */
+export const LANE_RULES_DATA_MIGRATION = '024-lane-rules';

@@ -1,5 +1,5 @@
 import { countMatches } from './count-matches';
-import type { LaneMatcher } from './types';
+import type { LaneRule } from './types';
 
 /**
  * A title that names the technology is a decision the poster made; a body
@@ -16,7 +16,7 @@ export const titleAnchorOrBodyPlusN =
     bodyAnchors: readonly RegExp[];
     support: readonly RegExp[];
     n: number;
-  }): LaneMatcher =>
+  }): LaneRule =>
   (input) =>
     titleAnchors.some((anchor) => anchor.test(input.title)) ||
     (bodyAnchors.some((anchor) => anchor.test(input.haystack)) &&

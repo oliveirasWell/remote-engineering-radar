@@ -77,6 +77,48 @@ const LANE_CASES = [
     lane: undefined,
   },
   {
+    name: 'a Mobile title whose posting names a platform is Mobile',
+    input: laneInput('Senior Mobile Engineer', 'Ship our iOS app.'),
+    lane: MOBILE_LANE,
+  },
+  {
+    name: 'a React Native title whose posting names both platforms is Mobile',
+    input: laneInput(
+      'Senior React Native Developer',
+      'Ship features on iOS and Android with TypeScript.',
+    ),
+    lane: MOBILE_LANE,
+  },
+  {
+    name: 'a QA engineer testing the apps is not Mobile',
+    input: laneInput('QA Engineer', 'Test our iOS and Android apps.'),
+    lane: undefined,
+  },
+  {
+    name: 'a Mobile QA position is not Mobile',
+    input: laneInput(
+      'Mobile QA Analyst',
+      'Manual and automated testing on Android devices.',
+    ),
+    lane: undefined,
+  },
+  {
+    name: 'a product designer drawing the apps is not Mobile',
+    input: laneInput(
+      'Mobile Product Designer',
+      'Design flows for our iOS and Android apps.',
+    ),
+    lane: undefined,
+  },
+  {
+    name: 'a backend engineer serving the apps is not Mobile',
+    input: laneInput(
+      'Senior Backend Engineer',
+      'Build the APIs our iOS and Android clients consume.',
+    ),
+    lane: undefined,
+  },
+  {
     name: 'a cloud title with two tools is Cloud & Ops',
     input: laneInput(
       'Senior DevOps Engineer',
