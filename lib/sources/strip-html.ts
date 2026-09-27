@@ -12,25 +12,22 @@ const decodeBasicEntities = (value: string): string =>
       return codePoint <= 0x10ffff ? String.fromCodePoint(codePoint) : entity;
     });
 
+/**
+ * Splitting on '>' leaves each tag at the end of its chunk, opened by the
+ * chunk's first '<'. One pass and no regex, so an unclosed '<' is never
+ * rescanned. `<>` and a stray '>' stay as text.
+ */
+const stripTrailingTag = (chunk: string): string => {
+  const opening = chunk.indexOf('<');
+  return opening === -1 || opening === chunk.length - 1
+    ? `${chunk}>`
+    : `${chunk.slice(0, opening)} `;
+};
+
 export const stripHtml = (value: string): string => {
-  const decoded = decodeBasicEntities(value);
-  const parts: string[] = [];
-  let textStart = 0;
-  let opening = decoded.indexOf('<');
-
-  // Never rescan an unclosed suffix for each nested '<'.
-  while (opening !== -1) {
-    const closing = decoded.indexOf('>', opening + 1);
-    if (closing === -1) {
-      break;
-    }
-    if (closing > opening + 1) {
-      parts.push(decoded.slice(textStart, opening), ' ');
-      textStart = closing + 1;
-    }
-    opening = decoded.indexOf('<', closing + 1);
-  }
-
-  parts.push(decoded.slice(textStart));
-  return parts.join('').replaceAll(/\s+/g, ' ').trim();
+  const chunks = decodeBasicEntities(value).split('>');
+  return [...chunks.slice(0, -1).map(stripTrailingTag), chunks.at(-1)]
+    .join('')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
 };

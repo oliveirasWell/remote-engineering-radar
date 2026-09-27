@@ -51,15 +51,9 @@ const fetchAllJobs = async (
     throw new Error('Jobicy response has an unexpected shape');
   }
 
-  const normalized: NormalizedJob[] = [];
-  for (const record of (payload as JobicyJobsPage & { jobs: unknown[] }).jobs) {
-    const job = isJobRecord(record) ? normalizeJobicyJob(record) : null;
-    if (job) {
-      normalized.push(job);
-    }
-  }
-
-  return normalized;
+  return (payload as JobicyJobsPage & { jobs: unknown[] }).jobs
+    .filter(isJobRecord)
+    .flatMap((record) => normalizeJobicyJob(record) ?? []);
 };
 
 export const createJobicyAdapter = (

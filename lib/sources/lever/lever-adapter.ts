@@ -41,15 +41,9 @@ const fetchBoardJobs = async (
     throw new Error(`Lever response has no valid job records for ${boardSlug}`);
   }
 
-  const normalized: NormalizedJob[] = [];
-  for (const record of records) {
-    const job = normalizeLeverJob(record, boardSlug);
-    if (job) {
-      normalized.push(job);
-    }
-  }
-
-  return normalized;
+  return records.flatMap(
+    (record) => normalizeLeverJob(record, boardSlug) ?? [],
+  );
 };
 
 export const createLeverAdapter = (options: LeverAdapterOptions): JobSource => {

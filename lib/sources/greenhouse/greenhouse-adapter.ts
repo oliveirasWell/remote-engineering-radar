@@ -87,64 +87,61 @@ const fetchJobsPage = async (
   return payload as GreenhouseJobsPage & { jobs: unknown[] };
 };
 
+type BoardProgress = {
+  page: number;
+  fetched: number;
+  total: number | undefined;
+};
+
+/** One page per call, carrying the records seen and the advertised total. */
 const fetchBoardJobs = async (
   boardToken: string,
   jobsPerPage: number,
   fetchImpl: typeof fetch,
+  progress: BoardProgress = { page: 1, fetched: 0, total: undefined },
 ): Promise<NormalizedJob[]> => {
-  const normalized: NormalizedJob[] = [];
-  let page = 1;
-  let fetched = 0;
-  let total: number | undefined;
-
-  while (page <= 50) {
-    const payload = await fetchJobsPage(
-      boardToken,
-      page,
-      jobsPerPage,
-      fetchImpl,
-    );
-    const records = payload.jobs;
-    total = readTotal(payload) ?? total;
-
-    if (records.length === 0) {
-      if (total !== undefined && fetched < total) {
-        throw new Error('Greenhouse pagination ended before advertised total');
-      }
-      break;
-    }
-
-    const validRecords = records.filter(isJobRecord);
-    if (validRecords.length === 0) {
-      throw new Error(
-        `Greenhouse response has no valid job records (page ${page})`,
-      );
-    }
-
-    for (const record of validRecords) {
-      const job = normalizeGreenhouseJob(record, boardToken);
-      if (job) {
-        normalized.push(job);
-      }
-    }
-
-    fetched += records.length;
-    if (total !== undefined && fetched >= total) {
-      break;
-    }
-
-    if (total === undefined && records.length < jobsPerPage) {
-      break;
-    }
-
-    page += 1;
-  }
-
+  const { page, fetched } = progress;
   if (page > 50) {
     throw new Error('Greenhouse pagination limit reached');
   }
 
-  return normalized;
+  const payload = await fetchJobsPage(boardToken, page, jobsPerPage, fetchImpl);
+  const records = payload.jobs;
+  const total = readTotal(payload) ?? progress.total;
+
+  if (records.length === 0) {
+    if (total !== undefined && fetched < total) {
+      throw new Error('Greenhouse pagination ended before advertised total');
+    }
+    return [];
+  }
+
+  const validRecords = records.filter(isJobRecord);
+  if (validRecords.length === 0) {
+    throw new Error(
+      `Greenhouse response has no valid job records (page ${page})`,
+    );
+  }
+
+  const jobs = validRecords.flatMap(
+    (record) => normalizeGreenhouseJob(record, boardToken) ?? [],
+  );
+
+  const fetchedSoFar = fetched + records.length;
+  const lastPage =
+    total === undefined ? records.length < jobsPerPage : fetchedSoFar >= total;
+  if (lastPage) {
+    return jobs;
+  }
+
+  return [
+    ...jobs,
+    ...(await fetchBoardJobs(boardToken, jobsPerPage, fetchImpl, {
+      page: page + 1,
+      fetched: fetchedSoFar,
+      total,
+    })),
+  ];
 };
 
 export const createGreenhouseAdapter = (

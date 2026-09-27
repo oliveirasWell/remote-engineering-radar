@@ -70,35 +70,40 @@ const fetchAllJobs = async (
   pageSize: number,
   maxPages: number,
   fetchImpl: typeof fetch,
+  page = 1,
+  cursor?: string,
 ): Promise<NormalizedJob[]> => {
-  const normalized: NormalizedJob[] = [];
-  let cursor: string | undefined;
-
-  for (let page = 1; page <= maxPages; page += 1) {
-    const payload = await fetchJobsPage(page, pageSize, cursor, fetchImpl);
-    const records = payload.jobs.filter(isJobRecord);
-
-    if (records.length === 0) {
-      break;
-    }
-
-    for (const record of records) {
-      const job = normalizeHimalayasJob(record);
-      if (job) {
-        normalized.push(job);
-      }
-    }
-
-    cursor =
-      typeof payload.nextCursor === 'string' && payload.nextCursor.length > 0
-        ? payload.nextCursor
-        : undefined;
-    if (!cursor) {
-      break;
-    }
+  if (page > maxPages) {
+    return [];
   }
 
-  return normalized;
+  const payload = await fetchJobsPage(page, pageSize, cursor, fetchImpl);
+  const records = payload.jobs.filter(isJobRecord);
+
+  if (records.length === 0) {
+    return [];
+  }
+
+  const jobs = records.flatMap((record) => normalizeHimalayasJob(record) ?? []);
+
+  const nextCursor =
+    typeof payload.nextCursor === 'string' && payload.nextCursor.length > 0
+      ? payload.nextCursor
+      : undefined;
+  if (!nextCursor) {
+    return jobs;
+  }
+
+  return [
+    ...jobs,
+    ...(await fetchAllJobs(
+      pageSize,
+      maxPages,
+      fetchImpl,
+      page + 1,
+      nextCursor,
+    )),
+  ];
 };
 
 export const createHimalayasAdapter = (
