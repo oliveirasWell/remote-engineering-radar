@@ -20,9 +20,9 @@ const SSL_CONNECTION_PARAMETERS = [
 
 const secureConnectionString = (connectionString: string): string => {
   const url = new URL(connectionString);
-  for (const parameter of SSL_CONNECTION_PARAMETERS) {
+  SSL_CONNECTION_PARAMETERS.forEach((parameter) => {
     url.searchParams.delete(parameter);
-  }
+  });
   return url.toString();
 };
 
@@ -33,17 +33,15 @@ export const securePrismaConnectionString = (
   const url = new URL(secureConnectionString(connectionString));
   const hostname = url.hostname.toLowerCase();
   // Prisma's sslcert is a trusted CA PEM path, not pg's client certificate.
-  let certificate =
+  const declaredCertificate =
     parameters.get('sslcert')?.trim() || parameters.get('sslrootcert')?.trim();
-  if (
-    !certificate &&
-    (hostname.endsWith('.supabase.co') || hostname.endsWith('.supabase.com'))
-  ) {
-    certificate = resolve(
-      dirname(fileURLToPath(import.meta.url)),
-      'supabase-root-ca.pem',
-    );
-  }
+  const isSupabaseHost =
+    hostname.endsWith('.supabase.co') || hostname.endsWith('.supabase.com');
+  const certificate =
+    declaredCertificate ||
+    (isSupabaseHost
+      ? resolve(dirname(fileURLToPath(import.meta.url)), 'supabase-root-ca.pem')
+      : undefined);
   if (certificate) {
     url.searchParams.set('sslcert', certificate);
   }

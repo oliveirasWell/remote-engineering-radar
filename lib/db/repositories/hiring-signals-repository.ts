@@ -67,61 +67,59 @@ const replaceMany = async (
   `);
 };
 
-export const createHiringSignalsRepository = (db: Db) => {
-  return {
-    create: async (input: NewHiringSignal): Promise<HiringSignal> =>
-      toHiringSignal(
-        await db.hiringSignal.create({
-          data: {
-            companyId: input.companyId,
-            type: input.type,
-            description: input.description,
-            sourceUrl: input.sourceUrl ?? null,
-            score: input.score ?? 0,
-            detectedAt: input.detectedAt ?? new Date(),
-          },
-        }),
-      ),
+export const createHiringSignalsRepository = (db: Db) => ({
+  create: async (input: NewHiringSignal): Promise<HiringSignal> =>
+    toHiringSignal(
+      await db.hiringSignal.create({
+        data: {
+          companyId: input.companyId,
+          type: input.type,
+          description: input.description,
+          sourceUrl: input.sourceUrl ?? null,
+          score: input.score ?? 0,
+          detectedAt: input.detectedAt ?? new Date(),
+        },
+      }),
+    ),
 
-    findById: async (id: string): Promise<HiringSignal | null> => {
-      const row = await db.hiringSignal.findUnique({ where: { id } });
-      return row ? toHiringSignal(row) : null;
-    },
+  findById: async (id: string): Promise<HiringSignal | null> => {
+    const row = await db.hiringSignal.findUnique({ where: { id } });
+    return row ? toHiringSignal(row) : null;
+  },
 
-    listByCompanyId: async (companyId: string): Promise<HiringSignal[]> =>
-      (await db.hiringSignal.findMany({ where: { companyId } })).map(
-        toHiringSignal,
-      ),
+  listByCompanyId: async (companyId: string): Promise<HiringSignal[]> =>
+    (await db.hiringSignal.findMany({ where: { companyId } })).map(
+      toHiringSignal,
+    ),
 
-    listByCompanyIds: async (companyIds: string[]): Promise<HiringSignal[]> => {
-      if (companyIds.length === 0) {
-        return [];
-      }
+  listByCompanyIds: async (companyIds: string[]): Promise<HiringSignal[]> => {
+    if (companyIds.length === 0) {
+      return [];
+    }
 
-      const rows = await db.hiringSignal.findMany({
-        where: { companyId: { in: companyIds } },
-      });
-      return rows.map(toHiringSignal);
-    },
+    const rows = await db.hiringSignal.findMany({
+      where: { companyId: { in: companyIds } },
+    });
+    return rows.map(toHiringSignal);
+  },
 
-    deleteByCompanyId: async (companyId: string): Promise<number> =>
-      (await db.hiringSignal.deleteMany({ where: { companyId } })).count,
+  deleteByCompanyId: async (companyId: string): Promise<number> =>
+    (await db.hiringSignal.deleteMany({ where: { companyId } })).count,
 
-    replaceForCompanies: async (
-      entries: CompanyHiringSignals[],
-    ): Promise<void> => {
-      if (entries.length === 0) {
-        return;
-      }
-      if (canStartTransaction(db)) {
-        await db.$transaction((tx) => replaceMany(tx, entries));
-        return;
-      }
+  replaceForCompanies: async (
+    entries: CompanyHiringSignals[],
+  ): Promise<void> => {
+    if (entries.length === 0) {
+      return;
+    }
+    if (canStartTransaction(db)) {
+      await db.$transaction((tx) => replaceMany(tx, entries));
+      return;
+    }
 
-      await replaceMany(db, entries);
-    },
+    await replaceMany(db, entries);
+  },
 
-    deleteById: async (id: string): Promise<boolean> =>
-      (await db.hiringSignal.deleteMany({ where: { id } })).count > 0,
-  };
-};
+  deleteById: async (id: string): Promise<boolean> =>
+    (await db.hiringSignal.deleteMany({ where: { id } })).count > 0,
+});

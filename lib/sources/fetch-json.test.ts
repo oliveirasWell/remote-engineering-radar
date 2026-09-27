@@ -164,15 +164,16 @@ describe('readJsonResponse', () => {
 
   it('keeps the request timeout active while consuming the body', async () => {
     vi.useFakeTimers();
-    const fetchMock = vi.fn<typeof fetch>(async () => {
-      return new Response(
-        new ReadableStream({
-          start(controller) {
-            controller.enqueue(new TextEncoder().encode('{"ok":'));
-          },
-        }),
-      );
-    });
+    const fetchMock = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode('{"ok":'));
+            },
+          }),
+        ),
+    );
 
     const response = await fetchWithRetry('https://example.com', fetchMock);
     const bodyResult = expect(readJsonResponse(response)).rejects.toMatchObject(

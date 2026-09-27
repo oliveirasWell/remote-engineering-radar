@@ -56,11 +56,8 @@ const isPostedBeyondMaxAge = (
   job: NormalizedJob,
   now: Date,
   maxAgeMs: number,
-): boolean => {
-  return job.postedAt
-    ? now.getTime() - job.postedAt.getTime() > maxAgeMs
-    : false;
-};
+): boolean =>
+  job.postedAt ? now.getTime() - job.postedAt.getTime() > maxAgeMs : false;
 
 const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
   const classification = classifyJob({
@@ -142,20 +139,19 @@ export const runIngestion = async (options: {
   const persistable = enriched.filter((job) => job.shouldPersist);
   const { jobs: uniqueJobs } = deduplicateJobs(persistable);
 
-  const companyInputsBySlug = new Map<string, NewCompany>();
-  for (const job of uniqueJobs) {
+  // Match sequential upserts: last name/source wins, but only safe URLs
+  // replace websites, so each entry reads the one it replaces.
+  const companyInputsBySlug = uniqueJobs.reduce((bySlug, job) => {
     const slug = toSlug(job.company.name);
-    // Match sequential upserts: last name/source wins, but only safe URLs
-    // replace websites.
-    companyInputsBySlug.set(slug, {
+    return bySlug.set(slug, {
       name: job.company.name,
       slug,
       websiteUrl: isSafeExternalUrl(job.company.websiteUrl)
         ? job.company.websiteUrl
-        : companyInputsBySlug.get(slug)?.websiteUrl,
+        : bySlug.get(slug)?.websiteUrl,
       source: job.source,
     });
-  }
+  }, new Map<string, NewCompany>());
 
   const persistedBySource = new Map<string, number>();
 
@@ -198,12 +194,12 @@ export const runIngestion = async (options: {
           };
         }),
       );
-      for (const job of uniqueJobs) {
+      uniqueJobs.forEach((job) => {
         persistedBySource.set(
           job.source,
           (persistedBySource.get(job.source) ?? 0) + 1,
         );
-      }
+      });
 
       for (const sourceResult of sourceResults) {
         if (sourceResult.error !== undefined) {
@@ -231,18 +227,14 @@ export const runIngestion = async (options: {
                 )
                 .map((job) => job.sourceJobId),
             );
-        for (const job of deactivatedJobs) {
-          companyIds.add(job.companyId);
-        }
+        deactivatedJobs.forEach((job) => companyIds.add(job.companyId));
       }
 
       const agedOut = await jobsRepository.deactivateOlderThan(
         JOB_MAX_AGE_MS,
         now,
       );
-      for (const job of agedOut) {
-        companyIds.add(job.companyId);
-      }
+      agedOut.forEach((job) => companyIds.add(job.companyId));
 
       await jobsRepository.deleteInactiveOlderThan(JOB_RETENTION_MS, now);
 

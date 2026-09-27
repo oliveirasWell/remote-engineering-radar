@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
+import functional from 'eslint-plugin-functional';
 import sonarjs from 'eslint-plugin-sonarjs';
 import unicorn from 'eslint-plugin-unicorn';
 
@@ -34,6 +35,17 @@ const BANNED_CONTROL_FLOW = [
   },
 ];
 
+/**
+ * A data loop is a transformation, and map/filter/reduce/flatMap/forEach say
+ * so in one expression. `for...of` stays legal when it awaits, because that
+ * is how sequential work is written and a promise-chaining reduce is worse.
+ */
+const NO_DATA_LOOPS = {
+  selector: 'ForOfStatement:not(:has(AwaitExpression))',
+  message:
+    'Use map/filter/reduce/flatMap/forEach for a data loop. Keep for...of for sequential awaits.',
+};
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
@@ -42,7 +54,7 @@ const eslintConfig = defineConfig([
     settings: {
       'import/resolver': { typescript: { project: './tsconfig.json' } },
     },
-    plugins: { unicorn },
+    plugins: { unicorn, functional },
     rules: {
       // Braces and explicit blocks: no single-statement if/else/for bodies.
       curly: ['error', 'all'],
@@ -50,8 +62,9 @@ const eslintConfig = defineConfig([
       'no-else-return': ['error', { allowElseIf: false }],
 
       // Control flow.
-      'no-restricted-syntax': ['error', ...BANNED_CONTROL_FLOW],
+      'no-restricted-syntax': ['error', ...BANNED_CONTROL_FLOW, NO_DATA_LOOPS],
       'unicorn/no-for-loop': 'error',
+      'functional/no-let': 'error',
       'unicorn/prefer-array-find': 'error',
       'unicorn/prefer-array-some': 'error',
       'unicorn/prefer-array-flat-map': 'error',
@@ -74,21 +87,26 @@ const eslintConfig = defineConfig([
       'no-var': 'error',
       'no-param-reassign': ['error', { props: true }],
       'prefer-arrow-callback': ['error', { allowNamedFunctions: false }],
+      'arrow-body-style': ['error', 'as-needed'],
+      'sonarjs/prefer-immediate-return': 'error',
       'func-style': ['error', 'expression', { allowArrowFunctions: true }],
       'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
       eqeqeq: ['error', 'always', { null: 'ignore' }],
 
       // Sonar, tuned. The complexity ceiling is the worst function we have
-      // today: it blocks new complexity and ratchets down as those five are
-      // split up. Nested template literals and unions are how this codebase
-      // writes i18n and route params, and the ReDoS heuristic only fires on
-      // anchored, input-bounded patterns here.
+      // today: it blocks new complexity and ratchets down as those are split
+      // up. Nested template literals and inline unions are how this codebase
+      // writes i18n and route params.
+      // Complexity, pinned at today's worst function: new complexity is
+      // blocked and the ceiling ratchets down as those are split up.
+      complexity: ['error', 19],
+      'max-depth': ['error', 3],
+      'max-nested-callbacks': ['error', 3],
+      'max-statements': ['error', 50],
       'sonarjs/cognitive-complexity': ['error', 21],
       'sonarjs/no-identical-functions': 'error',
       'sonarjs/no-nested-template-literals': 'off',
       'sonarjs/use-type-alias': 'off',
-      'sonarjs/regex-complexity': 'off',
-      'sonarjs/super-linear-regex': 'off',
 
       'import/first': 'error',
       'react/destructuring-assignment': ['error', 'always'],
@@ -118,6 +136,21 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // Imperative by nature or by age: paginated source adapters, CLI scripts,
+    // the union-find in deduplication, and the score accumulator. Functional
+    // style is required of everything else.
+    files: [
+      'lib/sources/**/*.ts',
+      'scripts/**/*.ts',
+      'lib/deduplication/deduplicate-jobs.ts',
+      'lib/scoring/score-job.ts',
+    ],
+    rules: {
+      'functional/no-let': 'off',
+      'no-restricted-syntax': ['error', ...BANNED_CONTROL_FLOW],
+    },
+  },
+  {
     files: ['lib/db/**/*.ts'],
     rules: {
       'no-restricted-imports': [
@@ -142,6 +175,17 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // Debt, not exemption: these four patterns can backtrack on a long title.
+    // They run on titles, not descriptions, so the blast radius is small, but
+    // each one still needs rewriting with its normalizer's tests.
+    files: [
+      'lib/jobs/countries.ts',
+      'lib/sources/frontendbr/normalize-frontendbr-issue.ts',
+      'lib/sources/hackernews/normalize-hackernews-comment.ts',
+    ],
+    rules: { 'sonarjs/super-linear-regex': 'off' },
+  },
+  {
     // Scripts are CLIs: their output is the product.
     files: ['scripts/**/*.ts'],
     rules: { 'no-console': 'off' },
@@ -158,6 +202,10 @@ const eslintConfig = defineConfig([
       'sonarjs/no-regex-spaces': 'off',
       'sonarjs/code-eval': 'off',
       'sonarjs/hooks-before-test-cases': 'off',
+      'functional/no-let': 'off',
+      'max-nested-callbacks': 'off',
+      'max-statements': 'off',
+      'no-restricted-syntax': ['error', ...BANNED_CONTROL_FLOW],
     },
   },
   globalIgnores([
