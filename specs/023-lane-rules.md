@@ -66,6 +66,4 @@ RED → GREEN → REFACTOR. Every SPEC-022 lane case stays green, plus:
 
 ## Debt
 
-- `allRulesPass` returns a boolean. Returning the first failing rule would let
-  `reclassify-active-jobs --audit` say why a job left a lane.
 - QA and product positions are English only.
