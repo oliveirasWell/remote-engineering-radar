@@ -45,6 +45,24 @@ export const assertBaselineSafe = (state: {
   }
 };
 
+const readBaselineApplied = async (pool: Pool): Promise<boolean> => {
+  const migrationTableResult = await pool.query<{ exists: boolean }>(`
+    SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS exists
+  `);
+  if (!migrationTableResult.rows[0]?.exists) {
+    return false;
+  }
+
+  const baselineResult = await pool.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+      SELECT 1 FROM "_prisma_migrations"
+      WHERE migration_name = $1 AND finished_at IS NOT NULL
+    ) AS exists`,
+    [PRISMA_BASELINE],
+  );
+  return baselineResult.rows[0]?.exists ?? false;
+};
+
 const verifyBaselineState = async (connectionString: string): Promise<void> => {
   const pool = new Pool({ ...databasePoolConfig(connectionString), max: 1 });
   try {
@@ -56,20 +74,7 @@ const verifyBaselineState = async (connectionString: string): Promise<void> => {
     `);
     const applicationTableCount = tableResult.rows[0]?.count ?? 0;
 
-    let baselineApplied = false;
-    const migrationTableResult = await pool.query<{ exists: boolean }>(`
-      SELECT to_regclass('public._prisma_migrations') IS NOT NULL AS exists
-    `);
-    if (migrationTableResult.rows[0]?.exists) {
-      const baselineResult = await pool.query<{ exists: boolean }>(
-        `SELECT EXISTS (
-          SELECT 1 FROM "_prisma_migrations"
-          WHERE migration_name = $1 AND finished_at IS NOT NULL
-        ) AS exists`,
-        [PRISMA_BASELINE],
-      );
-      baselineApplied = baselineResult.rows[0]?.exists ?? false;
-    }
+    const baselineApplied = await readBaselineApplied(pool);
 
     assertBaselineSafe({ applicationTableCount, baselineApplied });
   } finally {

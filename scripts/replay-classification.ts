@@ -90,10 +90,10 @@ const readFeedInputs = async (
       const { jobs } = await createGreenhouseAdapter({
         boardTokens: [board],
       }).fetchJobs();
-      for (const job of jobs) {
-        entries.push({
+      entries.push(
+        ...jobs.map((job) => ({
           key: `feed:${board}:${job.sourceJobId}`,
-          origin: 'feed',
+          origin: 'feed' as const,
           input: {
             title: job.title,
             description: job.description,
@@ -101,8 +101,8 @@ const readFeedInputs = async (
             remotePolicy: job.remotePolicy,
             technologies: job.technologies,
           },
-        });
-      }
+        })),
+      );
     } catch (error) {
       console.error(`Skipping board ${board}: ${String(error)}`);
     }
@@ -126,40 +126,44 @@ const snapshot = async (file: string, feedsOnly: boolean, boards: string[]) => {
 const describe = (entry: ReplayEntry) =>
   `${entry.key} | ${entry.input.title} | ${entry.input.location ?? ''}`;
 
+const diffLines = (
+  entry: ReplayEntry,
+  next: ReturnType<typeof classify>,
+): { category: string; line: string }[] => [
+  ...(next.persist && !entry.persist
+    ? [{ category: 'newly persisted', line: describe(entry) }]
+    : []),
+  ...(!next.persist && entry.persist
+    ? [{ category: 'newly dropped', line: describe(entry) }]
+    : []),
+  ...DIFF_FIELDS.flatMap((field) => {
+    const before = JSON.stringify(entry.classification[field] ?? null);
+    const after = JSON.stringify(next.classification[field] ?? null);
+    return before === after
+      ? []
+      : [
+          {
+            category: `${field} changed`,
+            line: `${describe(entry)} | ${before} -> ${after}`,
+          },
+        ];
+  }),
+];
+
 const compare = async (file: string) => {
   const entries = JSON.parse(await readFile(file, 'utf8')) as ReplayEntry[];
-  const diffs = new Map<string, string[]>();
-  const record = (category: string, line: string) => {
-    diffs.set(category, [...(diffs.get(category) ?? []), line]);
-  };
-
-  for (const entry of entries) {
-    const next = classify(entry.input);
-    if (next.persist && !entry.persist) {
-      record('newly persisted', describe(entry));
-    }
-    if (!next.persist && entry.persist) {
-      record('newly dropped', describe(entry));
-    }
-    for (const field of DIFF_FIELDS) {
-      const before = JSON.stringify(entry.classification[field] ?? null);
-      const after = JSON.stringify(next.classification[field] ?? null);
-      if (before !== after) {
-        record(
-          `${field} changed`,
-          `${describe(entry)} | ${before} -> ${after}`,
-        );
-      }
-    }
-  }
+  const diffs = Map.groupBy(
+    entries.flatMap((entry) => diffLines(entry, classify(entry.input))),
+    (diff) => diff.category,
+  );
 
   console.log(`Compared ${entries.length} jobs`);
-  for (const [category, lines] of diffs) {
+  diffs.forEach((lines, category) => {
     console.log(`\n${category}: ${lines.length}`);
-    for (const line of lines.slice(0, MAX_SAMPLES)) {
-      console.log(`  ${line}`);
-    }
-  }
+    lines.slice(0, MAX_SAMPLES).forEach((diff) => {
+      console.log(`  ${diff.line}`);
+    });
+  });
   if (diffs.size === 0) {
     console.log('No differences');
   }
