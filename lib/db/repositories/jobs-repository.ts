@@ -15,6 +15,7 @@ import { coalescedPostedAtFilter } from './posted-at-filter';
 import { JOB_ORDER_BY } from './constants';
 
 const AGGREGATOR_SOURCES = ['himalayas', 'jobicy'] as const;
+const DIRECT_BOARD_SOURCES = ['greenhouse', 'ashby', 'lever'] as const;
 
 const toStringArray = (column: string, value: Prisma.JsonValue): string[] => {
   if (
@@ -457,14 +458,26 @@ export const createJobsRepository = (db: Db) => ({
       WHERE aggregator.is_active
         AND aggregator.source IN (${Prisma.join(AGGREGATOR_SOURCES)})
         AND btrim(regexp_replace(lower(aggregator.title), '[^a-z0-9+#.]+', ' ', 'g')) <> ''
-        AND EXISTS (
-          SELECT 1 FROM jobs direct
-          WHERE direct.company_id = aggregator.company_id
-            AND direct.is_active
-            AND direct.source NOT IN (${Prisma.join(AGGREGATOR_SOURCES)})
+        -- ponytail: keep ambiguous same-title groups until sources share a
+        -- requisition ID; a title alone cannot distinguish their openings.
+        AND (
+          SELECT count(*) FROM jobs peer
+          WHERE peer.company_id = aggregator.company_id AND peer.is_active
+            AND peer.source IN (${Prisma.join(AGGREGATOR_SOURCES)})
+            AND btrim(regexp_replace(lower(peer.title), '[^a-z0-9+#.]+', ' ', 'g')) =
+              btrim(regexp_replace(lower(aggregator.title), '[^a-z0-9+#.]+', ' ', 'g'))
+        ) = 1
+        AND (
+          SELECT count(*) FROM jobs direct
+          WHERE direct.company_id = aggregator.company_id AND direct.is_active
+            AND direct.source IN (${Prisma.join(DIRECT_BOARD_SOURCES)})
             AND btrim(regexp_replace(lower(direct.title), '[^a-z0-9+#.]+', ' ', 'g')) =
               btrim(regexp_replace(lower(aggregator.title), '[^a-z0-9+#.]+', ' ', 'g'))
-        )
+            AND EXISTS (
+              SELECT 1 FROM ats_boards board
+              WHERE board.company_id = direct.company_id AND board.ats = direct.source
+            )
+        ) = 1
       RETURNING aggregator.company_id AS "companyId"
     `),
 

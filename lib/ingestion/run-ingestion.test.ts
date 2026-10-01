@@ -357,6 +357,13 @@ describe('runIngestion', () => {
         },
       ],
     });
+    const company =
+      await createCompaniesRepository(db).findBySlug('acme-robotics');
+    await createAtsBoardsRepository(db).insertVerified(
+      'greenhouse',
+      'acme',
+      company!.id,
+    );
     const direct = makeJob({
       source: 'greenhouse',
       sourceJobId: 'newer',

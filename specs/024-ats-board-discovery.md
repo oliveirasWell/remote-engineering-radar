@@ -139,15 +139,18 @@ verification, whose `board_checked_at` is null or older than
    international, labs (`grafana`)
 
 **Probe.** For each candidate, try Greenhouse, then Ashby, then Lever, using each
-adapter's existing URL builder and base URL constant. Stop at the first board that
-returns at least one job.
+adapter's existing URL builder and base URL constant. An unrelated board is a
+homonym, not a verified hit: continue through the other slugs and ATS vendors.
+Stop only when a board has a matching title.
 
 **Homonym guard.** A hit is stored only when at least one board job title,
 normalized with `normalizeJobTitle`, equals the normalized title of an active
 Himalayas or Jobicy software job we already hold for that company. A board's
 existing jobs cannot verify its own slug; this also keeps another company's
-`oscar` board off Oscar. Every probed company gets `board_checked_at = now()`,
-hit or not.
+`oscar` board off Oscar. Set `board_checked_at = now()` for a verified hit or a
+conclusive miss (including 404). If any probe had a transient failure or the
+budget expired mid-company, leave the timestamp null or stale so the company
+remains pending for the next ingest. No separate pending column is needed.
 
 **Budget.** Probe companies in order until `BOARD_DISCOVERY_BUDGET_MS` runs out.
 Discovery never fails the ingest: errors are logged, and the run result is
@@ -173,9 +176,12 @@ never re-fetched, because the feed only reaches back ~2 days. One step covers bo
 
 - During persistence, before hiring signals are recalculated, a jobs-repository
   method deactivates active rows from
-  `AGGREGATOR_SOURCES = ['himalayas', 'jobicy']` whose canonical company ID and
-  normalized title (`normalizeJobTitle`) match an active row from any other
-  source. Keep the constant in that repository file, its only consumer.
+  `AGGREGATOR_SOURCES = ['himalayas', 'jobicy']` only when exactly one active
+  aggregator row and one active Greenhouse, Ashby, or Lever row share a canonical
+  company ID and normalized title (`normalizeJobTitle`), and that ATS has a
+  verified company association. Keep both source constants in the repository.
+  Ambiguous same-title groups and matches from other feeds remain active until
+  a stronger shared requisition ID is available.
 - `deduplicateJobs` is unchanged.
 
 ## Acceptance
@@ -185,9 +191,12 @@ RED → GREEN → REFACTOR, one part per PR, in order 1 → 6.
 - `buildSlugCandidates('Grafana Labs')` returns `grafanalabs` and `grafana`.
 - A probe whose board lists a title we hold for the company stores the board.
 - A probe whose board lists only unrelated titles stores nothing.
+- An unrelated homonym board does not prevent a later slug or ATS from being
+  verified.
 - 404 on all three ATS stores nothing.
-- Every probed company has `board_checked_at` set. A company checked less than 30
-  days ago is not probed; an older one is.
+- Conclusive probes set `board_checked_at`. A company checked less than 30 days
+  ago is not probed; an older one is. Transient failures stay pending and are
+  eligible on the next ingest.
 - A probe that finds a seed board stores its verified company association once;
   a known board inserts nothing and does not throw.
 - Discovery stops at `BOARD_DISCOVERY_BUDGET_MS`, and a throwing probe does not fail
@@ -197,8 +206,9 @@ RED → GREEN → REFACTOR, one part per PR, in order 1 → 6.
 - A discovered board that answers 404 is deleted from `ats_boards`.
 - The fetch set never exceeds `MAX_CONFIGURED_BOARDS` per ATS, and seed boards come
   first.
-- After ingest, an active Himalayas row that matches an active Greenhouse row by
-  company and title is inactive, and the Greenhouse row stays active.
+- After ingest, a one-to-one active Himalayas/verified Greenhouse match by
+  company and title retires the Himalayas row. Same-title requisitions with
+  multiple aggregator or ATS rows, and matches from non-ATS feeds, remain active.
 - `scripts/ingest.ts` and the workflow no longer read board env variables.
 
 `pnpm test` and `pnpm check` stay green. After deploy, run a manual

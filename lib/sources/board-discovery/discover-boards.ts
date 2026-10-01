@@ -23,6 +23,8 @@ type DiscoveryOptions = {
   delayMs?: number;
 };
 
+type ProbeOutcome = { verified: number; conclusive: boolean };
+
 const DAY_MS = 86_400_000;
 
 const probeCompany = async (
@@ -35,24 +37,29 @@ const probeCompany = async (
     slug: string,
     companyId: string,
   ) => Promise<boolean>,
-): Promise<number> => {
+): Promise<ProbeOutcome> => {
   const slugs = buildSlugCandidates(company.name);
+  const state = { pending: false };
   for (const [ats, adapter] of adapters) {
     for (const slug of slugs) {
       if (performance.now() >= deadline) {
-        return 0;
+        return { verified: 0, conclusive: false };
       }
-      const { jobs } = await adapter(slug).fetchJobs();
-      if (jobs.length === 0) {
+      const { jobs, failedBoards } = await adapter(slug).fetchJobs();
+      const failure = failedBoards?.[0];
+      state.pending ||= failure !== undefined && failure.status !== 404;
+      if (failure) {
         continue;
       }
-      return Number(
-        jobs.some((job) => titles.has(normalizeJobTitle(job.title))) &&
-          (await insertVerified(ats, slug, company.id)),
-      );
+      if (jobs.some((job) => titles.has(normalizeJobTitle(job.title)))) {
+        return {
+          verified: Number(await insertVerified(ats, slug, company.id)),
+          conclusive: true,
+        };
+      }
     }
   }
-  return 0;
+  return { verified: 0, conclusive: !state.pending };
 };
 
 export const discoverBoards = async (
@@ -133,19 +140,21 @@ export const discoverBoards = async (
           .map(normalizeJobTitle)
           .filter(Boolean),
       );
-      stats.verified += await probeCompany(
+      const outcome = await probeCompany(
         company,
         titles,
         adapters,
         deadline,
         repository.insertVerified,
       );
+      stats.verified += outcome.verified;
+      if (outcome.conclusive) {
+        await repository.markChecked(company.id, now);
+      }
     } catch (error) {
       console.error(
         `Board discovery for ${company.name} failed: ${String(error)}`,
       );
-    } finally {
-      await repository.markChecked(company.id, now);
     }
   }
   return stats;

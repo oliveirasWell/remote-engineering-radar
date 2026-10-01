@@ -2,6 +2,7 @@ import { createTestDb } from '@/lib/db/test/create-test-db';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
 import { createAtsBoardsRepository } from '@/lib/db/repositories/ats-boards-repository';
+import { GREENHOUSE_API_BASE_URL } from '@/lib/sources/greenhouse/constants';
 import { TEST_COMPANY, TEST_JOB } from '@/lib/db/repositories/test-fixtures';
 import { asFetch, jsonResponse } from '@/test/http';
 import { BOARD_RECHECK_DAYS } from './constants';
@@ -74,8 +75,10 @@ describe('discoverBoards', () => {
 
   it('rejects a homonym board with unrelated titles and still marks the company checked', async () => {
     const { db, company, repository } = await setupCompany();
-    const fetchMock = vi.fn(async () =>
-      greenhouseResponse('Sales Representative'),
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) =>
+      String(input).startsWith(GREENHOUSE_API_BASE_URL)
+        ? greenhouseResponse('Sales Representative')
+        : jsonResponse({}, 404),
     );
 
     expect(
@@ -91,6 +94,28 @@ describe('discoverBoards', () => {
       (await db.company.findUnique({ where: { id: company.id } }))
         ?.boardCheckedAt,
     ).toEqual(NOW);
+  });
+
+  it('continues past an unrelated homonym board to verify another slug', async () => {
+    const { db, repository } = await setupCompany();
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) =>
+      String(input).includes(`/${BOARD_SLUG}/`)
+        ? greenhouseResponse('Sales Representative')
+        : greenhouseResponse(MATCHING_TITLE),
+    );
+
+    expect(
+      await discoverBoards({
+        db,
+        now: NOW,
+        fetch: asFetch(fetchMock),
+        delayMs: 0,
+      }),
+    ).toEqual({ checked: 1, verified: 1 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(await repository.listVerified()).toMatchObject([
+      { ats: 'greenhouse', slug: 'grafana' },
+    ]);
   });
 
   it('does not store a board when every ATS returns 404', async () => {
@@ -124,7 +149,7 @@ describe('discoverBoards', () => {
     expect(await repository.listVerified()).toHaveLength(1);
   });
 
-  it('marks a company checked after a throwing probe', async () => {
+  it('leaves transient failures pending for the next ingest', async () => {
     const { db, company, repository } = await setupCompany();
     const failedFetch = asFetch(async () => {
       throw new Error('network unavailable');
@@ -137,7 +162,20 @@ describe('discoverBoards', () => {
     expect(
       (await db.company.findUnique({ where: { id: company.id } }))
         ?.boardCheckedAt,
-    ).toEqual(NOW);
+    ).toBeNull();
+    expect(
+      await repository.listCandidates(
+        new Date(NOW.getTime() - BOARD_RECHECK_DAYS * 86400000),
+      ),
+    ).toHaveLength(1);
+    expect(
+      await discoverBoards({
+        db,
+        now: NOW,
+        fetch: asFetch(async () => greenhouseResponse(MATCHING_TITLE)),
+        delayMs: 0,
+      }),
+    ).toEqual({ checked: 1, verified: 1 });
   });
 
   it('skips recent checks, retries an old check, and honors an exhausted budget', async () => {
