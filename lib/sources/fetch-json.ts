@@ -94,57 +94,65 @@ const readChunk = async (
   });
 };
 
+type FetchOutcome = { response: Response } | { error: unknown };
+
+const settle = async (
+  request: () => Promise<Response>,
+): Promise<FetchOutcome> => {
+  try {
+    return { response: await request() };
+  } catch (error) {
+    return { error };
+  }
+};
+
+const attemptFetch = async (
+  input: RequestInfo | URL,
+  fetchImpl: typeof fetch,
+  init: RequestInit | undefined,
+  attempt: number,
+): Promise<Response> => {
+  const lastAttempt = attempt === SOURCE_MAX_ATTEMPTS - 1;
+  const controller = new AbortController();
+  const timeout = setTimeout(
+    () => controller.abort(),
+    SOURCE_REQUEST_TIMEOUT_MS,
+  );
+
+  const outcome = await settle(() =>
+    fetchImpl(input, { ...init, signal: controller.signal }),
+  );
+
+  if ('error' in outcome) {
+    clearTimeout(timeout);
+    if (lastAttempt) {
+      throw outcome.error;
+    }
+    await wait(RETRY_BASE_DELAY_MS * 2 ** attempt);
+    return attemptFetch(input, fetchImpl, init, attempt + 1);
+  }
+
+  const { response } = outcome;
+  const delay =
+    !lastAttempt && isRetryableResponse(response)
+      ? retryDelay(response, attempt)
+      : undefined;
+  if (delay === undefined) {
+    responseDeadlines.set(response, { controller, timeout });
+    return response;
+  }
+
+  clearTimeout(timeout);
+  void response.body?.cancel().catch(() => {});
+  await wait(delay);
+  return attemptFetch(input, fetchImpl, init, attempt + 1);
+};
+
 export const fetchWithRetry = async (
   input: RequestInfo | URL,
   fetchImpl: typeof fetch,
   init?: RequestInit,
-): Promise<Response> => {
-  for (let attempt = 0; attempt < SOURCE_MAX_ATTEMPTS; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(
-      () => controller.abort(),
-      SOURCE_REQUEST_TIMEOUT_MS,
-    );
-    let keepTimeout = false;
-
-    try {
-      const response = await fetchImpl(input, {
-        ...init,
-        signal: controller.signal,
-      });
-      if (
-        !isRetryableResponse(response) ||
-        attempt === SOURCE_MAX_ATTEMPTS - 1
-      ) {
-        responseDeadlines.set(response, { controller, timeout });
-        keepTimeout = true;
-        return response;
-      }
-
-      const delay = retryDelay(response, attempt);
-      if (delay === undefined) {
-        responseDeadlines.set(response, { controller, timeout });
-        keepTimeout = true;
-        return response;
-      }
-
-      clearTimeout(timeout);
-      void response.body?.cancel().catch(() => {});
-      await wait(delay);
-    } catch (error) {
-      if (attempt === SOURCE_MAX_ATTEMPTS - 1) {
-        throw error;
-      }
-      await wait(RETRY_BASE_DELAY_MS * 2 ** attempt);
-    } finally {
-      if (!keepTimeout) {
-        clearTimeout(timeout);
-      }
-    }
-  }
-
-  throw new Error('Source request failed after retries');
-};
+): Promise<Response> => attemptFetch(input, fetchImpl, init, 0);
 
 export const discardResponse = async (response: Response): Promise<void> => {
   const deadline = responseDeadlines.get(response);
@@ -153,6 +161,32 @@ export const discardResponse = async (response: Response): Promise<void> => {
     responseDeadlines.delete(response);
   }
   await response.body?.cancel().catch(() => {});
+};
+
+/** One chunk per call, carrying the text and byte count read so far. */
+const readBody = async (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  deadline: ResponseDeadline | undefined,
+  decoder: TextDecoder,
+  body = '',
+  bytesRead = 0,
+): Promise<string> => {
+  const result = await readChunk(reader, deadline);
+  if (result.done) {
+    return body + decoder.decode();
+  }
+
+  const totalBytes = bytesRead + result.value.byteLength;
+  if (totalBytes > SOURCE_MAX_RESPONSE_BYTES) {
+    throw new Error('Source response exceeded the size limit');
+  }
+  return readBody(
+    reader,
+    deadline,
+    decoder,
+    body + decoder.decode(result.value, { stream: true }),
+    totalBytes,
+  );
 };
 
 export const readTextResponse = async (response: Response): Promise<string> => {
@@ -171,26 +205,7 @@ export const readTextResponse = async (response: Response): Promise<string> => {
       throw new Error('Source response exceeded the size limit');
     }
 
-    const decoder = new TextDecoder();
-    let body = '';
-    let bytesRead = 0;
-
-    while (reader) {
-      const result = await readChunk(reader, deadline);
-
-      if (result.done) {
-        break;
-      }
-
-      bytesRead += result.value.byteLength;
-      if (bytesRead > SOURCE_MAX_RESPONSE_BYTES) {
-        throw new Error('Source response exceeded the size limit');
-      }
-      body += decoder.decode(result.value, { stream: true });
-    }
-
-    body += decoder.decode();
-    return body;
+    return await (reader ? readBody(reader, deadline, new TextDecoder()) : '');
   } finally {
     if (deadline) {
       clearTimeout(deadline.timeout);

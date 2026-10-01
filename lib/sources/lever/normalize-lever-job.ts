@@ -39,12 +39,11 @@ const readCountries = (record: LeverJobRecord): string[] => {
   }
 
   if (Array.isArray(record.categories?.allLocations)) {
-    for (const entry of record.categories.allLocations) {
-      const name = asString(entry);
+    record.categories.allLocations.map(asString).forEach((name) => {
       if (name) {
         countries.add(name);
       }
-    }
+    });
   }
 
   return [...countries];

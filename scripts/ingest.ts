@@ -46,7 +46,7 @@ export const reportIngestionSourceFailures = (
   failed: Array<{ name: string; error: string }>,
   captureException: typeof Sentry.captureException = Sentry.captureException,
 ): void => {
-  for (const source of failed) {
+  failed.forEach((source) => {
     captureException(
       new Error(`Source ${source.name} failed: ${source.error}`),
       {
@@ -54,7 +54,7 @@ export const reportIngestionSourceFailures = (
         fingerprint: ['ingest-source-failure', source.name],
       },
     );
-  }
+  });
 };
 
 const main = async () => {

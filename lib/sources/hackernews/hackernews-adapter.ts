@@ -90,46 +90,43 @@ const fetchStoryComments = async (
   storyId: string,
   hitsPerPage: number,
   fetchImpl: typeof fetch,
+  page = 0,
 ): Promise<NormalizedJob[]> => {
-  const normalized: NormalizedJob[] = [];
-  let page = 0;
-  let nbPages = 1;
+  const url = new URL(`${HN_ALGOLIA_API_BASE_URL}/search_by_date`);
+  url.searchParams.set('tags', `comment,story_${storyId}`);
+  url.searchParams.set('numericFilters', `parent_id=${storyId}`);
+  url.searchParams.set('hitsPerPage', String(hitsPerPage));
+  url.searchParams.set('page', String(page));
 
-  while (page < nbPages && page < 50) {
-    const url = new URL(`${HN_ALGOLIA_API_BASE_URL}/search_by_date`);
-    url.searchParams.set('tags', `comment,story_${storyId}`);
-    url.searchParams.set('numericFilters', `parent_id=${storyId}`);
-    url.searchParams.set('hitsPerPage', String(hitsPerPage));
-    url.searchParams.set('page', String(page));
+  const payload = await fetchJson(url.toString(), fetchImpl);
+  const nbPages = asNumber(payload.nbPages) ?? 1;
+  const hits = payload.hits;
 
-    const payload = await fetchJson(url.toString(), fetchImpl);
-    nbPages = asNumber(payload.nbPages) ?? 1;
-    const hits = payload.hits;
-
-    if (hits.length === 0) {
-      break;
-    }
-
-    const validComments = hits.filter(isComment);
-    if (validComments.length === 0) {
-      throw new Error('Hacker News response has no valid comment records');
-    }
-
-    for (const hit of validComments) {
-      const job = normalizeHackerNewsComment(hit);
-      if (job) {
-        normalized.push(job);
-      }
-    }
-
-    page += 1;
+  if (hits.length === 0) {
+    return [];
   }
 
-  if (page === 50 && page < nbPages) {
+  const validComments = hits.filter(isComment);
+  if (validComments.length === 0) {
+    throw new Error('Hacker News response has no valid comment records');
+  }
+
+  const jobs = validComments.flatMap(
+    (hit) => normalizeHackerNewsComment(hit) ?? [],
+  );
+
+  const nextPage = page + 1;
+  if (nextPage >= nbPages) {
+    return jobs;
+  }
+  if (nextPage === 50) {
     throw new Error('Hacker News pagination limit reached');
   }
 
-  return normalized;
+  return [
+    ...jobs,
+    ...(await fetchStoryComments(storyId, hitsPerPage, fetchImpl, nextPage)),
+  ];
 };
 
 export const createHackerNewsAdapter = (

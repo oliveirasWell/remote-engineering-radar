@@ -78,39 +78,23 @@ export const createQuaveAdapter = (
     headers.set('Authorization', `Bearer ${token}`);
   }
 
+  const fetchFrom = async (page: number): Promise<NormalizedJob[]> => {
+    if (page > QUAVE_MAX_PAGES) {
+      throw new Error(`${QUAVE_SOURCE_NAME} pagination limit reached`);
+    }
+
+    const records = await fetchIssuesPage(page, perPage, fetchImpl, headers);
+    const jobs = records
+      .filter(isIssue)
+      .flatMap((record) => normalizeQuaveIssue(record) ?? []);
+
+    return records.length < perPage
+      ? jobs
+      : [...jobs, ...(await fetchFrom(page + 1))];
+  };
+
   return {
     name: QUAVE_SOURCE_NAME,
-    fetchJobs: async () => {
-      const normalized: NormalizedJob[] = [];
-      let page = 1;
-
-      while (page <= QUAVE_MAX_PAGES) {
-        const records = await fetchIssuesPage(
-          page,
-          perPage,
-          fetchImpl,
-          headers,
-        );
-
-        for (const record of records) {
-          if (!isIssue(record)) {
-            continue;
-          }
-
-          const job = normalizeQuaveIssue(record);
-          if (job) {
-            normalized.push(job);
-          }
-        }
-
-        if (records.length < perPage) {
-          return { jobs: normalized, complete: true };
-        }
-
-        page += 1;
-      }
-
-      throw new Error(`${QUAVE_SOURCE_NAME} pagination limit reached`);
-    },
+    fetchJobs: async () => ({ jobs: await fetchFrom(1), complete: true }),
   };
 };
