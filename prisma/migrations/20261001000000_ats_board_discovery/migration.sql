@@ -1,6 +1,6 @@
-ALTER TABLE "companies" ADD COLUMN "board_checked_at" TIMESTAMPTZ;
+ALTER TABLE "companies" ADD COLUMN IF NOT EXISTS "board_checked_at" TIMESTAMPTZ;
 
-CREATE TABLE "ats_boards" (
+CREATE TABLE IF NOT EXISTS "ats_boards" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "ats" TEXT NOT NULL,
     "slug" TEXT NOT NULL,
@@ -10,11 +10,21 @@ CREATE TABLE "ats_boards" (
     CONSTRAINT "ats_boards_ats_check" CHECK ("ats" IN ('greenhouse', 'ashby', 'lever'))
 );
 
-CREATE INDEX "ats_boards_company_id_idx" ON "ats_boards"("company_id");
+CREATE INDEX IF NOT EXISTS "ats_boards_company_id_idx" ON "ats_boards"("company_id");
 
-ALTER TABLE "ats_boards" ADD CONSTRAINT "ats_boards_company_id_companies_id_fk"
-    FOREIGN KEY ("company_id") REFERENCES "companies"("id")
-    ON DELETE NO ACTION ON UPDATE NO ACTION;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint
+        WHERE conname = 'ats_boards_company_id_companies_id_fk'
+          AND conrelid = 'public.ats_boards'::regclass
+    ) THEN
+        ALTER TABLE "ats_boards" ADD CONSTRAINT "ats_boards_company_id_companies_id_fk"
+            FOREIGN KEY ("company_id") REFERENCES "companies"("id")
+            ON DELETE NO ACTION ON UPDATE NO ACTION;
+    END IF;
+END
+$$;
 
 ALTER TABLE "ats_boards" ENABLE ROW LEVEL SECURITY;
 
