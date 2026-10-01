@@ -182,6 +182,62 @@ describe('createJobsRepository', () => {
     ).resolves.toMatchObject({ isActive: true });
   });
 
+  it('deactivates aggregator twins by canonical company and normalized title only', async () => {
+    const db = await createTestDb();
+    const companies = createCompaniesRepository(db);
+    const jobs = createJobsRepository(db);
+    const company = await companies.create(TEST_COMPANY);
+    const otherCompany = await companies.create({
+      ...TEST_COMPANY,
+      slug: 'other',
+      name: 'Other',
+    });
+    const input = { ...TEST_JOB, technologies: [...TEST_JOB.technologies] };
+    const himalayas = await jobs.create({
+      ...input,
+      companyId: company.id,
+      source: 'himalayas',
+      sourceJobId: 'aggregator-one',
+      title: 'Senior React Engineer!',
+    });
+    const jobicy = await jobs.create({
+      ...input,
+      companyId: company.id,
+      source: 'jobicy',
+      sourceJobId: 'aggregator-two',
+      title: 'Senior React Engineer',
+    });
+    const other = await jobs.create({
+      ...input,
+      companyId: otherCompany.id,
+      source: 'himalayas',
+      sourceJobId: 'other-company',
+      title: 'Senior React Engineer',
+    });
+    const direct = await jobs.create({
+      ...input,
+      companyId: company.id,
+      source: 'greenhouse',
+      sourceJobId: 'direct',
+      title: 'senior react engineer',
+    });
+
+    expect(await jobs.deactivateAggregatorTwins()).toEqual([
+      { companyId: company.id },
+      { companyId: company.id },
+    ]);
+    for (const job of [himalayas, jobicy]) {
+      await expect(jobs.findById(job.id)).resolves.toMatchObject({
+        isActive: false,
+      });
+    }
+    for (const job of [other, direct]) {
+      await expect(jobs.findById(job.id)).resolves.toMatchObject({
+        isActive: true,
+      });
+    }
+  });
+
   it('batch retires only active requested IDs in the specified source', async () => {
     const db = await createTestDb();
     const jobsRepository = createJobsRepository(db);

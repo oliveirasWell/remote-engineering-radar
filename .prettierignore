@@ -1,5 +1,7 @@
 .next
 brag-output
+brag-output-*
+.vitest
 coverage
 node_modules
 pnpm-lock.yaml

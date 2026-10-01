@@ -3,6 +3,7 @@ import { createCompaniesRepository } from '@/lib/db/repositories/companies-repos
 import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
+import { createAtsBoardsRepository } from '@/lib/db/repositories/ats-boards-repository';
 import { JOB_RETENTION_MS } from '@/lib/jobs/constants';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { HACKER_NEWS_SOURCE_NAME } from '@/lib/sources/hackernews/constants';
@@ -17,6 +18,11 @@ import { asFetch, jsonResponse } from '@/test/http';
 import { Prisma } from '@prisma/client';
 import { INGESTION_TRANSACTION_TIMEOUT_MS } from './constants';
 import { runIngestion } from './run-ingestion';
+import { discoverBoards } from '@/lib/sources/board-discovery/discover-boards';
+
+vi.mock('@/lib/sources/board-discovery/discover-boards', () => ({
+  discoverBoards: vi.fn(async () => ({ checked: 0, verified: 0 })),
+}));
 
 vi.mock(
   '@/lib/db/repositories/companies-repository',
@@ -53,6 +59,22 @@ const makeJob = (
 });
 
 describe('runIngestion', () => {
+  it('keeps the ingestion result when discovery fails', async () => {
+    const db = await createTestDb();
+    const errors: string[] = [];
+    vi.mocked(discoverBoards).mockRejectedValueOnce(
+      new Error('probe unavailable'),
+    );
+
+    const result = await runIngestion({
+      db,
+      sources: [],
+      logger: { info: () => {}, error: (message) => errors.push(message) },
+    });
+
+    expect(result).toMatchObject({ persistedJobs: 0, companiesUpdated: 0 });
+    expect(errors).toContain('Board discovery failed: probe unavailable');
+  });
   it('uses an ingestion-only ten-minute transaction timeout without overriding maxWait', async () => {
     const db = await createTestDb();
     const transaction = vi.spyOn(db, '$transaction');
@@ -280,6 +302,118 @@ describe('runIngestion', () => {
     expect(result.persistedJobs).toBe(1);
     expect(logs.some((line) => line.includes('ashby failed'))).toBe(true);
     await expect(jobsRepository.findById(before!.id)).resolves.toEqual(before);
+  });
+
+  it('keeps partial source jobs and reports individual board failures', async () => {
+    const db = await createTestDb();
+    const source: JobSource = {
+      name: 'greenhouse',
+      fetchJobs: async () => ({
+        jobs: [
+          makeJob({
+            source: 'greenhouse',
+            sourceJobId: '1',
+            title: 'Senior React Engineer',
+            url: 'https://example.com/jobs/1',
+          }),
+        ],
+        complete: false,
+        failedBoards: [
+          {
+            board: 'missing',
+            status: 404,
+            error: 'Greenhouse request failed: 404',
+          },
+        ],
+      }),
+    };
+
+    const result = await runIngestion({ db, sources: [source] });
+
+    expect(result.sources[0]).toMatchObject({
+      name: 'greenhouse',
+      fetched: 1,
+      failedBoards: [{ board: 'missing', status: 404 }],
+    });
+    await expect(
+      createJobsRepository(db).findBySourceJobId('greenhouse', '1'),
+    ).resolves.toMatchObject({ isActive: true });
+  });
+
+  it('retires an existing aggregator copy when a direct board job arrives on a later day', async () => {
+    const db = await createTestDb();
+    const aggregator = makeJob({
+      source: 'himalayas',
+      sourceJobId: 'older',
+      title: 'Senior React Engineer',
+      url: 'https://himalayas.app/jobs/older',
+    });
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'himalayas',
+          fetchJobs: async () => ({ jobs: [aggregator], complete: false }),
+        },
+      ],
+    });
+    const direct = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'newer',
+      title: 'Senior React Engineer!',
+      url: 'https://boards.greenhouse.io/acme/jobs/newer',
+    });
+
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'greenhouse',
+          fetchJobs: async () => ({ jobs: [direct], complete: true }),
+        },
+      ],
+    });
+
+    const repository = createJobsRepository(db);
+    await expect(
+      repository.findBySourceJobId('himalayas', 'older'),
+    ).resolves.toMatchObject({ isActive: false });
+    await expect(
+      repository.findBySourceJobId('greenhouse', 'newer'),
+    ).resolves.toMatchObject({ isActive: true });
+  });
+
+  it('removes only verified boards that return 404', async () => {
+    const db = await createTestDb();
+    const company = await createCompaniesRepository(db).create({
+      name: 'Acme Robotics',
+      slug: 'acme-robotics',
+      source: 'himalayas',
+    });
+    const boards = createAtsBoardsRepository(db);
+    await boards.insertVerified('greenhouse', 'missing', company.id);
+    await boards.insertVerified('greenhouse', 'temporary', company.id);
+
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'greenhouse',
+          fetchJobs: async () => ({
+            jobs: [],
+            complete: false,
+            failedBoards: [
+              { board: 'missing', status: 404, error: '404' },
+              { board: 'temporary', status: 503, error: '503' },
+            ],
+          }),
+        },
+      ],
+    });
+
+    expect((await boards.listVerified()).map(({ slug }) => slug)).toEqual([
+      'temporary',
+    ]);
   });
 
   it('records the ingestion completion time', async () => {

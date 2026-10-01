@@ -14,6 +14,8 @@ import { focusFilter } from './focus-filter';
 import { coalescedPostedAtFilter } from './posted-at-filter';
 import { JOB_ORDER_BY } from './constants';
 
+const AGGREGATOR_SOURCES = ['himalayas', 'jobicy'] as const;
+
 const toStringArray = (column: string, value: Prisma.JsonValue): string[] => {
   if (
     !Array.isArray(value) ||
@@ -447,6 +449,24 @@ export const createJobsRepository = (db: Db) => ({
       data: { isActive: false, updatedAt: now },
       select: { companyId: true },
     }),
+
+  deactivateAggregatorTwins: async (): Promise<{ companyId: string }[]> =>
+    db.$queryRaw<{ companyId: string }[]>(Prisma.sql`
+      UPDATE jobs aggregator
+      SET is_active = false, updated_at = ${new Date()}
+      WHERE aggregator.is_active
+        AND aggregator.source IN (${Prisma.join(AGGREGATOR_SOURCES)})
+        AND btrim(regexp_replace(lower(aggregator.title), '[^a-z0-9+#.]+', ' ', 'g')) <> ''
+        AND EXISTS (
+          SELECT 1 FROM jobs direct
+          WHERE direct.company_id = aggregator.company_id
+            AND direct.is_active
+            AND direct.source NOT IN (${Prisma.join(AGGREGATOR_SOURCES)})
+            AND btrim(regexp_replace(lower(direct.title), '[^a-z0-9+#.]+', ' ', 'g')) =
+              btrim(regexp_replace(lower(aggregator.title), '[^a-z0-9+#.]+', ' ', 'g'))
+        )
+      RETURNING aggregator.company_id AS "companyId"
+    `),
 
   /** Rows are only ever deactivated, so without this the table grows forever. */
   deleteInactiveOlderThan: async (

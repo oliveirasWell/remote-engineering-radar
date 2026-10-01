@@ -136,7 +136,7 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
       SELECT EXISTS (
         SELECT 1
         FROM pg_roles role
-        CROSS JOIN unnest(ARRAY['companies', 'jobs', 'hiring_signals', 'data_migrations', '_prisma_migrations']) AS table_name
+        CROSS JOIN unnest(ARRAY['companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', 'ats_boards', '_prisma_migrations']) AS table_name
         WHERE role.rolname IN ('anon', 'authenticated')
           AND to_regclass('public.' || table_name) IS NOT NULL
           AND (
@@ -171,7 +171,7 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
             WHERE relation.relowner = defaults.defaclrole
               AND relation.relnamespace = 'public'::regnamespace
               AND relation.relkind IN ('r', 'p')
-              AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', '_prisma_migrations')
+              AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', 'ats_boards', '_prisma_migrations')
           ) AS owner_owns_radar_tables,
           owner.rolname = 'postgres' AS owner_is_postgres,
           -- USAGE matches the effective role privileges needed to alter default ACLs.
@@ -190,7 +190,7 @@ const verifyPrivileges = async (connectionString: string): Promise<void> => {
               WHERE relation.relowner = defaults.defaclrole
                 AND relation.relnamespace = 'public'::regnamespace
                 AND relation.relkind IN ('r', 'p')
-                AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', '_prisma_migrations')
+                AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', 'ats_boards', '_prisma_migrations')
             )
           )
           AND (
