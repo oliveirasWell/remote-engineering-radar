@@ -196,6 +196,7 @@ const eslintConfig = defineConfig([
   globalIgnores([
     '.next/**',
     'brag-output/**',
+    'brag-output-*/**',
     'out/**',
     'build/**',
     'next-env.d.ts',

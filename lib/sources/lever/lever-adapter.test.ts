@@ -48,17 +48,36 @@ describe('createLeverAdapter', () => {
     );
   });
 
-  it('fails the snapshot when a later configured board fails', async () => {
+  it('uses a verified company name instead of the board slug', async () => {
+    const adapter = createLeverAdapter({
+      boardSlugs: [BOARD_SLUG],
+      companyNamesByBoard: { [BOARD_SLUG]: 'CI&T' },
+      fetch: asFetch(async () => jsonResponse(page1)),
+    });
+
+    expect((await adapter.fetchJobs()).jobs[0]?.company.name).toBe('CI&T');
+  });
+
+  it('returns healthy boards and identifies a failed board without completing the snapshot', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(page1))
-      .mockResolvedValueOnce(jsonResponse({}, 400));
+      .mockResolvedValueOnce(jsonResponse({}, 400))
+      .mockResolvedValueOnce(jsonResponse(page1));
     const adapter = createLeverAdapter({
-      boardSlugs: [BOARD_SLUG, `${BOARD_SLUG}-other`],
+      boardSlugs: [BOARD_SLUG, `${BOARD_SLUG}-other`, `${BOARD_SLUG}-third`],
       fetch: asFetch(fetchMock),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(/Lever request failed/);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const result = await adapter.fetchJobs();
+    expect(result).toMatchObject({
+      complete: false,
+      jobs: expect.arrayContaining([
+        expect.objectContaining({ source: LEVER_SOURCE_NAME }),
+      ]),
+      failedBoards: [{ board: `${BOARD_SLUG}-other`, status: 400 }],
+    });
+    expect(result.jobs).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });

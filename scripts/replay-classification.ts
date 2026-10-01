@@ -20,6 +20,7 @@ import type { JobClassification } from '../lib/classification/types';
 import { createDb, disconnectDb } from '../lib/db/client';
 import { REMOTE_POLICY_REMOTE } from '../lib/jobs/constants';
 import { createGreenhouseAdapter } from '../lib/sources/greenhouse/greenhouse-adapter';
+import { GREENHOUSE_BOARD_TOKENS } from '../lib/sources/greenhouse/constants';
 
 type ReplayEntry = {
   key: string;
@@ -178,10 +179,7 @@ const main = async () => {
       boards: { type: 'string', default: '' },
     },
   });
-  const boards = [
-    ...(process.env.GREENHOUSE_BOARD_TOKENS ?? '').split(','),
-    ...values.boards.split(','),
-  ]
+  const boards = [...GREENHOUSE_BOARD_TOKENS, ...values.boards.split(',')]
     .map((board) => board.trim())
     .filter(Boolean);
 

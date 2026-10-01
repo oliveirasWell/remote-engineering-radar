@@ -5,6 +5,10 @@ import {
 import type { NewCompany } from '@/lib/companies/types';
 import type { RootDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
+import {
+  createAtsBoardsRepository,
+  type Ats,
+} from '@/lib/db/repositories/ats-boards-repository';
 import { createHiringSignalsRepository } from '@/lib/db/repositories/hiring-signals-repository';
 import { createIngestionRunsRepository } from '@/lib/db/repositories/ingestion-runs-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
@@ -18,9 +22,14 @@ import {
   JOB_RETENTION_MS,
   REMOTE_POLICY_REMOTE,
 } from '@/lib/jobs/constants';
-import { scoreClassifiedJob } from '@/lib/scoring/score-job';
 import type { JobCard } from '@/lib/jobs/types';
-import type { JobSource, NormalizedJob } from '@/lib/sources/types';
+import { scoreClassifiedJob } from '@/lib/scoring/score-job';
+import { discoverBoards } from '@/lib/sources/board-discovery/discover-boards';
+import type {
+  BoardFailure,
+  JobSource,
+  NormalizedJob,
+} from '@/lib/sources/types';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 
 export type IngestionLogger = {
@@ -33,6 +42,7 @@ export type IngestionSourceResult = {
   fetched: number;
   persisted: number;
   error?: string;
+  failedBoards?: BoardFailure[];
 };
 
 export type IngestionResult = {
@@ -91,6 +101,35 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
   };
 };
 
+const removeMissingVerifiedBoards = async (
+  db: RootDb,
+  sources: IngestionSourceResult[],
+  logger: IngestionLogger,
+): Promise<void> => {
+  const boards = createAtsBoardsRepository(db);
+  for (const source of sources) {
+    if (
+      source.name !== 'greenhouse' &&
+      source.name !== 'ashby' &&
+      source.name !== 'lever'
+    ) {
+      continue;
+    }
+    for (const failure of source.failedBoards ?? []) {
+      if (failure.status !== 404) {
+        continue;
+      }
+      try {
+        await boards.remove(source.name as Ats, failure.board);
+      } catch (error) {
+        logger.error(
+          `Failed to remove ${source.name} board ${failure.board}: ${String(error)}`,
+        );
+      }
+    }
+  }
+};
+
 export const runIngestion = async (options: {
   db: RootDb;
   sources: JobSource[];
@@ -110,7 +149,7 @@ export const runIngestion = async (options: {
 
   for (const source of options.sources) {
     try {
-      const { jobs, complete } = await source.fetchJobs();
+      const { jobs, complete, failedBoards } = await source.fetchJobs();
       fetchedJobs.push(...jobs);
       if (complete) {
         completeSources.add(source.name);
@@ -119,6 +158,7 @@ export const runIngestion = async (options: {
         name: source.name,
         fetched: jobs.length,
         persisted: 0,
+        ...(failedBoards?.length ? { failedBoards } : {}),
       });
       logger.info(`Source ${source.name}: fetched ${jobs.length} jobs`);
     } catch (error) {
@@ -236,6 +276,9 @@ export const runIngestion = async (options: {
       );
       agedOut.forEach((job) => companyIds.add(job.companyId));
 
+      const aggregatorTwins = await jobsRepository.deactivateAggregatorTwins();
+      aggregatorTwins.forEach((job) => companyIds.add(job.companyId));
+
       await jobsRepository.deleteInactiveOlderThan(JOB_RETENTION_MS, now);
 
       // One batched read instead of one query per touched company, and
@@ -302,6 +345,19 @@ export const runIngestion = async (options: {
   logger.info(
     `Ingestion complete: ${persistedJobs} jobs across ${companiesUpdated} companies`,
   );
+
+  await removeMissingVerifiedBoards(options.db, sourceResults, logger);
+
+  try {
+    const { checked, verified } = await discoverBoards({ db: options.db, now });
+    logger.info(
+      `Board discovery: checked ${checked} companies, verified ${verified} boards`,
+    );
+  } catch (error) {
+    logger.error(
+      `Board discovery failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 
   return {
     sources,

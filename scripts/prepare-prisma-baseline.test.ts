@@ -5,6 +5,8 @@ const preparationSql = readFileSync(
   new URL('./prepare-prisma-baseline.sql', import.meta.url),
   'utf8',
 );
+const LEGACY_COMPANY_ID = '00000000-0000-4000-8000-000000000001';
+const NEW_COMPANY_ID = '00000000-0000-4000-8000-000000000005';
 
 describe('legacy Prisma baseline preparation SQL', () => {
   let db: PGlite;
@@ -12,18 +14,18 @@ describe('legacy Prisma baseline preparation SQL', () => {
   beforeEach(async () => {
     db = new PGlite();
     await db.exec(`
-      CREATE TABLE companies (id integer PRIMARY KEY, name text NOT NULL);
+      CREATE TABLE companies (id uuid PRIMARY KEY, name text NOT NULL);
       CREATE TABLE jobs (
         id integer PRIMARY KEY,
-        company_id integer NOT NULL REFERENCES companies(id),
+        company_id uuid NOT NULL REFERENCES companies(id),
         title text NOT NULL,
         technologies jsonb NOT NULL DEFAULT '[]'::jsonb
       );
       CREATE TABLE hiring_signals (id integer PRIMARY KEY, description text);
       CREATE SCHEMA drizzle;
       CREATE TABLE drizzle.__drizzle_migrations (id integer PRIMARY KEY, hash text);
-      INSERT INTO companies VALUES (1, 'Legacy company');
-      INSERT INTO jobs VALUES (2, 1, 'Existing role', '["React"]');
+      INSERT INTO companies VALUES ('${LEGACY_COMPANY_ID}', 'Legacy company');
+      INSERT INTO jobs VALUES (2, '${LEGACY_COMPANY_ID}', 'Existing role', '["React"]');
       INSERT INTO hiring_signals VALUES (3, 'Keep this signal');
       INSERT INTO drizzle.__drizzle_migrations VALUES (4, 'historical-hash');
     `);
@@ -33,7 +35,7 @@ describe('legacy Prisma baseline preparation SQL', () => {
     await db.close();
   });
 
-  it('adds exactly the four legacy columns with NOT NULL types and defaults, preserving rows', async () => {
+  it('adds legacy columns and the verified-board table without changing existing rows', async () => {
     await db.exec(preparationSql);
 
     const columns = await db.query(`
@@ -73,12 +75,17 @@ describe('legacy Prisma baseline preparation SQL', () => {
       },
     ]);
     expect((await db.query('SELECT * FROM companies')).rows).toEqual([
-      { id: 1, name: 'Legacy company', kind: 'product' },
+      {
+        id: LEGACY_COMPANY_ID,
+        name: 'Legacy company',
+        kind: 'product',
+        board_checked_at: null,
+      },
     ]);
     expect((await db.query('SELECT * FROM jobs')).rows).toEqual([
       {
         id: 2,
-        company_id: 1,
+        company_id: LEGACY_COMPANY_ID,
         title: 'Existing role',
         technologies: ['React'],
         geographies: [],
@@ -87,11 +94,19 @@ describe('legacy Prisma baseline preparation SQL', () => {
       },
     ]);
     await db.exec(`
-      INSERT INTO companies (id, name) VALUES (5, 'New company');
-      INSERT INTO jobs (id, company_id, title) VALUES (6, 5, 'New role');
+      INSERT INTO companies (id, name) VALUES ('${NEW_COMPANY_ID}', 'New company');
+      INSERT INTO jobs (id, company_id, title) VALUES (6, '${NEW_COMPANY_ID}', 'New role');
     `);
     expect(
-      (await db.query('SELECT kind FROM companies WHERE id = 5')).rows,
+      (await db.query("SELECT to_regclass('public.ats_boards') AS board_table"))
+        .rows,
+    ).toEqual([{ board_table: 'ats_boards' }]);
+    expect(
+      (
+        await db.query(
+          `SELECT kind FROM companies WHERE id = '${NEW_COMPANY_ID}'`,
+        )
+      ).rows,
     ).toEqual([{ kind: 'product' }]);
     expect(
       (
@@ -212,7 +227,7 @@ describe('legacy Prisma baseline preparation SQL', () => {
       ).rows,
     ).toEqual([]);
     expect((await db.query('SELECT * FROM companies')).rows).toEqual([
-      { id: 1, name: 'Legacy company' },
+      { id: LEGACY_COMPANY_ID, name: 'Legacy company' },
     ]);
     expect(preparationSql).toMatch(/BEGIN;\s+SET LOCAL lock_timeout = '5s';/);
     expect(preparationSql.trim()).toMatch(/COMMIT;$/);

@@ -1,4 +1,5 @@
 import type { JobSource, NormalizedJob } from '../types';
+import { boardFailure } from '../board-failure';
 import {
   discardResponse,
   fetchWithRetry,
@@ -13,6 +14,8 @@ import {
 
 export type AshbyAdapterOptions = {
   boardNames: string[];
+  companyNamesByBoard?: Readonly<Record<string, string>>;
+  logFailures?: boolean;
   fetch?: typeof fetch;
 };
 
@@ -60,7 +63,9 @@ const fetchJobsPage = async (
 
   if (!response.ok) {
     await discardResponse(response);
-    throw new Error(`Ashby request failed: ${response.status}`);
+    throw Object.assign(new Error(`Ashby request failed: ${response.status}`), {
+      status: response.status,
+    });
   }
 
   const payload = await readJsonResponse<unknown>(response);
@@ -118,13 +123,36 @@ export const createAshbyAdapter = (options: AshbyAdapterOptions): JobSource => {
     name: ASHBY_SOURCE_NAME,
     fetchJobs: async () => {
       const jobs: NormalizedJob[] = [];
+      const failedBoards = [];
 
       for (const boardName of options.boardNames) {
-        const boardJobs = await fetchBoardJobs(boardName, fetchImpl);
-        jobs.push(...boardJobs);
+        try {
+          jobs.push(
+            ...(await fetchBoardJobs(boardName, fetchImpl)).map((job) => ({
+              ...job,
+              company: {
+                ...job.company,
+                name:
+                  options.companyNamesByBoard?.[boardName] ?? job.company.name,
+              },
+            })),
+          );
+        } catch (error) {
+          const failure = boardFailure(boardName, error);
+          failedBoards.push(failure);
+          if (options.logFailures !== false) {
+            console.error(
+              `Source ${ASHBY_SOURCE_NAME} board ${boardName} failed: ${failure.status ?? failure.error}`,
+            );
+          }
+        }
       }
 
-      return { jobs, complete: true };
+      return {
+        jobs,
+        complete: failedBoards.length === 0,
+        ...(failedBoards.length > 0 ? { failedBoards } : {}),
+      };
     },
   };
 };

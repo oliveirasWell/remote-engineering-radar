@@ -180,17 +180,17 @@ export const EN_MESSAGES = {
       {
         name: 'Greenhouse',
         description:
-          'Public board API for configured company tokens (GREENHOUSE_BOARD_TOKENS).',
+          'Public boards of companies on the radar, via the Greenhouse API.',
       },
       {
         name: 'Ashby',
         description:
-          'Public job-board API for configured board names (ASHBY_BOARD_NAMES).',
+          'Public boards of companies on the radar, via the Ashby API.',
       },
       {
         name: 'Lever',
         description:
-          'Public postings API for configured board slugs (LEVER_BOARD_SLUGS).',
+          'Public boards of companies on the radar, via the Lever API.',
       },
       {
         name: 'GetOnBrd',
@@ -425,17 +425,15 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
       {
         name: 'Greenhouse',
         description:
-          'API pública de boards para os tokens configurados (GREENHOUSE_BOARD_TOKENS).',
+          'Boards públicos de empresas no radar, via API do Greenhouse.',
       },
       {
         name: 'Ashby',
-        description:
-          'API pública de job board para os nomes configurados (ASHBY_BOARD_NAMES).',
+        description: 'Boards públicos de empresas no radar, via API do Ashby.',
       },
       {
         name: 'Lever',
-        description:
-          'API pública de postings para os slugs configurados (LEVER_BOARD_SLUGS).',
+        description: 'Boards públicos de empresas no radar, via API do Lever.',
       },
       {
         name: 'GetOnBrd',

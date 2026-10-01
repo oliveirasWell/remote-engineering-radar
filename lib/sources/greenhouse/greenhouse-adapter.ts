@@ -1,4 +1,5 @@
 import type { JobSource, NormalizedJob } from '../types';
+import { boardFailure } from '../board-failure';
 import {
   discardResponse,
   fetchWithRetry,
@@ -17,6 +18,8 @@ import {
 
 export type GreenhouseAdapterOptions = {
   boardTokens: string[];
+  companyNamesByBoard?: Readonly<Record<string, string>>;
+  logFailures?: boolean;
   fetch?: typeof fetch;
   jobsPerPage?: number;
 };
@@ -68,8 +71,9 @@ const fetchJobsPage = async (
 
   if (!response.ok) {
     await discardResponse(response);
-    throw new Error(
-      `Greenhouse request failed (page ${page}): ${response.status}`,
+    throw Object.assign(
+      new Error(`Greenhouse request failed (page ${page}): ${response.status}`),
+      { status: response.status },
     );
   }
 
@@ -154,17 +158,39 @@ export const createGreenhouseAdapter = (
     name: GREENHOUSE_SOURCE_NAME,
     fetchJobs: async () => {
       const jobs: NormalizedJob[] = [];
+      const failedBoards = [];
 
       for (const boardToken of options.boardTokens) {
-        const boardJobs = await fetchBoardJobs(
-          boardToken,
-          jobsPerPage,
-          fetchImpl,
-        );
-        jobs.push(...boardJobs);
+        try {
+          jobs.push(
+            ...(await fetchBoardJobs(boardToken, jobsPerPage, fetchImpl)).map(
+              (job) => ({
+                ...job,
+                company: {
+                  ...job.company,
+                  name:
+                    options.companyNamesByBoard?.[boardToken] ??
+                    job.company.name,
+                },
+              }),
+            ),
+          );
+        } catch (error) {
+          const failure = boardFailure(boardToken, error);
+          failedBoards.push(failure);
+          if (options.logFailures !== false) {
+            console.error(
+              `Source ${GREENHOUSE_SOURCE_NAME} board ${boardToken} failed: ${failure.status ?? failure.error}`,
+            );
+          }
+        }
       }
 
-      return { jobs, complete: true };
+      return {
+        jobs,
+        complete: failedBoards.length === 0,
+        ...(failedBoards.length > 0 ? { failedBoards } : {}),
+      };
     },
   };
 };

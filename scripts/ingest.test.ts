@@ -80,4 +80,20 @@ describe('ingest Sentry reporting', () => {
       },
     );
   });
+
+  it('reports a failed board with its source and slug', () => {
+    reportIngestionSourceFailures(
+      [{ name: 'greenhouse', board: 'canonical', error: '404' }],
+      mocks.captureException,
+    );
+
+    expect(mocks.captureException).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Source greenhouse board canonical failed: 404',
+      }),
+      expect.objectContaining({
+        tags: { job: 'ingest', source: 'greenhouse' },
+      }),
+    );
+  });
 });

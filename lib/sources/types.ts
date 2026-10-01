@@ -22,5 +22,12 @@ export type JobSource = {
     jobs: NormalizedJob[];
     /** Only exhaustive snapshots may retire jobs absent from this fetch. */
     complete: boolean;
+    failedBoards?: BoardFailure[];
   }>;
+};
+
+export type BoardFailure = {
+  board: string;
+  error: string;
+  status?: number;
 };
