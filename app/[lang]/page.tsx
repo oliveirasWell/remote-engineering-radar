@@ -53,7 +53,11 @@ const Home = ({ searchParams }: HomeProps) => (
   <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-10 px-6 py-16">
     <>
       <HomeHeading />
-      <AdUnit placement="home" slot={ADSENSE_HOME_SLOT} />
+      <AdUnit
+        placement="home"
+        slot={ADSENSE_HOME_SLOT}
+        preview={process.env.VERCEL_ENV === 'preview'}
+      />
     </>
     <Suspense fallback={<ReportLoading report="home" />}>
       <CompaniesSection searchParams={searchParams} />

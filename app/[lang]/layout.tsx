@@ -71,7 +71,11 @@ const RootLayout = async ({
           />
         ) : null}
         <I18nProvider locale={lang}>
-          <AdUnit placement="topbar" slot={ADSENSE_TOPBAR_SLOT} />
+          <AdUnit
+            placement="topbar"
+            slot={ADSENSE_TOPBAR_SLOT}
+            preview={process.env.VERCEL_ENV === 'preview'}
+          />
           <SiteHeader />
           {children}
           <SiteFooter />

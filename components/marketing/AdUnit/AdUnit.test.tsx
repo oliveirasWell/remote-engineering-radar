@@ -67,6 +67,34 @@ describe('AdUnit', () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('shows a compact beta preview without requesting an ad', () => {
+    const push = vi.fn();
+    vi.stubGlobal('adsbygoogle', { push });
+
+    render(<AdUnit placement="topbar" slot="" preview />);
+
+    const region = screen.getByRole('complementary', {
+      name: messagesFor().marketing.advertisement,
+    });
+    expect(region).toHaveTextContent(messagesFor().marketing.preview);
+    expect(region.querySelector('ins.adsbygoogle')).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('labels the home preview in Portuguese', () => {
+    render(
+      <I18nProvider locale="pt-BR">
+        <AdUnit placement="home" slot="" preview />
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.getByRole('complementary', {
+        name: messagesFor('pt-BR').marketing.advertisement,
+      }),
+    ).toHaveTextContent(messagesFor('pt-BR').marketing.preview);
+  });
+
   it('does not request the same ad twice under StrictMode', () => {
     const push = vi.fn();
     vi.stubGlobal('adsbygoogle', { push });

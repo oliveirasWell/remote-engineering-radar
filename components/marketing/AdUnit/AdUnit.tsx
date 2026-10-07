@@ -7,12 +7,15 @@ import { ADSENSE_CLIENT_ID } from '@/lib/marketing/adsense';
 export const AdUnit = ({
   placement,
   slot,
+  preview = false,
 }: {
   placement: 'topbar' | 'home';
   slot: string;
+  preview?: boolean;
 }) => {
   const { messages } = useI18n();
   const initialized = useRef(false);
+  const configured = Boolean(ADSENSE_CLIENT_ID && slot);
 
   useEffect(() => {
     if (ADSENSE_CLIENT_ID && slot && !initialized.current) {
@@ -23,7 +26,7 @@ export const AdUnit = ({
     }
   }, [slot]);
 
-  if (!ADSENSE_CLIENT_ID || !slot) {
+  if (!configured && !preview) {
     return null;
   }
 
@@ -32,26 +35,38 @@ export const AdUnit = ({
       aria-label={messages.marketing.advertisement}
       className="w-full border-b border-border bg-muted/30 px-4 py-1"
     >
-      <ins
-        className="adsbygoogle mx-auto"
-        style={{ display: 'block', width: '100%', maxWidth: 468, height: 50 }}
-        data-ad-client={ADSENSE_CLIENT_ID}
-        data-ad-slot={slot}
-      />
+      {configured ? (
+        <ins
+          className="adsbygoogle mx-auto"
+          style={{ display: 'block', width: '100%', maxWidth: 468, height: 50 }}
+          data-ad-client={ADSENSE_CLIENT_ID}
+          data-ad-slot={slot}
+        />
+      ) : (
+        <div className="mx-auto flex h-[50px] w-full max-w-[468px] items-center justify-center border border-dashed border-border text-xs text-muted-foreground">
+          {messages.marketing.preview}
+        </div>
+      )}
     </aside>
   ) : (
     <aside aria-label={messages.marketing.advertisement} className="w-full">
       <span className="mb-2 block text-center text-xs text-muted-foreground">
         {messages.marketing.advertisement}
       </span>
-      <ins
-        className="adsbygoogle"
-        style={{ display: 'block' }}
-        data-ad-client={ADSENSE_CLIENT_ID}
-        data-ad-slot={slot}
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
+      {configured ? (
+        <ins
+          className="adsbygoogle"
+          style={{ display: 'block' }}
+          data-ad-client={ADSENSE_CLIENT_ID}
+          data-ad-slot={slot}
+          data-ad-format="auto"
+          data-full-width-responsive="true"
+        />
+      ) : (
+        <div className="flex min-h-[120px] items-center justify-center border border-dashed border-border text-sm text-muted-foreground">
+          {messages.marketing.preview}
+        </div>
+      )}
     </aside>
   );
 };
