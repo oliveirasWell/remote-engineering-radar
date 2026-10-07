@@ -18,7 +18,34 @@ import { HOME_SECTIONS } from './home-constants';
 import { I18N_TEST } from './i18n-fixtures';
 import RootLayout from './layout';
 
+const ADSENSE_TEST = vi.hoisted(() => ({
+  client: 'ca-pub-1234567890123456',
+  topbarSlot: '1234567890',
+}));
+
 vi.mock('next/font/google', () => ({ Inter: () => ({ variable: '' }) }));
+vi.mock('next/script', () => ({
+  default: ({
+    src,
+    strategy,
+    crossOrigin,
+  }: {
+    src: string;
+    strategy: string;
+    crossOrigin: string;
+  }) => (
+    <div
+      data-testid="adsense-script"
+      data-src={src}
+      data-strategy={strategy}
+      data-cross-origin={crossOrigin}
+    />
+  ),
+}));
+vi.mock('@/lib/marketing/adsense', () => ({
+  ADSENSE_CLIENT_ID: ADSENSE_TEST.client,
+  ADSENSE_TOPBAR_SLOT: ADSENSE_TEST.topbarSlot,
+}));
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/'),
   useSearchParams: vi.fn(() => new URLSearchParams()),
@@ -41,6 +68,7 @@ const layoutFor = (lang: string) =>
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllEnvs();
   vi.mocked(usePathname).mockReturnValue('/');
   vi.mocked(useSearchParams).mockReturnValue(
     new URLSearchParams() as ReturnType<typeof useSearchParams>,
@@ -49,6 +77,26 @@ afterEach(() => {
 });
 
 describe('site language and navigation', () => {
+  it('loads AdSense and the top bar in beta as well as production', async () => {
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    render(await layoutFor(I18N_TEST.english), { container: document });
+
+    const script = screen.getByTestId('adsense-script');
+    expect(script).toHaveAttribute(
+      'data-src',
+      `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_TEST.client}`,
+    );
+    expect(script).toHaveAttribute('data-strategy', 'beforeInteractive');
+    expect(script).toHaveAttribute('data-cross-origin', 'anonymous');
+    expect(
+      screen
+        .getByRole('complementary', {
+          name: messagesFor().marketing.advertisement,
+        })
+        .querySelector('ins.adsbygoogle'),
+    ).toHaveAttribute('data-ad-slot', ADSENSE_TEST.topbarSlot);
+  });
+
   it('shares navigation, PT/EN language links, and a safe repository footer', async () => {
     render(await layoutFor(I18N_TEST.english), { container: document });
 
