@@ -7,6 +7,8 @@ import { searchMetadata } from '@/lib/seo/search-metadata/search-metadata';
 import { parseCountryFilter } from '@/lib/report/parse-country-filter';
 import { parseFocusFilter } from '@/lib/report/parse-focus-filter';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
+import { AdUnit } from '@/components/marketing/AdUnit/AdUnit';
+import { ADSENSE_HOME_SLOT } from '@/lib/marketing/adsense';
 import { CompaniesReport, HomeHeading } from './home-presentation';
 
 type HomeProps = {
@@ -49,7 +51,10 @@ const CompaniesSection = async ({ searchParams }: HomeProps) => {
 
 const Home = ({ searchParams }: HomeProps) => (
   <main className="mx-auto flex min-h-dvh w-full max-w-3xl flex-col gap-10 px-6 py-16">
-    <HomeHeading />
+    <>
+      <HomeHeading />
+      <AdUnit placement="home" slot={ADSENSE_HOME_SLOT} />
+    </>
     <Suspense fallback={<ReportLoading report="home" />}>
       <CompaniesSection searchParams={searchParams} />
     </Suspense>

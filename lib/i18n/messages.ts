@@ -20,6 +20,7 @@ export const EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
+  marketing: { advertisement: 'Advertisements' },
   home: {
     subtitle:
       'Companies hiring remote senior talent in React, TypeScript, Node.js, GraphQL and React Native, Cloud & Ops, Product, and Data Annotation.',
@@ -263,6 +264,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
+  marketing: { advertisement: 'Publicidade' },
   home: {
     subtitle:
       'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, Cloud & Ops, Produto e Anotação de Dados.',

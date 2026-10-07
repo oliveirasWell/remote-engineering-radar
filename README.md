@@ -57,3 +57,20 @@ See [`package.json`](package.json) for all scripts.
 - [Specs](specs/) — feature requirements and technical decisions.
 - [Prisma data layer](specs/014-prisma-data-layer.md) — production baseline,
   migration rollout, and rollback instructions.
+
+## AdSense
+
+Set the public publisher ID and the two display ad unit IDs in
+[`lib/marketing/adsense.ts`](lib/marketing/adsense.ts). The top bar appears above
+the site header on every page; the responsive banner appears after the home
+heading. Empty IDs suppress the corresponding ad, and an empty publisher ID
+also suppresses the script. Once set, the script loads in every environment,
+including beta; ad delivery still depends on Google's site approval.
+
+After setting the publisher ID, publish `public/ads.txt` with your own ID:
+
+```text
+google.com, pub-1234567890123456, DIRECT, f08c47fec0942fa0
+```
+
+Replace the sample ID before publishing and verify `/ads.txt` on the site.
