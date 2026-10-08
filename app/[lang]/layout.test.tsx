@@ -18,9 +18,9 @@ import { HOME_SECTIONS } from './home-constants';
 import { I18N_TEST } from './i18n-fixtures';
 import RootLayout from './layout';
 
+const ADSENSE_HEADER_SLOT = '6534094031';
 const ADSENSE_TEST = vi.hoisted(() => ({
   client: 'ca-pub-1234567890123456',
-  topbarSlot: '1234567890',
 }));
 
 vi.mock('next/font/google', () => ({ Inter: () => ({ variable: '' }) }));
@@ -42,10 +42,15 @@ vi.mock('next/script', () => ({
     />
   ),
 }));
-vi.mock('@/lib/marketing/adsense', () => ({
-  ADSENSE_CLIENT_ID: ADSENSE_TEST.client,
-  ADSENSE_TOPBAR_SLOT: ADSENSE_TEST.topbarSlot,
-}));
+vi.mock('@/lib/marketing/adsense', async () => {
+  const actual = await vi.importActual<
+    typeof import('@/lib/marketing/adsense')
+  >('@/lib/marketing/adsense');
+  return {
+    ...actual,
+    ADSENSE_CLIENT_ID: ADSENSE_TEST.client,
+  };
+});
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/'),
   useSearchParams: vi.fn(() => new URLSearchParams()),
@@ -88,13 +93,14 @@ describe('site language and navigation', () => {
     );
     expect(script).toHaveAttribute('data-strategy', 'beforeInteractive');
     expect(script).toHaveAttribute('data-cross-origin', 'anonymous');
-    expect(
-      screen
-        .getByRole('complementary', {
-          name: messagesFor().marketing.advertisement,
-        })
-        .querySelector('ins.adsbygoogle'),
-    ).toHaveAttribute('data-ad-slot', ADSENSE_TEST.topbarSlot);
+    const ad = screen
+      .getByRole('complementary', {
+        name: messagesFor().marketing.advertisement,
+      })
+      .querySelector('ins.adsbygoogle');
+    expect(ad).toHaveAttribute('data-ad-slot', ADSENSE_HEADER_SLOT);
+    expect(ad).toHaveAttribute('data-ad-format', 'auto');
+    expect(ad).toHaveAttribute('data-full-width-responsive', 'true');
   });
 
   it('shares navigation, PT/EN language links, and a safe repository footer', async () => {
