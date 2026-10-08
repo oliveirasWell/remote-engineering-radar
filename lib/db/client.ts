@@ -13,12 +13,15 @@ export type RootDb = PrismaClient;
 
 export const createDb = (
   connectionString = process.env[DATABASE_URL_ENV],
+  options?: { queryTimeoutMs?: number },
 ): PrismaClient => {
   if (!connectionString) {
     throw new Error(MISSING_DATABASE_URL_MESSAGE);
   }
 
-  const adapter = new PrismaPg(databasePoolConfig(connectionString));
+  const adapter = new PrismaPg(
+    databasePoolConfig(connectionString, options?.queryTimeoutMs),
+  );
   return new PrismaClient({
     adapter,
     transactionOptions: {
