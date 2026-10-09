@@ -41,7 +41,7 @@ describe('legacy Prisma baseline preparation SQL', () => {
     const columns = await db.query(`
       SELECT table_name, column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
-      WHERE table_schema = 'public' AND column_name IN ('kind', 'geographies', 'countries', 'role_focus')
+      WHERE table_schema = 'public' AND column_name IN ('kind', 'geographies', 'countries', 'role_focus', 'click_count')
       ORDER BY table_name, column_name
     `);
     expect(columns.rows).toEqual([
@@ -51,6 +51,13 @@ describe('legacy Prisma baseline preparation SQL', () => {
         data_type: 'text',
         is_nullable: 'NO',
         column_default: "'product'::text",
+      },
+      {
+        table_name: 'jobs',
+        column_name: 'click_count',
+        data_type: 'integer',
+        is_nullable: 'NO',
+        column_default: '0',
       },
       {
         table_name: 'jobs',
@@ -91,6 +98,7 @@ describe('legacy Prisma baseline preparation SQL', () => {
         geographies: [],
         countries: [],
         role_focus: [],
+        click_count: 0,
       },
     ]);
     await db.exec(`
@@ -122,6 +130,9 @@ describe('legacy Prisma baseline preparation SQL', () => {
     await expect(db.exec('UPDATE jobs SET countries = NULL')).rejects.toThrow();
     await expect(
       db.exec('UPDATE jobs SET role_focus = NULL'),
+    ).rejects.toThrow();
+    await expect(
+      db.exec('UPDATE jobs SET click_count = NULL'),
     ).rejects.toThrow();
   });
 
