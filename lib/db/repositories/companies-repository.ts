@@ -36,6 +36,56 @@ const toCompany = (row: PrismaCompany): Company => ({
 const resolveKindForInput = (input: NewCompany): CompanyKind =>
   input.kind ?? resolveCompanyKind(input.slug);
 
+type ListedCompanyOptions = {
+  limit?: number;
+  minimumHiringScore?: number;
+  country?: JobCountrySlug;
+  focus?: JobFocusSlug;
+  maxJobAgeMs?: number;
+  now?: Date;
+};
+
+type OpeningStamp = {
+  companyId: string;
+  postedAt: Date | null;
+  firstSeenAt: Date;
+};
+
+const listedJobWhere = (
+  options: ListedCompanyOptions | undefined,
+  cutoff: Date | undefined,
+): Prisma.JobWhereInput => ({
+  isActive: true,
+  remotePolicy: REMOTE_POLICY_REMOTE,
+  AND: [
+    cutoff ? coalescedPostedAtFilter('gte', cutoff) : {},
+    countryFilter(options?.country),
+    focusFilter(options?.focus),
+  ],
+});
+
+const latestOpeningMs = (jobs: OpeningStamp[]): Map<string, number> =>
+  jobs.reduce((latest, job) => {
+    const openedAt = (job.postedAt ?? job.firstSeenAt).getTime();
+    const current = latest.get(job.companyId);
+    if (current === undefined || openedAt > current) {
+      latest.set(job.companyId, openedAt);
+    }
+    return latest;
+  }, new Map<string, number>());
+
+const byNewestOpening = (
+  latest: Map<string, number>,
+  left: PrismaCompany,
+  right: PrismaCompany,
+): number => {
+  const leftOpened = latest.get(left.id) ?? 0;
+  const rightOpened = latest.get(right.id) ?? 0;
+  return rightOpened === leftOpened
+    ? right.hiringScore - left.hiringScore
+    : rightOpened - leftOpened;
+};
+
 export const createCompaniesRepository = (db: Db) => ({
   create: async (input: NewCompany): Promise<Company> =>
     toCompany(
@@ -71,40 +121,37 @@ export const createCompaniesRepository = (db: Db) => ({
     return rows.map(toCompany);
   },
 
-  listByHiringScore: async (options?: {
-    limit?: number;
-    minimumHiringScore?: number;
-    country?: JobCountrySlug;
-    focus?: JobFocusSlug;
-    maxJobAgeMs?: number;
-    now?: Date;
-  }): Promise<Company[]> => {
+  listByHiringScore: async (
+    options?: ListedCompanyOptions,
+  ): Promise<Company[]> => {
     const now = options?.now ?? new Date();
-    const maxJobAgeMs = options?.maxJobAgeMs;
     const cutoff =
-      maxJobAgeMs === undefined
+      options?.maxJobAgeMs === undefined
         ? undefined
-        : new Date(now.getTime() - maxJobAgeMs);
-
+        : new Date(now.getTime() - options.maxJobAgeMs);
+    const jobWhere = listedJobWhere(options, cutoff);
     const rows = await db.company.findMany({
       where: {
         hiringScore: { gt: options?.minimumHiringScore ?? 0 },
-        jobs: {
-          some: {
-            isActive: true,
-            remotePolicy: REMOTE_POLICY_REMOTE,
-            AND: [
-              cutoff ? coalescedPostedAtFilter('gte', cutoff) : {},
-              countryFilter(options?.country),
-              focusFilter(options?.focus),
-            ],
-          },
-        },
+        jobs: { some: jobWhere },
       },
-      orderBy: [{ hiringScore: 'desc' }, { updatedAt: 'desc' }],
-      ...(options?.limit === undefined ? {} : { take: options.limit }),
     });
-    return rows.map(toCompany);
+    const openings =
+      rows.length === 0
+        ? []
+        : await db.job.findMany({
+            where: {
+              AND: [{ companyId: { in: rows.map((row) => row.id) } }, jobWhere],
+            },
+            select: { companyId: true, postedAt: true, firstSeenAt: true },
+          });
+    const latest = latestOpeningMs(openings);
+    const ordered = [...rows].sort((left, right) =>
+      byNewestOpening(latest, left, right),
+    );
+    const limited =
+      options?.limit === undefined ? ordered : ordered.slice(0, options.limit);
+    return limited.map(toCompany);
   },
 
   /**

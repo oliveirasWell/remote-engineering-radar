@@ -108,6 +108,7 @@ export const getCompaniesPageData = async (
           score: job.score,
           postedAt: job.postedAt,
           url: job.url,
+          clickCount: job.clickCount,
         })),
         signalSourceUrls: [
           ...new Set(

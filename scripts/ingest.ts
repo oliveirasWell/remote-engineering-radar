@@ -2,6 +2,7 @@ import { pathToFileURL } from 'node:url';
 import * as Sentry from '@sentry/node';
 import { createDb, disconnectDb } from '../lib/db/client';
 import { createAtsBoardsRepository } from '../lib/db/repositories/ats-boards-repository';
+import { INGESTION_TRANSACTION_TIMEOUT_MS } from '../lib/ingestion/constants';
 import { runIngestion } from '../lib/ingestion/run-ingestion';
 import { createAshbyAdapter } from '../lib/sources/ashby/ashby-adapter';
 import { ASHBY_BOARD_NAMES } from '../lib/sources/ashby/constants';
@@ -83,9 +84,17 @@ export const reportIngestionSourceFailures = (
   });
 };
 
+// pg aborts each statement at query_timeout. Request traffic keeps the 30s
+// default. This job's transaction runs for up to ten minutes, and each
+// statement uses that same budget.
+export const createIngestionDb = () =>
+  createDb(undefined, {
+    queryTimeoutMs: INGESTION_TRANSACTION_TIMEOUT_MS,
+  });
+
 const main = async () => {
   const sentryEnabled = initIngestSentry();
-  const db = createDb();
+  const db = createIngestionDb();
   try {
     const verified = await createAtsBoardsRepository(db).listVerified();
     const greenhouseBoards = buildFetchSet(

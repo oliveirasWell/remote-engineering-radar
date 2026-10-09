@@ -68,12 +68,15 @@ export const databaseSslMode = (
       };
 };
 
-export const databasePoolConfig = (connectionString: string) => ({
+export const databasePoolConfig = (
+  connectionString: string,
+  queryTimeoutMs = DB_QUERY_TIMEOUT_MILLISECONDS,
+) => ({
   // pg lets URL query parameters override the explicit ssl object.
   connectionString: secureConnectionString(connectionString),
   connectionTimeoutMillis: DB_CONNECT_TIMEOUT_MILLISECONDS,
   idleTimeoutMillis: DB_IDLE_TIMEOUT_MILLISECONDS,
   max: DB_MAX_CONNECTIONS,
-  query_timeout: DB_QUERY_TIMEOUT_MILLISECONDS,
+  query_timeout: queryTimeoutMs,
   ssl: databaseSslMode(connectionString),
 });

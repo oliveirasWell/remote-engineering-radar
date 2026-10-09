@@ -12,7 +12,7 @@ import type { Db } from '../client';
 import { countryFilter } from './country-filter';
 import { focusFilter } from './focus-filter';
 import { coalescedPostedAtFilter } from './posted-at-filter';
-import { JOB_ORDER_BY } from './constants';
+import { JOB_ORDER_BY, JOB_UPSERT_BATCH_SIZE } from './constants';
 
 const AGGREGATOR_SOURCES = ['himalayas', 'jobicy'] as const;
 const DIRECT_BOARD_SOURCES = ['greenhouse', 'ashby', 'lever'] as const;
@@ -58,6 +58,7 @@ const jobCardColumns = {
   postedAt: true,
   firstSeenAt: true,
   isActive: true,
+  clickCount: true,
 } as const;
 
 type JobCardRow = Prisma.JobGetPayload<{ select: typeof jobCardColumns }>;
@@ -216,6 +217,85 @@ const createData = (
   isActive: input.isActive ?? true,
 });
 
+const chunkRows = <T>(rows: readonly T[], size: number): T[][] =>
+  Array.from({ length: Math.ceil(rows.length / size) }, (_, index) =>
+    rows.slice(index * size, index * size + size),
+  );
+
+const upsertJobBatch = (
+  db: Db,
+  rows: readonly NewJob[],
+  now: Date,
+): Promise<number> => {
+  const column = <T>(select: (input: NewJob) => T): T[] => rows.map(select);
+
+  return db.$executeRaw(Prisma.sql`
+    INSERT INTO jobs (
+      company_id, source, source_job_id, title, url, location, remote_policy,
+      description, technologies, geographies, countries, role_focus, seniority,
+      score, posted_at, first_seen_at, last_seen_at, is_active
+    )
+    SELECT
+      company_id, source, source_job_id, title, url, location, remote_policy,
+      description, technologies::jsonb, geographies::jsonb, countries::jsonb,
+      role_focus::jsonb, seniority, score, posted_at, first_seen_at,
+      last_seen_at, is_active
+    FROM unnest(
+      ${column((row) => row.companyId)}::uuid[],
+      ${column((row) => row.source)}::text[],
+      ${column((row) => row.sourceJobId)}::text[],
+      ${column((row) => row.title)}::text[],
+      ${column((row) => row.url)}::text[],
+      ${column((row) => row.location ?? null)}::text[],
+      ${column((row) => row.remotePolicy ?? null)}::text[],
+      ${column((row) => row.description ?? null)}::text[],
+      ${column((row) => JSON.stringify(row.technologies ?? []))}::text[],
+      ${column((row) => JSON.stringify(row.geographies ?? []))}::text[],
+      ${column((row) => JSON.stringify(row.countries ?? []))}::text[],
+      ${column((row) => JSON.stringify(row.roleFocus ?? []))}::text[],
+      ${column((row) => row.seniority ?? null)}::text[],
+      ${column((row) => row.score ?? 0)}::int[],
+      ${column((row) => row.postedAt ?? null)}::timestamptz[],
+      ${column((row) => row.firstSeenAt ?? now)}::timestamptz[],
+      ${column((row) => row.lastSeenAt ?? now)}::timestamptz[],
+      ${column((row) => row.isActive ?? true)}::boolean[]
+    ) AS t(
+      company_id, source, source_job_id, title, url, location, remote_policy,
+      description, technologies, geographies, countries, role_focus, seniority,
+      score, posted_at, first_seen_at, last_seen_at, is_active
+    )
+    ON CONFLICT (source, source_job_id) DO UPDATE SET
+      company_id = EXCLUDED.company_id,
+      title = EXCLUDED.title,
+      url = EXCLUDED.url,
+      location = EXCLUDED.location,
+      remote_policy = EXCLUDED.remote_policy,
+      description = EXCLUDED.description,
+      technologies = EXCLUDED.technologies,
+      geographies = EXCLUDED.geographies,
+      countries = EXCLUDED.countries,
+      role_focus = EXCLUDED.role_focus,
+      seniority = EXCLUDED.seniority,
+      score = EXCLUDED.score,
+      posted_at = COALESCE(EXCLUDED.posted_at, jobs.posted_at),
+      last_seen_at = EXCLUDED.last_seen_at,
+      is_active = EXCLUDED.is_active,
+      updated_at = ${now}
+  `);
+};
+
+const writeJobBatches = async (
+  db: Db,
+  batches: readonly (readonly NewJob[])[],
+  now: Date,
+): Promise<number> => {
+  const [batch, ...rest] = batches;
+  return batch === undefined
+    ? 0
+    : (await upsertJobBatch(db, batch, now)) +
+        (await writeJobBatches(db, rest, now));
+};
+
 export const createJobsRepository = (db: Db) => ({
   create: async (input: NewJob): Promise<Job> =>
     toJob(await db.job.create({ data: createData(input, new Date()) })),
@@ -322,6 +402,15 @@ export const createJobsRepository = (db: Db) => ({
   countActive: async (options?: ActiveJobsOptions): Promise<number> =>
     db.job.count({ where: activeJobsWhere(options) }),
 
+  incrementClickCount: async (id: string): Promise<number | null> => {
+    const [row] = await db.job.updateManyAndReturn({
+      where: { id },
+      data: { clickCount: { increment: 1 } },
+      select: { clickCount: true },
+    });
+    return row?.clickCount ?? null;
+  },
+
   updateScore: async (id: string, score: number): Promise<Job | null> => {
     const [row] = await db.job.updateManyAndReturn({
       where: { id },
@@ -331,10 +420,11 @@ export const createJobsRepository = (db: Db) => ({
   },
 
   /**
-   * One statement for the whole ingestion batch. A conflict keeps the stored
-   * `firstSeenAt`, and keeps the stored `postedAt` when the batch has none:
-   * feeds routinely drop that date, and wiping it both stops the job ageing
-   * out and sorts it NULLS FIRST. `score` is always written.
+   * One statement per chunk, so a full day's descriptions stay under the
+   * client query timeout. A conflict keeps the stored `firstSeenAt`, and
+   * keeps the stored `postedAt` when the batch has none: feeds routinely
+   * drop that date, and wiping it both stops the job ageing out and sorts
+   * it NULLS FIRST. `score` is always written.
    */
   upsertManyBySourceJobId: async (inputs: NewJob[]): Promise<number> => {
     // ON CONFLICT DO UPDATE errors when one statement hits a key twice.
@@ -346,66 +436,9 @@ export const createJobsRepository = (db: Db) => ({
         ]),
       ).values(),
     ];
-    if (rows.length === 0) {
-      return 0;
-    }
-
-    const now = new Date();
-    const column = <T>(select: (input: NewJob) => T): T[] => rows.map(select);
-
-    return db.$executeRaw(Prisma.sql`
-      INSERT INTO jobs (
-        company_id, source, source_job_id, title, url, location, remote_policy,
-        description, technologies, geographies, countries, role_focus, seniority,
-        score, posted_at, first_seen_at, last_seen_at, is_active
-      )
-      SELECT
-        company_id, source, source_job_id, title, url, location, remote_policy,
-        description, technologies::jsonb, geographies::jsonb, countries::jsonb,
-        role_focus::jsonb, seniority, score, posted_at, first_seen_at,
-        last_seen_at, is_active
-      FROM unnest(
-        ${column((row) => row.companyId)}::uuid[],
-        ${column((row) => row.source)}::text[],
-        ${column((row) => row.sourceJobId)}::text[],
-        ${column((row) => row.title)}::text[],
-        ${column((row) => row.url)}::text[],
-        ${column((row) => row.location ?? null)}::text[],
-        ${column((row) => row.remotePolicy ?? null)}::text[],
-        ${column((row) => row.description ?? null)}::text[],
-        ${column((row) => JSON.stringify(row.technologies ?? []))}::text[],
-        ${column((row) => JSON.stringify(row.geographies ?? []))}::text[],
-        ${column((row) => JSON.stringify(row.countries ?? []))}::text[],
-        ${column((row) => JSON.stringify(row.roleFocus ?? []))}::text[],
-        ${column((row) => row.seniority ?? null)}::text[],
-        ${column((row) => row.score ?? 0)}::int[],
-        ${column((row) => row.postedAt ?? null)}::timestamptz[],
-        ${column((row) => row.firstSeenAt ?? now)}::timestamptz[],
-        ${column((row) => row.lastSeenAt ?? now)}::timestamptz[],
-        ${column((row) => row.isActive ?? true)}::boolean[]
-      ) AS t(
-        company_id, source, source_job_id, title, url, location, remote_policy,
-        description, technologies, geographies, countries, role_focus, seniority,
-        score, posted_at, first_seen_at, last_seen_at, is_active
-      )
-      ON CONFLICT (source, source_job_id) DO UPDATE SET
-        company_id = EXCLUDED.company_id,
-        title = EXCLUDED.title,
-        url = EXCLUDED.url,
-        location = EXCLUDED.location,
-        remote_policy = EXCLUDED.remote_policy,
-        description = EXCLUDED.description,
-        technologies = EXCLUDED.technologies,
-        geographies = EXCLUDED.geographies,
-        countries = EXCLUDED.countries,
-        role_focus = EXCLUDED.role_focus,
-        seniority = EXCLUDED.seniority,
-        score = EXCLUDED.score,
-        posted_at = COALESCE(EXCLUDED.posted_at, jobs.posted_at),
-        last_seen_at = EXCLUDED.last_seen_at,
-        is_active = EXCLUDED.is_active,
-        updated_at = ${now}
-    `);
+    return rows.length === 0
+      ? 0
+      : writeJobBatches(db, chunkRows(rows, JOB_UPSERT_BATCH_SIZE), new Date());
   },
 
   deactivateMissingBySource: async (

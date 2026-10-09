@@ -30,18 +30,24 @@ export const AdUnit = ({
     return null;
   }
 
+  const responsiveAd = (
+    <ins
+      className="adsbygoogle"
+      style={{ display: 'block' }}
+      data-ad-client={ADSENSE_CLIENT_ID}
+      data-ad-slot={slot}
+      data-ad-format="auto"
+      data-full-width-responsive="true"
+    />
+  );
+
   return placement === 'topbar' ? (
     <aside
       aria-label={messages.marketing.advertisement}
-      className="w-full border-b border-border bg-muted/30 px-4 py-1"
+      className="w-full border-b border-border bg-muted/30"
     >
       {configured ? (
-        <ins
-          className="adsbygoogle mx-auto"
-          style={{ display: 'block', width: '100%', maxWidth: 468, height: 50 }}
-          data-ad-client={ADSENSE_CLIENT_ID}
-          data-ad-slot={slot}
-        />
+        responsiveAd
       ) : (
         <div className="mx-auto flex h-[50px] w-full max-w-[468px] items-center justify-center border border-dashed border-border text-xs text-muted-foreground">
           {messages.marketing.preview}
@@ -54,14 +60,7 @@ export const AdUnit = ({
         {messages.marketing.advertisement}
       </span>
       {configured ? (
-        <ins
-          className="adsbygoogle"
-          style={{ display: 'block' }}
-          data-ad-client={ADSENSE_CLIENT_ID}
-          data-ad-slot={slot}
-          data-ad-format="auto"
-          data-full-width-responsive="true"
-        />
+        responsiveAd
       ) : (
         <div className="flex min-h-[120px] items-center justify-center border border-dashed border-border text-sm text-muted-foreground">
           {messages.marketing.preview}

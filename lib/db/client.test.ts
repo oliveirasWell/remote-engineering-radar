@@ -64,6 +64,7 @@ const SUPABASE_CA_FILE_PATH = fileURLToPath(
   new URL('./supabase-root-ca.pem', import.meta.url),
 );
 const BLANK_CA_PATHS = ['', ' \t '];
+const EXTENDED_QUERY_TIMEOUT_MS = 45_000;
 
 describe('database TLS', () => {
   it('ships the exact runtime CA as a readable, valid public PEM for Prisma', () => {
@@ -352,6 +353,10 @@ describe('createDb', () => {
       query_timeout: 30_000,
       ssl: { rejectUnauthorized: true },
     });
+    expect(
+      databasePoolConfig(REMOTE_DATABASE_URL, EXTENDED_QUERY_TIMEOUT_MS)
+        .query_timeout,
+    ).toBe(EXTENDED_QUERY_TIMEOUT_MS);
     expect(
       databasePoolConfig(
         'postgres://user:pass@db.example.com:5432/radar?sslmode=disable',

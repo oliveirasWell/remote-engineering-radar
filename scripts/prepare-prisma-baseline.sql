@@ -5,6 +5,7 @@ ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS kind text DEFAULT 'product
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS geographies jsonb DEFAULT '[]'::jsonb NOT NULL;
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS countries jsonb DEFAULT '[]'::jsonb NOT NULL;
 ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS role_focus jsonb DEFAULT '[]'::jsonb NOT NULL;
+ALTER TABLE public.jobs ADD COLUMN IF NOT EXISTS click_count integer DEFAULT 0 NOT NULL;
 ALTER TABLE public.companies ADD COLUMN IF NOT EXISTS board_checked_at timestamptz;
 
 CREATE TABLE IF NOT EXISTS public.ats_boards (
