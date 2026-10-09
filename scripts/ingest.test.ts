@@ -2,6 +2,7 @@ import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
 import {
   createIngestionDb,
   initIngestSentry,
+  reportIngestCrash,
   reportIngestionSourceFailures,
 } from './ingest';
 
@@ -64,6 +65,18 @@ describe('ingest Sentry reporting', () => {
     expect(mocks.init).toHaveBeenCalledWith(
       expect.objectContaining({ dsn: 'https://private@example.com/1' }),
     );
+  });
+
+  it('reports a crashed ingest as a fatal Sentry event', () => {
+    const crash = new Error('Query read timeout');
+
+    reportIngestCrash(crash, mocks.captureException);
+
+    expect(mocks.captureException).toHaveBeenCalledWith(crash, {
+      level: 'fatal',
+      tags: { job: 'ingest' },
+      fingerprint: ['ingest-fatal'],
+    });
   });
 
   it('reports each failed source with stable fingerprint tags', () => {

@@ -52,6 +52,17 @@ export const initIngestSentry = (
   return true;
 };
 
+export const reportIngestCrash = (
+  error: unknown,
+  captureException: typeof Sentry.captureException = Sentry.captureException,
+): void => {
+  captureException(error, {
+    level: 'fatal',
+    tags: { job: 'ingest' },
+    fingerprint: ['ingest-fatal'],
+  });
+};
+
 export const reportIngestionSourceFailures = (
   failed: Array<{ name: string; error: string; board?: string }>,
   captureException: typeof Sentry.captureException = Sentry.captureException,
@@ -174,10 +185,7 @@ if (
   main().catch(async (error) => {
     const sentryEnabled = initIngestSentry();
     console.error(error instanceof Error ? error.message : error);
-    Sentry.captureException(error, {
-      tags: { job: 'ingest' },
-      fingerprint: ['ingest-fatal'],
-    });
+    reportIngestCrash(error);
     if (sentryEnabled) {
       await Sentry.flush(SENTRY_FLUSH_TIMEOUT_MS);
     }
