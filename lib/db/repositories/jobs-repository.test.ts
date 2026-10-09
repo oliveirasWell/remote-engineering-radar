@@ -18,6 +18,7 @@ import {
 } from '@/lib/jobs/constants';
 import { createCompaniesRepository } from './companies-repository';
 import { createAtsBoardsRepository } from './ats-boards-repository';
+import { JOB_UPSERT_BATCH_SIZE } from './constants';
 import { createJobsRepository } from './jobs-repository';
 import { createTestDb } from '../test/create-test-db';
 import { TEST_COMPANY, TEST_JOB } from './test-fixtures';
@@ -906,5 +907,49 @@ describe('createJobsRepository', () => {
     const jobsRepository = createJobsRepository(db);
 
     await expect(jobsRepository.upsertManyBySourceJobId([])).resolves.toBe(0);
+  });
+
+  it('upserts each chunk when the batch is larger than one statement', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const existing = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const executeRaw = vi.spyOn(db, '$executeRaw');
+    const updatedTitle = 'Staff Frontend Engineer';
+    const inputs = Array.from(
+      { length: JOB_UPSERT_BATCH_SIZE + 1 },
+      (_, index) => ({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId:
+          index === JOB_UPSERT_BATCH_SIZE
+            ? TEST_JOB.sourceJobId
+            : `${TEST_JOB.sourceJobId}-${index}`,
+        title: index === JOB_UPSERT_BATCH_SIZE ? updatedTitle : TEST_JOB.title,
+        technologies: [...TEST_JOB.technologies],
+      }),
+    );
+
+    const written = await jobsRepository.upsertManyBySourceJobId(inputs);
+
+    expect(written).toBe(JOB_UPSERT_BATCH_SIZE + 1);
+    expect(executeRaw).toHaveBeenCalledTimes(2);
+    const updated = await jobsRepository.findBySourceJobId(
+      TEST_JOB.source,
+      TEST_JOB.sourceJobId,
+    );
+    expect(updated).toMatchObject({ title: updatedTitle });
+    expect(updated?.firstSeenAt).toEqual(existing.firstSeenAt);
+    await expect(
+      jobsRepository.findBySourceJobId(
+        TEST_JOB.source,
+        `${TEST_JOB.sourceJobId}-0`,
+      ),
+    ).resolves.toMatchObject({ title: TEST_JOB.title });
   });
 });

@@ -1,14 +1,35 @@
-import { initIngestSentry, reportIngestionSourceFailures } from './ingest';
+import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
+import {
+  createIngestionDb,
+  initIngestSentry,
+  reportIngestionSourceFailures,
+} from './ingest';
 
 const mocks = vi.hoisted(() => ({
   init: vi.fn(),
   captureException: vi.fn(),
+  createDb: vi.fn(),
 }));
 
 vi.mock('@sentry/node', () => ({
   init: mocks.init,
   captureException: mocks.captureException,
 }));
+
+vi.mock('../lib/db/client', () => ({
+  createDb: mocks.createDb,
+  disconnectDb: vi.fn(),
+}));
+
+describe('createIngestionDb', () => {
+  it('keeps each statement alive for the ingestion transaction budget', () => {
+    createIngestionDb();
+
+    expect(mocks.createDb).toHaveBeenCalledWith(undefined, {
+      queryTimeoutMs: INGESTION_TRANSACTION_TIMEOUT_MS,
+    });
+  });
+});
 
 describe('ingest Sentry reporting', () => {
   beforeEach(() => {
