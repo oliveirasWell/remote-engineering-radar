@@ -68,6 +68,43 @@ describe('createJobsRepository', () => {
     await expect(jobsRepository.findById(created.id)).resolves.toBeNull();
   });
 
+  it('counts each original-listing click and keeps that count across ingest', async () => {
+    const db = await createTestDb();
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobsRepository = createJobsRepository(db);
+    const created = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const missingJobId = '00000000-0000-4000-8000-000000000000';
+    const updatedTitle = 'Staff Frontend Engineer';
+
+    expect(created.clickCount).toBe(0);
+    await expect(jobsRepository.incrementClickCount(created.id)).resolves.toBe(
+      1,
+    );
+    await expect(jobsRepository.incrementClickCount(created.id)).resolves.toBe(
+      2,
+    );
+    await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        title: updatedTitle,
+        technologies: [...TEST_JOB.technologies],
+      },
+    ]);
+
+    await expect(jobsRepository.findById(created.id)).resolves.toMatchObject({
+      clickCount: 2,
+      title: updatedTitle,
+    });
+    await expect(
+      jobsRepository.incrementClickCount(missingJobId),
+    ).resolves.toBeNull();
+  });
+
   it('rejects duplicate source + sourceJobId pairs', async () => {
     const db = await createTestDb();
     const companiesRepository = createCompaniesRepository(db);

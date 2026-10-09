@@ -89,7 +89,7 @@ docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbn
 # row's identity, must survive untouched.
 snapshot_query="SELECT jsonb_build_object(
   'companies', (SELECT jsonb_agg(to_jsonb(c) - 'kind' - 'board_checked_at' ORDER BY id) FROM companies c),
-  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' - 'role_focus' - 'technologies' - 'seniority' - 'score' - 'is_active' - 'updated_at' ORDER BY id) FROM jobs j),
+  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' - 'role_focus' - 'click_count' - 'technologies' - 'seniority' - 'score' - 'is_active' - 'updated_at' ORDER BY id) FROM jobs j),
   'hiring_signals', (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM hiring_signals s),
   'ingestion_runs', (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM ingestion_runs r),
   'drizzle', (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM drizzle.__drizzle_migrations m)

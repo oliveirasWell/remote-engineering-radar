@@ -27,5 +27,6 @@ export const TEST_REPORT_JOB = {
   score: 94,
   postedAt: new Date('2026-08-26T06:00:00Z'),
   url: 'https://example.com/jobs/1',
+  clickCount: 0,
   reasons: ['Matches the focus stack'],
 } satisfies ReportJobDetail;

@@ -58,6 +58,7 @@ const jobCardColumns = {
   postedAt: true,
   firstSeenAt: true,
   isActive: true,
+  clickCount: true,
 } as const;
 
 type JobCardRow = Prisma.JobGetPayload<{ select: typeof jobCardColumns }>;
@@ -400,6 +401,15 @@ export const createJobsRepository = (db: Db) => ({
 
   countActive: async (options?: ActiveJobsOptions): Promise<number> =>
     db.job.count({ where: activeJobsWhere(options) }),
+
+  incrementClickCount: async (id: string): Promise<number | null> => {
+    const [row] = await db.job.updateManyAndReturn({
+      where: { id },
+      data: { clickCount: { increment: 1 } },
+      select: { clickCount: true },
+    });
+    return row?.clickCount ?? null;
+  },
 
   updateScore: async (id: string, score: number): Promise<Job | null> => {
     const [row] = await db.job.updateManyAndReturn({

@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
+import { JOB_CLICK_PATH } from '@/lib/jobs/constants';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import type { ReportJobCard } from '@/lib/report/types';
 import { formatRelativeTime } from '@/lib/report/format';
@@ -23,6 +24,7 @@ export const JobCard = ({ job }: JobCardProps) => {
     () => hiddenJobsStore.has(job.id),
     () => false,
   );
+  const [clickCount, setClickCount] = useState(job.clickCount);
   const remotePolicy =
     new Map(Object.entries(remote)).get(job.remotePolicy ?? '') ??
     job.remotePolicy;
@@ -32,6 +34,36 @@ export const JobCard = ({ job }: JobCardProps) => {
     if (window.confirm(jobCard.hideConfirmation)) {
       hiddenJobsStore.hide(job.id);
     }
+  };
+
+  const revertClick = () => {
+    setClickCount((count) => Math.max(0, count - 1));
+  };
+
+  const handleViewOriginal = () => {
+    setClickCount((count) => count + 1);
+    void fetch(JOB_CLICK_PATH, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jobId: job.id }),
+      keepalive: true,
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          revertClick();
+          return;
+        }
+        const payload: unknown = await response.json();
+        if (
+          typeof payload === 'object' &&
+          payload !== null &&
+          'clickCount' in payload &&
+          typeof payload.clickCount === 'number'
+        ) {
+          setClickCount(payload.clickCount);
+        }
+      })
+      .catch(revertClick);
   };
 
   if (isHidden) {
@@ -68,6 +100,7 @@ export const JobCard = ({ job }: JobCardProps) => {
             target="_blank"
             rel="noreferrer"
             className="text-sm text-muted-foreground underline underline-offset-2"
+            onClick={handleViewOriginal}
           >
             {jobCard.viewOriginal}
           </a>
@@ -80,6 +113,11 @@ export const JobCard = ({ job }: JobCardProps) => {
           {jobCard.hideAction}
         </button>
       </div>
+      {clickCount > 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground" aria-live="polite">
+          {jobCard.clickedCount(clickCount)}
+        </p>
+      ) : null}
     </article>
   );
 };

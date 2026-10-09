@@ -2,6 +2,7 @@
 
 import { fireEvent, render, screen } from '@testing-library/react';
 import { JobCard } from './JobCard';
+import { JOB_CLICK_PATH } from '@/lib/jobs/constants';
 import { HIDDEN_JOBS_STORAGE_KEY, JOB_CARD_COPY } from '../constants';
 import { TEST_REPORT_JOB } from '../test-fixtures';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
@@ -158,6 +159,50 @@ describe('JobCard', () => {
       screen.getByRole('heading', { name: job.title }),
     ).toBeInTheDocument();
     expect(localStorage.getItem(HIDDEN_JOBS_STORAGE_KEY)).toBeNull();
+  });
+
+  it('shows how many people already opened the listing and updates that count on click', async () => {
+    const startingClicks = 3;
+    const recordedClicks = 4;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => Response.json({ clickCount: recordedClicks })),
+    );
+    render(<JobCard job={{ ...job, clickCount: startingClicks }} />);
+
+    expect(screen.getByRole('article').lastElementChild).toHaveTextContent(
+      JOB_CARD_COPY.clickedCount(startingClicks),
+    );
+
+    fireEvent.click(
+      screen.getByRole('link', { name: JOB_CARD_COPY.viewOriginal }),
+    );
+
+    expect(fetch).toHaveBeenCalledWith(
+      JOB_CLICK_PATH,
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ jobId: job.id }),
+        keepalive: true,
+      }),
+    );
+    expect(
+      await screen.findByText(JOB_CARD_COPY.clickedCount(recordedClicks)),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('article').lastElementChild).toHaveTextContent(
+      JOB_CARD_COPY.clickedCount(recordedClicks),
+    );
+  });
+
+  it('hides the click count until someone opens the original listing', () => {
+    render(<JobCard job={{ ...job, clickCount: 0 }} />);
+
+    expect(
+      screen.queryByText(JOB_CARD_COPY.clickedCount(0)),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(JOB_CARD_COPY.clickedCount(1)),
+    ).not.toBeInTheDocument();
   });
 
   it('does not render a previously hidden job', () => {
