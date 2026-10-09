@@ -32,6 +32,7 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: read
+      issues: write
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -78,10 +79,20 @@ jobs:
           NODE_ENV: production
       # Merging a pull request is a push to main. Schedule and manual ingest already
       # run this step; a push must too, or the merge deploys migrations and skips the catalog.
-      - run: pnpm ingest
+      - id: ingest
+        run: pnpm ingest
         if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'ingest')
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           NODE_ENV: production
+      - name: Alert that production ingest failed
+        if: failure() && steps.ingest.outcome == 'failure'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          INGEST_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          INGEST_EVENT_NAME: ${{ github.event_name }}
+          INGEST_SHA: ${{ github.sha }}
+        run: pnpm exec tsx scripts/ingest-failure-alert.ts
