@@ -60,11 +60,11 @@ See [`package.json`](package.json) for all scripts.
 
 ## AdSense
 
-The public publisher ID and [`public/ads.txt`](public/ads.txt) are configured.
-Create two responsive Display ad units and set their IDs in
-[`lib/marketing/adsense.ts`](lib/marketing/adsense.ts). The top bar appears above
-the site header on every page; the responsive banner appears after the home
-heading. Empty slots suppress their ads in production. Preview deployments
-(including beta) show labeled layout placeholders until the slots are filled,
-without requesting an ad. The script loads in every environment; ad delivery
-still depends on Google's site approval. Verify `/ads.txt` on the approved site.
+The public publisher ID, the header unit, and [`public/ads.txt`](public/ads.txt)
+are configured in [`lib/marketing/adsense.ts`](lib/marketing/adsense.ts). The
+header unit is a responsive display ad above the site header on every page.
+The home banner slot is still empty; set it there when the unit exists. Empty
+slots suppress their ads in production. Preview deployments (including beta)
+show labeled layout placeholders until a slot is filled, without requesting an
+ad. The script loads in every environment; ad delivery still depends on
+Google's site approval. Verify `/ads.txt` on the approved site.

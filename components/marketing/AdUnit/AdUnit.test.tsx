@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe('AdUnit', () => {
-  it('initializes a compact, labeled top bar ad', () => {
+  it('initializes the responsive header ad above the site header', () => {
     const push = vi.fn();
     vi.stubGlobal('adsbygoogle', { push });
 
@@ -33,7 +33,9 @@ describe('AdUnit', () => {
     expect(region).toHaveClass('border-b');
     expect(ad).toHaveAttribute('data-ad-client', ADSENSE_TEST.client);
     expect(ad).toHaveAttribute('data-ad-slot', ADSENSE_TEST.slot);
-    expect(ad).toHaveStyle({ height: '50px' });
+    expect(ad).toHaveAttribute('data-ad-format', 'auto');
+    expect(ad).toHaveAttribute('data-full-width-responsive', 'true');
+    expect(ad).toHaveStyle({ display: 'block' });
     expect(push).toHaveBeenCalledExactlyOnceWith({});
   });
 
