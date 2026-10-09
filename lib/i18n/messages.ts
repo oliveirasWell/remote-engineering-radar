@@ -20,6 +20,7 @@ export const EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
+  marketing: { advertisement: 'Advertisements', preview: 'Ad preview' },
   home: {
     subtitle:
       'Companies hiring remote senior talent in React, TypeScript, Node.js, GraphQL and React Native, Cloud & Ops, Product, and Data Annotation.',
@@ -33,10 +34,14 @@ export const EN_MESSAGES = {
     countryAll: 'All countries',
     sortLabel: 'Sort',
     sortOptions: {
-      default: 'Hiring signal',
+      default: 'Newest jobs',
       jobs: 'Open roles',
       name: 'Name (A–Z)',
     },
+    newJobs: (count: number) =>
+      count === 1
+        ? '1 new job in the last update'
+        : `${count} new jobs in the last update`,
     loading: 'Loading companies…',
   },
   jobs: {
@@ -141,6 +146,10 @@ export const EN_MESSAGES = {
     viewOriginal: 'View original job',
     postedLabel: 'Posted',
     unknownCompany: 'Unknown company',
+    clickedCount: (count: number) =>
+      count === 1
+        ? '1 person already clicked'
+        : `${count} people already clicked`,
   },
   companyCard: {
     hiringSignalLabel: 'Hiring signal',
@@ -180,17 +189,17 @@ export const EN_MESSAGES = {
       {
         name: 'Greenhouse',
         description:
-          'Public board API for configured company tokens (GREENHOUSE_BOARD_TOKENS).',
+          'Public boards of companies on the radar, via the Greenhouse API.',
       },
       {
         name: 'Ashby',
         description:
-          'Public job-board API for configured board names (ASHBY_BOARD_NAMES).',
+          'Public boards of companies on the radar, via the Ashby API.',
       },
       {
         name: 'Lever',
         description:
-          'Public postings API for configured board slugs (LEVER_BOARD_SLUGS).',
+          'Public boards of companies on the radar, via the Lever API.',
       },
       {
         name: 'GetOnBrd',
@@ -263,6 +272,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
+  marketing: { advertisement: 'Publicidade', preview: 'Prévia do anúncio' },
   home: {
     subtitle:
       'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, Cloud & Ops, Produto e Anotação de Dados.',
@@ -276,10 +286,14 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     countryAll: 'Todos os países',
     sortLabel: 'Ordenar',
     sortOptions: {
-      default: 'Sinal de contratação',
+      default: 'Vagas mais recentes',
       jobs: 'Vagas abertas',
       name: 'Nome (A–Z)',
     },
+    newJobs: (count: number) =>
+      count === 1
+        ? '1 vaga nova na última atualização'
+        : `${count} vagas novas na última atualização`,
     loading: 'Carregando empresas…',
   },
   jobs: {
@@ -385,6 +399,8 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     viewOriginal: 'Ver vaga original',
     postedLabel: 'Publicada',
     unknownCompany: 'Empresa desconhecida',
+    clickedCount: (count: number) =>
+      count === 1 ? '1 pessoa já clicou' : `${count} pessoas já clicaram`,
   },
   companyCard: {
     hiringSignalLabel: 'Sinal de contratação',
@@ -425,17 +441,15 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
       {
         name: 'Greenhouse',
         description:
-          'API pública de boards para os tokens configurados (GREENHOUSE_BOARD_TOKENS).',
+          'Boards públicos de empresas no radar, via API do Greenhouse.',
       },
       {
         name: 'Ashby',
-        description:
-          'API pública de job board para os nomes configurados (ASHBY_BOARD_NAMES).',
+        description: 'Boards públicos de empresas no radar, via API do Ashby.',
       },
       {
         name: 'Lever',
-        description:
-          'API pública de postings para os slugs configurados (LEVER_BOARD_SLUGS).',
+        description: 'Boards públicos de empresas no radar, via API do Lever.',
       },
       {
         name: 'GetOnBrd',

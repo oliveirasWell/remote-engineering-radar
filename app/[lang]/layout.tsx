@@ -2,13 +2,20 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Inter } from 'next/font/google';
+import Script from 'next/script';
 import { GoogleAnalytics } from '@/components/observability/GoogleAnalytics/GoogleAnalytics';
+import { AdUnit } from '@/components/marketing/AdUnit/AdUnit';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { SiteHeader } from '@/components/site/SiteHeader/SiteHeader';
 import { SiteFooter } from '@/components/site/SiteFooter/SiteFooter';
 import { isLocale, LOCALES, messagesFor } from '@/lib/i18n/messages';
 import { routeLocale } from '@/lib/i18n/route-locale/route-locale';
 import { siteOrigin } from '@/lib/seo/site-origin/site-origin';
+import {
+  ADSENSE_CLIENT_ID,
+  ADSENSE_TOPBAR_SLOT,
+} from '@/lib/marketing/adsense';
+import { getLatestIngestNewJobs } from '@/lib/report/get-latest-ingest-new-jobs';
 import { OPEN_GRAPH_LOCALES } from './constants';
 import '../globals.css';
 
@@ -53,12 +60,32 @@ const RootLayout = async ({
     notFound();
   }
 
+  const newJobs = await getLatestIngestNewJobs();
+  const { home } = messagesFor(lang);
+
   return (
     <html lang={lang} className={inter.variable}>
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <GoogleAnalytics />
+        {ADSENSE_CLIENT_ID ? (
+          <Script
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
+            strategy="beforeInteractive"
+            crossOrigin="anonymous"
+          />
+        ) : null}
         <I18nProvider locale={lang}>
+          <AdUnit
+            placement="topbar"
+            slot={ADSENSE_TOPBAR_SLOT}
+            preview={process.env.VERCEL_ENV === 'preview'}
+          />
           <SiteHeader />
+          {newJobs === null ? null : (
+            <p className="mx-auto w-full max-w-3xl px-6 pt-3 text-sm text-muted-foreground">
+              {home.newJobs(newJobs)}
+            </p>
+          )}
           {children}
           <SiteFooter />
         </I18nProvider>

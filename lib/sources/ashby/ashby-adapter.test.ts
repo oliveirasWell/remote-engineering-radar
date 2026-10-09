@@ -85,6 +85,18 @@ describe('createAshbyAdapter', () => {
     );
   });
 
+  it('uses a verified company name instead of the board slug', async () => {
+    const adapter = createAshbyAdapter({
+      boardNames: [BOARD_NAME],
+      companyNamesByBoard: { [BOARD_NAME]: 'Acme Robotics' },
+      fetch: asFetch(async () => jsonResponse(page2)),
+    });
+
+    expect((await adapter.fetchJobs()).jobs[0]?.company.name).toBe(
+      'Acme Robotics',
+    );
+  });
+
   it('skips malformed and unlisted records', async () => {
     const adapter = createAshbyAdapter({
       boardNames: [BOARD_NAME],
@@ -117,9 +129,9 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ message: 'not a jobs page' })),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(
-      /Ashby response has an unexpected shape/,
-    );
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+    });
   });
 
   it('rejects a non-empty page containing no valid jobs', async () => {
@@ -128,9 +140,9 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ jobs: [{}] })),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(
-      /Ashby response has no valid job records/,
-    );
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+    });
   });
 
   it('surfaces HTTP failures for a board', async () => {
@@ -139,7 +151,10 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ error: 'nope' }, 503)),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(/Ashby request failed/);
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+      failedBoards: [{ board: BOARD_NAME, status: 503 }],
+    });
   });
 
   it('rejects a repeated cursor instead of declaring a complete snapshot', async () => {
@@ -149,7 +164,9 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination limit/);
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+    });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -166,21 +183,32 @@ describe('createAshbyAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination limit/);
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+    });
     expect(fetchMock).toHaveBeenCalledTimes(50);
   });
 
-  it('fails the snapshot when a later configured board fails', async () => {
+  it('returns healthy boards and identifies a failed board without completing the snapshot', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse(page2))
-      .mockResolvedValueOnce(jsonResponse({}, 400));
+      .mockResolvedValueOnce(jsonResponse({}, 400))
+      .mockResolvedValueOnce(jsonResponse(page2));
     const adapter = createAshbyAdapter({
-      boardNames: [BOARD_NAME, `${BOARD_NAME}-other`],
+      boardNames: [BOARD_NAME, `${BOARD_NAME}-other`, `${BOARD_NAME}-third`],
       fetch: asFetch(fetchMock),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(/Ashby request failed/);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const result = await adapter.fetchJobs();
+    expect(result).toMatchObject({
+      complete: false,
+      jobs: expect.arrayContaining([
+        expect.objectContaining({ sourceJobId: page2.jobs[0].id }),
+      ]),
+      failedBoards: [{ board: `${BOARD_NAME}-other`, status: 400 }],
+    });
+    expect(result.jobs).toHaveLength(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });

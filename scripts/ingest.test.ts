@@ -1,14 +1,36 @@
-import { initIngestSentry, reportIngestionSourceFailures } from './ingest';
+import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
+import {
+  createIngestionDb,
+  initIngestSentry,
+  reportIngestCrash,
+  reportIngestionSourceFailures,
+} from './ingest';
 
 const mocks = vi.hoisted(() => ({
   init: vi.fn(),
   captureException: vi.fn(),
+  createDb: vi.fn(),
 }));
 
 vi.mock('@sentry/node', () => ({
   init: mocks.init,
   captureException: mocks.captureException,
 }));
+
+vi.mock('../lib/db/client', () => ({
+  createDb: mocks.createDb,
+  disconnectDb: vi.fn(),
+}));
+
+describe('createIngestionDb', () => {
+  it('keeps each statement alive for the ingestion transaction budget', () => {
+    createIngestionDb();
+
+    expect(mocks.createDb).toHaveBeenCalledWith(undefined, {
+      queryTimeoutMs: INGESTION_TRANSACTION_TIMEOUT_MS,
+    });
+  });
+});
 
 describe('ingest Sentry reporting', () => {
   beforeEach(() => {
@@ -45,6 +67,18 @@ describe('ingest Sentry reporting', () => {
     );
   });
 
+  it('reports a crashed ingest as a fatal Sentry event', () => {
+    const crash = new Error('Query read timeout');
+
+    reportIngestCrash(crash, mocks.captureException);
+
+    expect(mocks.captureException).toHaveBeenCalledWith(crash, {
+      level: 'fatal',
+      tags: { job: 'ingest' },
+      fingerprint: ['ingest-fatal'],
+    });
+  });
+
   it('reports each failed source with stable fingerprint tags', () => {
     reportIngestionSourceFailures(
       [
@@ -78,6 +112,22 @@ describe('ingest Sentry reporting', () => {
         tags: { job: 'ingest', source: 'ashby' },
         fingerprint: ['ingest-source-failure', 'ashby'],
       },
+    );
+  });
+
+  it('reports a failed board with its source and slug', () => {
+    reportIngestionSourceFailures(
+      [{ name: 'greenhouse', board: 'canonical', error: '404' }],
+      mocks.captureException,
+    );
+
+    expect(mocks.captureException).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Source greenhouse board canonical failed: 404',
+      }),
+      expect.objectContaining({
+        tags: { job: 'ingest', source: 'greenhouse' },
+      }),
     );
   });
 });

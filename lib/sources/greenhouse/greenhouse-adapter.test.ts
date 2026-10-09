@@ -101,6 +101,18 @@ describe('createGreenhouseAdapter', () => {
     expect(jobs[0]?.description).toContain('React');
   });
 
+  it('uses a verified company name instead of the board slug', async () => {
+    const adapter = createGreenhouseAdapter({
+      boardTokens: [BOARD_TOKEN],
+      companyNamesByBoard: { [BOARD_TOKEN]: 'Acme Incorporated' },
+      fetch: asFetch(async () => jsonResponse(page2)),
+    });
+
+    expect((await adapter.fetchJobs()).jobs[0]?.company.name).toBe(
+      'Acme Incorporated',
+    );
+  });
+
   it('skips malformed records and keeps valid ones', async () => {
     const adapter = createGreenhouseAdapter({
       boardTokens: [BOARD_TOKEN],
@@ -130,9 +142,15 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ message: 'not a jobs page' })),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(
-      /Greenhouse response has an unexpected shape/,
-    );
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+      failedBoards: [
+        {
+          board: BOARD_TOKEN,
+          error: expect.stringMatching(/unexpected shape/),
+        },
+      ],
+    });
   });
 
   it('rejects a non-empty page containing no valid jobs', async () => {
@@ -141,9 +159,9 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ jobs: [{}] })),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(
-      /Greenhouse response has no valid job records/,
-    );
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+    });
   });
 
   it('surfaces HTTP failures for a board', async () => {
@@ -152,9 +170,10 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ error: 'nope' }, 500)),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(
-      /Greenhouse request failed/,
-    );
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+      failedBoards: [{ board: BOARD_TOKEN, status: 500 }],
+    });
   });
 
   it('fails rather than treating the page cap as exhaustion', async () => {
@@ -165,7 +184,9 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(fetchMock),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination limit/);
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+    });
     expect(fetchMock).toHaveBeenCalledTimes(50);
   });
 
@@ -191,22 +212,36 @@ describe('createGreenhouseAdapter', () => {
       fetch: asFetch(async () => jsonResponse({ ...page1, jobs: [] })),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(/pagination/);
+    await expect(adapter.fetchJobs()).resolves.toMatchObject({
+      complete: false,
+    });
   });
 
-  it('fails the snapshot when a later configured board fails', async () => {
+  it('returns healthy boards and identifies a failed board without completing the snapshot', async () => {
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(jsonResponse({ jobs: page1.jobs }))
-      .mockResolvedValueOnce(jsonResponse({}, 400));
+      .mockResolvedValueOnce(jsonResponse({}, 400))
+      .mockResolvedValueOnce(jsonResponse({ jobs: page2.jobs }));
     const adapter = createGreenhouseAdapter({
-      boardTokens: [BOARD_TOKEN, `${BOARD_TOKEN}-other`],
+      boardTokens: [
+        BOARD_TOKEN,
+        `${BOARD_TOKEN}-other`,
+        `${BOARD_TOKEN}-third`,
+      ],
       fetch: asFetch(fetchMock),
     });
 
-    await expect(adapter.fetchJobs()).rejects.toThrow(
-      /Greenhouse request failed/,
-    );
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const result = await adapter.fetchJobs();
+    expect(result).toMatchObject({
+      complete: false,
+      jobs: expect.arrayContaining([
+        expect.objectContaining({ sourceJobId: '4001' }),
+        expect.objectContaining({ sourceJobId: '5001' }),
+      ]),
+      failedBoards: [{ board: `${BOARD_TOKEN}-other`, status: 400 }],
+    });
+    expect(result.jobs).toHaveLength(3);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 });

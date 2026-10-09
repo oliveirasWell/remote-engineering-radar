@@ -11,16 +11,21 @@ const LANGUAGES: readonly ClassificationVocabulary[] = [
 const merge = <K extends string>(
   pick: (vocabulary: ClassificationVocabulary) => Record<K, readonly RegExp[]>,
 ): Record<K, readonly RegExp[]> => {
-  const merged = {} as Record<K, RegExp[]>;
-  for (const vocabulary of LANGUAGES) {
-    for (const [key, patterns] of Object.entries(pick(vocabulary)) as [
-      K,
-      readonly RegExp[],
-    ][]) {
-      merged[key] = [...(merged[key] ?? []), ...patterns];
-    }
-  }
-  return merged;
+  const entries = LANGUAGES.flatMap(
+    (vocabulary) =>
+      Object.entries(pick(vocabulary)) as [K, readonly RegExp[]][],
+  );
+
+  const grouped: [K, readonly RegExp[]][] = [
+    ...new Set(entries.map(([key]) => key)),
+  ].map((key) => [
+    key,
+    entries
+      .filter(([entryKey]) => entryKey === key)
+      .flatMap(([, patterns]) => patterns),
+  ]);
+
+  return Object.fromEntries(grouped) as Record<K, readonly RegExp[]>;
 };
 
 const concat = (

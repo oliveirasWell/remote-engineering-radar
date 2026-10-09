@@ -33,6 +33,14 @@ const decodeHtmlEntities = (value: string): string =>
 const isJobRecord = (value: unknown): value is YCombinatorJobRecord =>
   Boolean(value && typeof value === 'object');
 
+const parseDataPage = (encoded: string): unknown => {
+  try {
+    return JSON.parse(decodeHtmlEntities(encoded));
+  } catch {
+    throw new Error('Y Combinator listing page has invalid data-page JSON');
+  }
+};
+
 export const parseYCombinatorListingHtml = (
   html: string,
 ): YCombinatorJobRecord[] => {
@@ -41,12 +49,7 @@ export const parseYCombinatorListingHtml = (
     throw new Error('Y Combinator listing page is missing data-page payload');
   }
 
-  let payload: unknown;
-  try {
-    payload = JSON.parse(decodeHtmlEntities(match[2]));
-  } catch {
-    throw new Error('Y Combinator listing page has invalid data-page JSON');
-  }
+  const payload = parseDataPage(match[2]);
 
   const jobPostings =
     payload &&
@@ -86,14 +89,9 @@ const fetchListingJobs = async (
   }
 
   const html = await readTextResponse(response);
-  const normalized: NormalizedJob[] = [];
-  for (const record of parseYCombinatorListingHtml(html)) {
-    const job = normalizeYCombinatorJob(record);
-    if (job) {
-      normalized.push(job);
-    }
-  }
-  return normalized;
+  return parseYCombinatorListingHtml(html).flatMap(
+    (record) => normalizeYCombinatorJob(record) ?? [],
+  );
 };
 
 const fetchAllJobs = async (

@@ -39,22 +39,20 @@ const readCountries = (record: LeverJobRecord): string[] => {
   }
 
   if (Array.isArray(record.categories?.allLocations)) {
-    for (const entry of record.categories.allLocations) {
-      const name = asString(entry);
+    record.categories.allLocations.map(asString).forEach((name) => {
       if (name) {
         countries.add(name);
       }
-    }
+    });
   }
 
   return [...countries];
 };
 
-const readPostedAt = (value: unknown): Date | undefined => {
-  return typeof value !== 'number' || !Number.isFinite(value)
+const readPostedAt = (value: unknown): Date | undefined =>
+  typeof value !== 'number' || !Number.isFinite(value)
     ? undefined
     : new Date(value);
-};
 
 export const normalizeLeverJob = (
   record: LeverJobRecord,

@@ -7,21 +7,35 @@ datasource db {
 }
 
 model Company {
-  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String         @db.Text
-  slug          String         @unique(map: "companies_slug_unique") @db.Text
-  websiteUrl    String?        @map("website_url") @db.Text
-  logoUrl       String?        @map("logo_url") @db.Text
-  source        String         @db.Text
-  kind          String         @default("product") @db.Text
-  hiringScore   Int            @default(0) @map("hiring_score")
-  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
-  jobs          Job[]
-  hiringSignals HiringSignal[]
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String         @db.Text
+  slug           String         @unique(map: "companies_slug_unique") @db.Text
+  websiteUrl     String?        @map("website_url") @db.Text
+  logoUrl        String?        @map("logo_url") @db.Text
+  source         String         @db.Text
+  kind           String         @default("product") @db.Text
+  hiringScore    Int            @default(0) @map("hiring_score")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @default(now()) @map("updated_at") @db.Timestamptz(6)
+  boardCheckedAt DateTime?      @map("board_checked_at") @db.Timestamptz(6)
+  jobs           Job[]
+  hiringSignals  HiringSignal[]
+  atsBoards      AtsBoard[]
 
   @@index([hiringScore, updatedAt], map: "companies_hiring_score_updated_at_idx")
   @@map("companies")
+}
+
+model AtsBoard {
+  id        String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ats       String  @db.Text
+  slug      String  @db.Text
+  companyId String  @map("company_id") @db.Uuid
+  company   Company @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "ats_boards_company_id_companies_id_fk")
+
+  @@unique([ats, slug], map: "ats_boards_ats_slug_unique")
+  @@index([companyId], map: "ats_boards_company_id_idx")
+  @@map("ats_boards")
 }
 
 model Job {
@@ -44,6 +58,7 @@ model Job {
   firstSeenAt  DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
   lastSeenAt   DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
   isActive     Boolean   @default(true) @map("is_active")
+  clickCount   Int       @default(0) @map("click_count")
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   company      Company   @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "jobs_company_id_companies_id_fk")

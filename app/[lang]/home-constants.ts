@@ -3,7 +3,7 @@ import type { ReportCompanyCard } from '@/lib/report/types';
 
 export const HOME_SECTIONS = EN_MESSAGES.home;
 
-/** `default` keeps the hiring-score order the query already returns. */
+/** `default` keeps the newest-opening order the query already returns. */
 export const COMPANY_SORTS: Record<
   keyof typeof EN_MESSAGES.home.sortOptions,
   (a: ReportCompanyCard, b: ReportCompanyCard) => number

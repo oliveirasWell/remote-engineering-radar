@@ -27,9 +27,9 @@ type JobUpdate = {
   isActive: boolean;
 };
 
-const readTechnologies = (value: Prisma.JsonValue): string[] =>
+export const readStringArray = (value: Prisma.JsonValue): string[] =>
   Array.isArray(value)
-    ? value.filter((tech): tech is string => typeof tech === 'string')
+    ? value.filter((entry): entry is string => typeof entry === 'string')
     : [];
 
 const readBatch = async (db: RootDb, cursor: string | undefined) =>
@@ -56,7 +56,7 @@ const toUpdate = (row: JobRow): JobUpdate => {
     description: row.description ?? undefined,
     location: row.location ?? undefined,
     remotePolicy: row.remotePolicy ?? undefined,
-    technologies: readTechnologies(row.technologies),
+    technologies: readStringArray(row.technologies),
   });
 
   return {

@@ -63,23 +63,16 @@ export const resolveJobCountries = (input: {
   sourceCountries?: string[];
   location?: string;
 }): string[] => {
-  const countries = new Set<string>();
+  const candidates = [
+    ...(input.sourceCountries ?? []),
+    ...(input.location?.split(/[,|/]|\s*-\s*/) ?? []),
+  ];
 
-  for (const raw of input.sourceCountries ?? []) {
-    const normalized = normalizeCountryName(raw);
-    if (normalized) {
-      countries.add(normalized);
-    }
-  }
-
-  if (input.location) {
-    for (const part of input.location.split(/[,|/]|\s*-\s*/)) {
-      const normalized = normalizeCountryName(part);
-      if (normalized) {
-        countries.add(normalized);
-      }
-    }
-  }
-
-  return [...countries];
+  return [
+    ...new Set(
+      candidates
+        .map((candidate) => normalizeCountryName(candidate))
+        .filter((country): country is string => Boolean(country)),
+    ),
+  ];
 };

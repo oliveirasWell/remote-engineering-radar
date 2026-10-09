@@ -15,103 +15,131 @@ type ScoreJobInput = ClassifyJobInput & { seniority?: string };
 
 const scoringSeniority = (
   seniority: string | undefined,
-): JobClassification['seniority'] => {
-  return seniority === 'junior' ||
-    seniority === 'mid' ||
-    seniority === 'senior' ||
-    seniority === 'staff' ||
-    seniority === 'principal'
+): JobClassification['seniority'] =>
+  seniority === 'junior' ||
+  seniority === 'mid' ||
+  seniority === 'senior' ||
+  seniority === 'staff' ||
+  seniority === 'principal'
     ? seniority
     : undefined;
-};
 
 const normalizeScore = (rawScore: number): number =>
   Math.max(MIN_NORMALIZED_SCORE, Math.min(MAX_NORMALIZED_SCORE, rawScore));
 
-const scoreClassification = (classification: JobClassification): JobScore => {
-  let rawScore = 0;
-  const reasons: string[] = [];
+type ScoreSignal = {
+  reason: string;
+  weight: number;
+  applies: (classification: JobClassification) => boolean;
+};
 
+/** Every non-technology signal, in the order its reason is reported. */
+const CLASSIFICATION_SIGNALS: readonly ScoreSignal[] = [
+  {
+    reason: 'Senior',
+    weight: SCORE_WEIGHTS.seniority.senior,
+    applies: (classification) => classification.seniority === 'senior',
+  },
+  {
+    reason: 'Staff',
+    weight: SCORE_WEIGHTS.seniority.staff,
+    applies: (classification) => classification.seniority === 'staff',
+  },
+  {
+    reason: 'Mid-level',
+    weight: SCORE_WEIGHTS.seniority.mid,
+    applies: (classification) => classification.seniority === 'mid',
+  },
+  {
+    reason: 'Junior',
+    weight: SCORE_WEIGHTS.seniority.junior,
+    applies: (classification) => classification.seniority === 'junior',
+  },
+  {
+    reason: 'Frontend',
+    weight: SCORE_WEIGHTS.roleFocus.frontend,
+    applies: (classification) => classification.roleFocus.includes('frontend'),
+  },
+  {
+    reason: 'Fullstack',
+    weight: SCORE_WEIGHTS.roleFocus.fullstack,
+    applies: (classification) => classification.roleFocus.includes('fullstack'),
+  },
+  {
+    reason: 'Platform',
+    weight: SCORE_WEIGHTS.roleFocus.platform,
+    applies: (classification) =>
+      classification.roleFocus.includes(PLATFORM_ROLE_FOCUS),
+  },
+  {
+    reason: 'Remote',
+    weight: SCORE_WEIGHTS.remote,
+    applies: (classification) => classification.remotePolicy === 'remote',
+  },
+  {
+    reason: 'On-site only',
+    weight: SCORE_WEIGHTS.onsiteOnly,
+    applies: (classification) => classification.remotePolicy === 'onsite',
+  },
+  {
+    reason: 'Brazil',
+    weight: SCORE_WEIGHTS.geography.brazil,
+    applies: (classification) => classification.geography.includes('brazil'),
+  },
+  {
+    reason: 'LATAM',
+    weight: SCORE_WEIGHTS.geography.latam,
+    applies: (classification) => classification.geography.includes('latam'),
+  },
+  {
+    reason: 'Americas',
+    weight: SCORE_WEIGHTS.geography.americas,
+    applies: (classification) => classification.geography.includes('americas'),
+  },
+  {
+    reason: 'Relocation required',
+    weight: SCORE_WEIGHTS.relocationRequired,
+    applies: (classification) => classification.requiresRelocation,
+  },
+  {
+    reason: 'Unrelated stack',
+    weight: SCORE_WEIGHTS.unrelatedStack,
+    applies: (classification) => classification.isUnrelatedStack,
+  },
+  {
+    reason: 'Unrelated role',
+    weight: SCORE_WEIGHTS.unrelatedRole,
+    applies: (classification) => classification.isUnrelatedRole,
+  },
+];
+
+const technologySignals = (
+  classification: JobClassification,
+): Omit<ScoreSignal, 'applies'>[] => {
   const technologyWeights = classification.roleFocus.includes(
     PLATFORM_ROLE_FOCUS,
   )
     ? SCORE_WEIGHTS.cloudTechnologies
     : SCORE_WEIGHTS.technologies;
 
-  for (const [name, weight] of Object.entries(technologyWeights)) {
-    if (classification.technologies.includes(name)) {
-      rawScore += weight;
-      reasons.push(name);
-    }
-  }
+  return Object.entries(technologyWeights)
+    .filter(([name]) => classification.technologies.includes(name))
+    .map(([name, weight]) => ({ reason: name, weight }));
+};
 
-  if (classification.seniority === 'senior') {
-    rawScore += SCORE_WEIGHTS.seniority.senior;
-    reasons.push('Senior');
-  } else if (classification.seniority === 'staff') {
-    rawScore += SCORE_WEIGHTS.seniority.staff;
-    reasons.push('Staff');
-  } else if (classification.seniority === 'mid') {
-    rawScore += SCORE_WEIGHTS.seniority.mid;
-    reasons.push('Mid-level');
-  } else if (classification.seniority === 'junior') {
-    rawScore += SCORE_WEIGHTS.seniority.junior;
-    reasons.push('Junior');
-  }
-
-  if (classification.roleFocus.includes('frontend')) {
-    rawScore += SCORE_WEIGHTS.roleFocus.frontend;
-    reasons.push('Frontend');
-  }
-  if (classification.roleFocus.includes('fullstack')) {
-    rawScore += SCORE_WEIGHTS.roleFocus.fullstack;
-    reasons.push('Fullstack');
-  }
-  if (classification.roleFocus.includes(PLATFORM_ROLE_FOCUS)) {
-    rawScore += SCORE_WEIGHTS.roleFocus.platform;
-    reasons.push('Platform');
-  }
-
-  if (classification.remotePolicy === 'remote') {
-    rawScore += SCORE_WEIGHTS.remote;
-    reasons.push('Remote');
-  } else if (classification.remotePolicy === 'onsite') {
-    rawScore += SCORE_WEIGHTS.onsiteOnly;
-    reasons.push('On-site only');
-  }
-
-  if (classification.geography.includes('brazil')) {
-    rawScore += SCORE_WEIGHTS.geography.brazil;
-    reasons.push('Brazil');
-  }
-  if (classification.geography.includes('latam')) {
-    rawScore += SCORE_WEIGHTS.geography.latam;
-    reasons.push('LATAM');
-  }
-  if (classification.geography.includes('americas')) {
-    rawScore += SCORE_WEIGHTS.geography.americas;
-    reasons.push('Americas');
-  }
-
-  if (classification.requiresRelocation) {
-    rawScore += SCORE_WEIGHTS.relocationRequired;
-    reasons.push('Relocation required');
-  }
-
-  if (classification.isUnrelatedStack) {
-    rawScore += SCORE_WEIGHTS.unrelatedStack;
-    reasons.push('Unrelated stack');
-  }
-
-  if (classification.isUnrelatedRole) {
-    rawScore += SCORE_WEIGHTS.unrelatedRole;
-    reasons.push('Unrelated role');
-  }
+const scoreClassification = (classification: JobClassification): JobScore => {
+  const signals = [
+    ...technologySignals(classification),
+    ...CLASSIFICATION_SIGNALS.filter((signal) =>
+      signal.applies(classification),
+    ),
+  ];
+  const rawScore = signals.reduce((sum, signal) => sum + signal.weight, 0);
 
   return {
     rawScore,
     score: normalizeScore(rawScore),
-    reasons,
+    reasons: signals.map((signal) => signal.reason),
   };
 };
 

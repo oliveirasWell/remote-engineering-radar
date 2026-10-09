@@ -171,6 +171,7 @@ describe('JobDetailPage cache boundary', () => {
           companyName: TEST_COMPANY.name,
           technologies: [...TEST_JOB.technologies],
           postedAt: null,
+          clickCount: 0,
           reasons: [],
         },
       });

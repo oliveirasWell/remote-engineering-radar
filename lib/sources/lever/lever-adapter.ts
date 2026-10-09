@@ -1,4 +1,5 @@
 import type { JobSource, NormalizedJob } from '../types';
+import { boardFailure } from '../board-failure';
 import {
   discardResponse,
   fetchWithRetry,
@@ -9,6 +10,8 @@ import { normalizeLeverJob, type LeverJobRecord } from './normalize-lever-job';
 
 export type LeverAdapterOptions = {
   boardSlugs: string[];
+  companyNamesByBoard?: Readonly<Record<string, string>>;
+  logFailures?: boolean;
   fetch?: typeof fetch;
 };
 
@@ -26,8 +29,11 @@ const fetchBoardJobs = async (
 
   if (!response.ok) {
     await discardResponse(response);
-    throw new Error(
-      `Lever request failed for ${boardSlug}: ${response.status}`,
+    throw Object.assign(
+      new Error(`Lever request failed for ${boardSlug}: ${response.status}`),
+      {
+        status: response.status,
+      },
     );
   }
 
@@ -41,15 +47,9 @@ const fetchBoardJobs = async (
     throw new Error(`Lever response has no valid job records for ${boardSlug}`);
   }
 
-  const normalized: NormalizedJob[] = [];
-  for (const record of records) {
-    const job = normalizeLeverJob(record, boardSlug);
-    if (job) {
-      normalized.push(job);
-    }
-  }
-
-  return normalized;
+  return records.flatMap(
+    (record) => normalizeLeverJob(record, boardSlug) ?? [],
+  );
 };
 
 export const createLeverAdapter = (options: LeverAdapterOptions): JobSource => {
@@ -59,13 +59,36 @@ export const createLeverAdapter = (options: LeverAdapterOptions): JobSource => {
     name: LEVER_SOURCE_NAME,
     fetchJobs: async () => {
       const jobs: NormalizedJob[] = [];
+      const failedBoards = [];
 
       for (const boardSlug of options.boardSlugs) {
-        const boardJobs = await fetchBoardJobs(boardSlug, fetchImpl);
-        jobs.push(...boardJobs);
+        try {
+          jobs.push(
+            ...(await fetchBoardJobs(boardSlug, fetchImpl)).map((job) => ({
+              ...job,
+              company: {
+                ...job.company,
+                name:
+                  options.companyNamesByBoard?.[boardSlug] ?? job.company.name,
+              },
+            })),
+          );
+        } catch (error) {
+          const failure = boardFailure(boardSlug, error);
+          failedBoards.push(failure);
+          if (options.logFailures !== false) {
+            console.error(
+              `Source ${LEVER_SOURCE_NAME} board ${boardSlug} failed: ${failure.status ?? failure.error}`,
+            );
+          }
+        }
       }
 
-      return { jobs, complete: true };
+      return {
+        jobs,
+        complete: failedBoards.length === 0,
+        ...(failedBoards.length > 0 ? { failedBoards } : {}),
+      };
     },
   };
 };

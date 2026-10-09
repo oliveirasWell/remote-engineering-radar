@@ -43,13 +43,12 @@ const toAbsoluteUrl = (pathOrUrl: string): string | undefined => {
 const isRemoteLocation = (location: string): boolean =>
   /\bremote\b/i.test(location);
 
-const readSkills = (value: unknown): string[] => {
-  return Array.isArray(value)
+const readSkills = (value: unknown): string[] =>
+  Array.isArray(value)
     ? value
         .map((entry) => asString(entry))
         .filter((entry): entry is string => Boolean(entry))
     : [];
-};
 
 export const normalizeYCombinatorJob = (
   record: YCombinatorJobRecord,

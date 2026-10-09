@@ -13,7 +13,7 @@ export type LaneInput = {
   haystack: string;
 };
 
-export type LaneMatcher = (input: LaneInput) => boolean;
+export type LaneRule = (input: LaneInput) => boolean;
 
 export type LaneRoleFocus =
   | typeof REACT_ROLE_FOCUS
@@ -22,7 +22,8 @@ export type LaneRoleFocus =
   | typeof PRODUCT_ROLE_FOCUS
   | typeof DATA_ANNOTATION_ROLE_FOCUS;
 
+/** A job is on the lane only when every rule passes. */
 export type LaneStrategy = {
   roleFocus: LaneRoleFocus;
-  matches: LaneMatcher;
+  rules: readonly LaneRule[];
 };

@@ -53,7 +53,7 @@ test "$migration_count" = "$expected_migration_count"
 timestamp_typmods="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --tuples-only --no-align --command "SELECT string_agg(DISTINCT attribute.atttypmod::text, ',' ORDER BY attribute.atttypmod::text) FROM pg_attribute attribute JOIN pg_class relation ON relation.oid = attribute.attrelid JOIN pg_namespace namespace ON namespace.oid = relation.relnamespace JOIN pg_type type ON type.oid = attribute.atttypid WHERE namespace.nspname = 'public' AND relation.relname IN ('companies', 'jobs', 'hiring_signals', 'ingestion_runs') AND type.typname = 'timestamptz' AND attribute.attnum > 0")"
 test "$timestamp_typmods" = '-1'
 
-public_privilege_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --tuples-only --no-align --command "SELECT count(*) FROM pg_roles role CROSS JOIN unnest(ARRAY['companies', 'jobs', 'hiring_signals', 'ingestion_runs', '_prisma_migrations']) AS table_name WHERE role.rolname IN ('anon', 'authenticated') AND (has_table_privilege(role.rolname, 'public.' || table_name, 'SELECT') OR has_table_privilege(role.rolname, 'public.' || table_name, 'INSERT') OR has_table_privilege(role.rolname, 'public.' || table_name, 'UPDATE') OR has_table_privilege(role.rolname, 'public.' || table_name, 'DELETE'))")"
+public_privilege_count="$(docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbname "$database_name" --tuples-only --no-align --command "SELECT count(*) FROM pg_roles role CROSS JOIN unnest(ARRAY['companies', 'jobs', 'hiring_signals', 'ingestion_runs', 'data_migrations', 'ats_boards', '_prisma_migrations']) AS table_name WHERE role.rolname IN ('anon', 'authenticated') AND (has_table_privilege(role.rolname, 'public.' || table_name, 'SELECT') OR has_table_privilege(role.rolname, 'public.' || table_name, 'INSERT') OR has_table_privilege(role.rolname, 'public.' || table_name, 'UPDATE') OR has_table_privilege(role.rolname, 'public.' || table_name, 'DELETE'))")"
 test "$public_privilege_count" = '0'
 
 docker exec "$container_id" createdb --username postgres "$unbaselined_database_name"
@@ -88,8 +88,8 @@ docker exec "$container_id" psql --set ON_ERROR_STOP=1 --username postgres --dbn
 # migration rewrites them on deploy by design. Everything else, including every
 # row's identity, must survive untouched.
 snapshot_query="SELECT jsonb_build_object(
-  'companies', (SELECT jsonb_agg(to_jsonb(c) - 'kind' ORDER BY id) FROM companies c),
-  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' - 'role_focus' - 'technologies' - 'seniority' - 'score' - 'is_active' - 'updated_at' ORDER BY id) FROM jobs j),
+  'companies', (SELECT jsonb_agg(to_jsonb(c) - 'kind' - 'board_checked_at' ORDER BY id) FROM companies c),
+  'jobs', (SELECT jsonb_agg(to_jsonb(j) - 'geographies' - 'countries' - 'role_focus' - 'click_count' - 'technologies' - 'seniority' - 'score' - 'is_active' - 'updated_at' ORDER BY id) FROM jobs j),
   'hiring_signals', (SELECT jsonb_agg(to_jsonb(s) ORDER BY id) FROM hiring_signals s),
   'ingestion_runs', (SELECT jsonb_agg(to_jsonb(r) ORDER BY id) FROM ingestion_runs r),
   'drizzle', (SELECT jsonb_agg(to_jsonb(m) ORDER BY id) FROM drizzle.__drizzle_migrations m)

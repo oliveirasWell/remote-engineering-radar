@@ -11,6 +11,7 @@ const vitestConfig = defineConfig({
     passWithNoTests: false,
     testTimeout: 15000,
     hookTimeout: 15000,
+    maxWorkers: 4,
     setupFiles: ['./test/setup.ts'],
     include: ['{app,components,lib,scripts}/**/*.test.{ts,tsx}'],
     alias: {

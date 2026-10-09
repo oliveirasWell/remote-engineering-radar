@@ -1,4 +1,5 @@
 import type { JobSource, NormalizedJob } from '../types';
+import { boardFailure } from '../board-failure';
 import {
   discardResponse,
   fetchWithRetry,
@@ -13,6 +14,8 @@ import {
 
 export type AshbyAdapterOptions = {
   boardNames: string[];
+  companyNamesByBoard?: Readonly<Record<string, string>>;
+  logFailures?: boolean;
   fetch?: typeof fetch;
 };
 
@@ -60,7 +63,9 @@ const fetchJobsPage = async (
 
   if (!response.ok) {
     await discardResponse(response);
-    throw new Error(`Ashby request failed: ${response.status}`);
+    throw Object.assign(new Error(`Ashby request failed: ${response.status}`), {
+      status: response.status,
+    });
   }
 
   const payload = await readJsonResponse<unknown>(response);
@@ -75,46 +80,40 @@ const fetchJobsPage = async (
   return payload as AshbyJobsPage & { jobs: unknown[] };
 };
 
+/** One page per call, recursing on the cursor the page hands back. */
 const fetchBoardJobs = async (
   boardName: string,
   fetchImpl: typeof fetch,
+  cursor?: string,
+  pageCount = 0,
 ): Promise<NormalizedJob[]> => {
-  const normalized: NormalizedJob[] = [];
-  let cursor: string | undefined;
-  let pageCount = 0;
-
-  while (pageCount < 50) {
-    const payload = await fetchJobsPage(boardName, cursor, fetchImpl);
-    const records = payload.jobs;
-    const validRecords = records.filter(isJobRecord);
-    if (records.length > 0 && validRecords.length === 0) {
-      throw new Error('Ashby response has no valid job records');
-    }
-
-    for (const record of validRecords) {
-      const job = normalizeAshbyJob(record, boardName);
-      if (job) {
-        normalized.push(job);
-      }
-    }
-
-    const nextCursor = asCursor(payload.nextCursor);
-    if (!nextCursor) {
-      break;
-    }
-    if (nextCursor === cursor) {
-      throw new Error('Ashby pagination limit reached');
-    }
-
-    cursor = nextCursor;
-    pageCount += 1;
-  }
-
   if (pageCount === 50) {
     throw new Error('Ashby pagination limit reached');
   }
 
-  return normalized;
+  const payload = await fetchJobsPage(boardName, cursor, fetchImpl);
+  const records = payload.jobs;
+  const validRecords = records.filter(isJobRecord);
+  if (records.length > 0 && validRecords.length === 0) {
+    throw new Error('Ashby response has no valid job records');
+  }
+
+  const jobs = validRecords.flatMap(
+    (record) => normalizeAshbyJob(record, boardName) ?? [],
+  );
+
+  const nextCursor = asCursor(payload.nextCursor);
+  if (!nextCursor) {
+    return jobs;
+  }
+  if (nextCursor === cursor) {
+    throw new Error('Ashby pagination limit reached');
+  }
+
+  return [
+    ...jobs,
+    ...(await fetchBoardJobs(boardName, fetchImpl, nextCursor, pageCount + 1)),
+  ];
 };
 
 export const createAshbyAdapter = (options: AshbyAdapterOptions): JobSource => {
@@ -124,13 +123,36 @@ export const createAshbyAdapter = (options: AshbyAdapterOptions): JobSource => {
     name: ASHBY_SOURCE_NAME,
     fetchJobs: async () => {
       const jobs: NormalizedJob[] = [];
+      const failedBoards = [];
 
       for (const boardName of options.boardNames) {
-        const boardJobs = await fetchBoardJobs(boardName, fetchImpl);
-        jobs.push(...boardJobs);
+        try {
+          jobs.push(
+            ...(await fetchBoardJobs(boardName, fetchImpl)).map((job) => ({
+              ...job,
+              company: {
+                ...job.company,
+                name:
+                  options.companyNamesByBoard?.[boardName] ?? job.company.name,
+              },
+            })),
+          );
+        } catch (error) {
+          const failure = boardFailure(boardName, error);
+          failedBoards.push(failure);
+          if (options.logFailures !== false) {
+            console.error(
+              `Source ${ASHBY_SOURCE_NAME} board ${boardName} failed: ${failure.status ?? failure.error}`,
+            );
+          }
+        }
       }
 
-      return { jobs, complete: true };
+      return {
+        jobs,
+        complete: failedBoards.length === 0,
+        ...(failedBoards.length > 0 ? { failedBoards } : {}),
+      };
     },
   };
 };

@@ -48,6 +48,7 @@ const toJobCard = (
   score: job.score,
   postedAt: job.postedAt,
   url: job.url,
+  clickCount: job.clickCount,
 });
 
 export const getJobsPageData = async (

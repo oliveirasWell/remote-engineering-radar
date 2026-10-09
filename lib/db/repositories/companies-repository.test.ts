@@ -3,6 +3,13 @@ import { createJobsRepository } from './jobs-repository';
 import { createTestDb } from '../test/create-test-db';
 import { TEST_COMPANY, TEST_JOB } from './test-fixtures';
 
+const NEWER_COMPANY_SLUG = 'newer-opening';
+const OLDER_COMPANY_SLUG = 'older-opening';
+const NEWER_HIRING_SCORE = 13;
+const OLDER_HIRING_SCORE = 90;
+const NEWER_FIRST_SEEN_AT = new Date('2026-10-01T00:00:00.000Z');
+const OLDER_POSTED_AT = new Date('2026-09-01T00:00:00.000Z');
+
 describe('createCompaniesRepository', () => {
   it('supports create, read, update, and delete', async () => {
     const db = await createTestDb();
@@ -69,6 +76,48 @@ describe('createCompaniesRepository', () => {
     await expect(
       companiesRepository.listByHiringScore({ minimumHiringScore: 12 }),
     ).resolves.toMatchObject([{ slug: 'higher-score' }]);
+  });
+
+  it('lists a lower hiring score first when its opening is newer', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const older = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: OLDER_COMPANY_SLUG,
+      hiringScore: OLDER_HIRING_SCORE,
+    });
+    const newer = await companiesRepository.create({
+      ...TEST_COMPANY,
+      slug: NEWER_COMPANY_SLUG,
+      hiringScore: NEWER_HIRING_SCORE,
+    });
+
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: older.id,
+      sourceJobId: OLDER_COMPANY_SLUG,
+      technologies: [...TEST_JOB.technologies],
+      postedAt: OLDER_POSTED_AT,
+    });
+    await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: newer.id,
+      sourceJobId: NEWER_COMPANY_SLUG,
+      technologies: [...TEST_JOB.technologies],
+      postedAt: null,
+      firstSeenAt: NEWER_FIRST_SEEN_AT,
+    });
+
+    await expect(
+      companiesRepository.listByHiringScore({ limit: 1 }),
+    ).resolves.toMatchObject([{ slug: NEWER_COMPANY_SLUG }]);
+    await expect(
+      companiesRepository.listByHiringScore(),
+    ).resolves.toMatchObject([
+      { slug: NEWER_COMPANY_SLUG },
+      { slug: OLDER_COMPANY_SLUG },
+    ]);
   });
 
   it('upserts many slugs in one statement, preserving omitted optional fields', async () => {

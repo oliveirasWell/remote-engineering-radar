@@ -37,6 +37,7 @@ vi.mock('@/lib/report/get-companies-page-data', () => ({
 
 afterEach(() => {
   document.cookie = `${LOCALE_COOKIE}=; path=/; max-age=0`;
+  vi.unstubAllEnvs();
 });
 
 const COUNTRY_TABS = [
@@ -50,6 +51,25 @@ const UNKNOWN_COUNTRIES = ['atlantis', 'unknown-country'];
 const UPDATED_AT = new Date('2026-09-01T12:00:00Z');
 
 describe('home report copy', () => {
+  it('shows the home ad preview on beta while the ad slots are pending', () => {
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    const page = Home({ searchParams: Promise.resolve({}) });
+
+    render(
+      <I18nProvider locale={I18N_TEST.portuguese}>
+        {page.props.children[0]}
+      </I18nProvider>,
+    );
+
+    const region = screen.getByRole('complementary', {
+      name: messagesFor(I18N_TEST.portuguese).marketing.advertisement,
+    });
+    expect(region).toHaveTextContent(
+      messagesFor(I18N_TEST.portuguese).marketing.preview,
+    );
+    expect(region.querySelector('ins.adsbygoogle')).toBeNull();
+  });
+
   it('keeps the update timestamp compact beside the section title and pads company hover rows', async () => {
     vi.mocked(getCompaniesPageData).mockResolvedValueOnce({
       companies: [{ ...TEST_REPORT_COMPANY, jobs: [], signalSourceUrls: [] }],

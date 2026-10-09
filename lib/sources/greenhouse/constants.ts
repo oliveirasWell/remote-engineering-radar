@@ -4,3 +4,11 @@ export const GREENHOUSE_API_BASE_URL =
   'https://boards-api.greenhouse.io/v1/boards';
 
 export const GREENHOUSE_JOBS_PER_PAGE = 100;
+
+export const GREENHOUSE_BOARD_TOKENS: readonly string[] = [
+  'gitlab',
+  'quintoandar',
+  'vtex',
+  'doximity',
+  'grafanalabs',
+];

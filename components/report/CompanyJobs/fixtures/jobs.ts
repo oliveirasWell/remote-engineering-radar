@@ -12,6 +12,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 95,
     postedAt: new Date('2026-09-01T12:00:00Z'),
     url: 'https://example.com/jobs/older',
+    clickCount: 0,
   },
   {
     id: 'newer-job',
@@ -24,6 +25,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 20,
     postedAt: new Date('2026-09-10T12:00:00Z'),
     url: 'https://example.com/jobs/newer',
+    clickCount: 0,
   },
   {
     id: 'undated-job',
@@ -36,6 +38,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 100,
     postedAt: null,
     url: 'https://example.com/jobs/undated',
+    clickCount: 0,
   },
   {
     id: 'same-date-job',
@@ -48,6 +51,7 @@ export const SORTING_JOBS: ReportJobCard[] = [
     score: 60,
     postedAt: new Date('2026-09-10T12:00:00Z'),
     url: 'https://example.com/jobs/same-date',
+    clickCount: 0,
   },
 ];
 

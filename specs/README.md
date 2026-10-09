@@ -24,6 +24,7 @@ Completed:
 - [SPEC-013](013-automated-ingestion.md) — automated ingestion
 - [SPEC-014](014-observability.md) — observability (GA4, Sentry, UptimeRobot)
 - [SPEC-016](016-cloud-ops-focus.md) — Cloud & Ops as a second tracked focus
+- [SPEC-023](023-rolesense-source.md) — why RoleSense is not ingestible
 
 Open:
 
@@ -45,6 +46,11 @@ Open:
   Portuguese, hreflang alternates, and a localized sitemap
 - [SPEC-022](022-lane-strategies.md) — lane strategies (React chip is not `software`;
   Mobile; title-anchor / veto; classification adapters, not source adapters)
+- [SPEC-023](023-lane-rules.md) — lane rules (a lane is a list of rules that must all
+  pass)
+- [SPEC-024](024-ats-board-discovery.md) — ATS board discovery (versioned seed boards,
+  per-board failure isolation, automatic discovery in the ingest, direct board wins
+  over the aggregator)
 
 ---
 

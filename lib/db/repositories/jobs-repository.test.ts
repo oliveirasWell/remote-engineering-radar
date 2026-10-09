@@ -17,6 +17,8 @@ import {
   JOB_RETENTION_MS,
 } from '@/lib/jobs/constants';
 import { createCompaniesRepository } from './companies-repository';
+import { createAtsBoardsRepository } from './ats-boards-repository';
+import { JOB_UPSERT_BATCH_SIZE } from './constants';
 import { createJobsRepository } from './jobs-repository';
 import { createTestDb } from '../test/create-test-db';
 import { TEST_COMPANY, TEST_JOB } from './test-fixtures';
@@ -64,6 +66,43 @@ describe('createJobsRepository', () => {
 
     await expect(jobsRepository.deleteById(created.id)).resolves.toBe(true);
     await expect(jobsRepository.findById(created.id)).resolves.toBeNull();
+  });
+
+  it('counts each original-listing click and keeps that count across ingest', async () => {
+    const db = await createTestDb();
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobsRepository = createJobsRepository(db);
+    const created = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const missingJobId = '00000000-0000-4000-8000-000000000000';
+    const updatedTitle = 'Staff Frontend Engineer';
+
+    expect(created.clickCount).toBe(0);
+    await expect(jobsRepository.incrementClickCount(created.id)).resolves.toBe(
+      1,
+    );
+    await expect(jobsRepository.incrementClickCount(created.id)).resolves.toBe(
+      2,
+    );
+    await jobsRepository.upsertManyBySourceJobId([
+      {
+        ...TEST_JOB,
+        companyId: company.id,
+        title: updatedTitle,
+        technologies: [...TEST_JOB.technologies],
+      },
+    ]);
+
+    await expect(jobsRepository.findById(created.id)).resolves.toMatchObject({
+      clickCount: 2,
+      title: updatedTitle,
+    });
+    await expect(
+      jobsRepository.incrementClickCount(missingJobId),
+    ).resolves.toBeNull();
   });
 
   it('rejects duplicate source + sourceJobId pairs', async () => {
@@ -180,6 +219,137 @@ describe('createJobsRepository', () => {
     await expect(
       jobsRepository.findBySourceJobId(TEST_JOB.source, 'present-job'),
     ).resolves.toMatchObject({ isActive: true });
+  });
+
+  it('deactivates unambiguous aggregator twins only for verified ATS boards', async () => {
+    const db = await createTestDb();
+    const companies = createCompaniesRepository(db);
+    const jobs = createJobsRepository(db);
+    const company = await companies.create(TEST_COMPANY);
+    await createAtsBoardsRepository(db).insertVerified(
+      'greenhouse',
+      'acme',
+      company.id,
+    );
+    const otherCompany = await companies.create({
+      ...TEST_COMPANY,
+      slug: 'other',
+      name: 'Other',
+    });
+    const input = { ...TEST_JOB, technologies: [...TEST_JOB.technologies] };
+    const himalayas = await jobs.create({
+      ...input,
+      companyId: company.id,
+      source: 'himalayas',
+      sourceJobId: 'aggregator-one',
+      title: 'Senior React Engineer!',
+    });
+    const jobicy = await jobs.create({
+      ...input,
+      companyId: company.id,
+      source: 'jobicy',
+      sourceJobId: 'aggregator-two',
+      title: 'Staff React Engineer',
+    });
+    const other = await jobs.create({
+      ...input,
+      companyId: otherCompany.id,
+      source: 'himalayas',
+      sourceJobId: 'other-company',
+      title: 'Senior React Engineer',
+    });
+    const direct = await jobs.create({
+      ...input,
+      companyId: company.id,
+      source: 'greenhouse',
+      sourceJobId: 'direct',
+      title: 'senior react engineer',
+    });
+    const secondDirect = await jobs.create({
+      ...input,
+      companyId: company.id,
+      source: 'greenhouse',
+      sourceJobId: 'second-direct',
+      title: 'Staff React Engineer',
+    });
+
+    expect(await jobs.deactivateAggregatorTwins()).toEqual([
+      { companyId: company.id },
+      { companyId: company.id },
+    ]);
+    for (const job of [himalayas, jobicy]) {
+      await expect(jobs.findById(job.id)).resolves.toMatchObject({
+        isActive: false,
+      });
+    }
+    for (const job of [other, direct, secondDirect]) {
+      await expect(jobs.findById(job.id)).resolves.toMatchObject({
+        isActive: true,
+      });
+    }
+  });
+
+  it('preserves ambiguous same-title roles and matches from unverified or non-ATS sources', async () => {
+    const db = await createTestDb();
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobs = createJobsRepository(db);
+    await createAtsBoardsRepository(db).insertVerified(
+      'greenhouse',
+      'acme',
+      company.id,
+    );
+    const input = {
+      ...TEST_JOB,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    };
+    const ambiguous = await Promise.all(
+      ['one', 'two'].map((sourceJobId) =>
+        jobs.create({
+          ...input,
+          source: 'himalayas',
+          sourceJobId,
+          title: 'Backend Engineer',
+        }),
+      ),
+    );
+    const nonAts = await jobs.create({
+      ...input,
+      source: 'himalayas',
+      sourceJobId: 'aggregator-non-ats',
+      title: 'Frontend Engineer',
+    });
+    const unverified = await jobs.create({
+      ...input,
+      source: 'jobicy',
+      sourceJobId: 'aggregator-unverified',
+      title: 'Product Designer',
+    });
+    await jobs.create({
+      ...input,
+      source: 'greenhouse',
+      sourceJobId: 'direct',
+      title: 'Backend Engineer',
+    });
+    await jobs.create({
+      ...input,
+      source: 'vagasremotas',
+      sourceJobId: 'another-board',
+      title: 'Frontend Engineer',
+    });
+    await jobs.create({
+      ...input,
+      source: 'ashby',
+      sourceJobId: 'not-verified',
+      title: 'Product Designer',
+    });
+
+    expect(await jobs.deactivateAggregatorTwins()).toEqual([]);
+    for (const job of [...ambiguous, nonAts, unverified]) {
+      await expect(jobs.findById(job.id)).resolves.toMatchObject({
+        isActive: true,
+      });
+    }
   });
 
   it('batch retires only active requested IDs in the specified source', async () => {
@@ -774,5 +944,49 @@ describe('createJobsRepository', () => {
     const jobsRepository = createJobsRepository(db);
 
     await expect(jobsRepository.upsertManyBySourceJobId([])).resolves.toBe(0);
+  });
+
+  it('upserts each chunk when the batch is larger than one statement', async () => {
+    const db = await createTestDb();
+    const companiesRepository = createCompaniesRepository(db);
+    const jobsRepository = createJobsRepository(db);
+    const company = await companiesRepository.create(TEST_COMPANY);
+    const existing = await jobsRepository.create({
+      ...TEST_JOB,
+      companyId: company.id,
+      technologies: [...TEST_JOB.technologies],
+    });
+    const executeRaw = vi.spyOn(db, '$executeRaw');
+    const updatedTitle = 'Staff Frontend Engineer';
+    const inputs = Array.from(
+      { length: JOB_UPSERT_BATCH_SIZE + 1 },
+      (_, index) => ({
+        ...TEST_JOB,
+        companyId: company.id,
+        sourceJobId:
+          index === JOB_UPSERT_BATCH_SIZE
+            ? TEST_JOB.sourceJobId
+            : `${TEST_JOB.sourceJobId}-${index}`,
+        title: index === JOB_UPSERT_BATCH_SIZE ? updatedTitle : TEST_JOB.title,
+        technologies: [...TEST_JOB.technologies],
+      }),
+    );
+
+    const written = await jobsRepository.upsertManyBySourceJobId(inputs);
+
+    expect(written).toBe(JOB_UPSERT_BATCH_SIZE + 1);
+    expect(executeRaw).toHaveBeenCalledTimes(2);
+    const updated = await jobsRepository.findBySourceJobId(
+      TEST_JOB.source,
+      TEST_JOB.sourceJobId,
+    );
+    expect(updated).toMatchObject({ title: updatedTitle });
+    expect(updated?.firstSeenAt).toEqual(existing.firstSeenAt);
+    await expect(
+      jobsRepository.findBySourceJobId(
+        TEST_JOB.source,
+        `${TEST_JOB.sourceJobId}-0`,
+      ),
+    ).resolves.toMatchObject({ title: TEST_JOB.title });
   });
 });

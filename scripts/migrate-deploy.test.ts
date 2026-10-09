@@ -268,23 +268,21 @@ describe('production workflow operation isolation', () => {
   const steps = workflow.split(/^      - /m).slice(1);
 
   it.each([
-    ['workflow_dispatch', 'prepare-baseline', ['prepare-baseline'], ''],
-    ['workflow_dispatch', 'check-baseline', ['baseline-check'], ''],
+    ['workflow_dispatch', 'prepare-baseline', ['prepare-baseline']],
+    ['workflow_dispatch', 'check-baseline', ['baseline-check']],
     [
       'workflow_dispatch',
       'resolve-baseline',
       ['baseline-check', 'resolve-baseline', 'deploy'],
-      '',
     ],
-    ['workflow_dispatch', 'deploy-migrations', ['deploy'], ''],
-    ['workflow_dispatch', 'ingest', ['deploy', 'ingest'], ''],
-    ['schedule', 'prepare-baseline', ['deploy', 'ingest'], ''],
-    // A merge deploys its migrations. Ingest stays off unless sources changed.
-    ['push', 'prepare-baseline', ['deploy'], 'false'],
-    ['push', 'prepare-baseline', ['deploy', 'ingest'], 'true'],
+    ['workflow_dispatch', 'deploy-migrations', ['deploy']],
+    ['workflow_dispatch', 'ingest', ['deploy', 'ingest']],
+    ['schedule', 'prepare-baseline', ['deploy', 'ingest']],
+    // A merge deploys its migrations and refreshes the catalog.
+    ['push', 'prepare-baseline', ['deploy', 'ingest']],
   ])(
-    'runs only intended database operations for %s / %s → %j (ingestPaths=%s)',
-    (event, operation, expected, ingestPathsRun) => {
+    'runs only intended database operations for %s / %s',
+    (event, operation, expected) => {
       const commands = steps.flatMap((step) => {
         const command = step.match(/\brun: pnpm (?:db:([\w-]+)|(ingest))\s/);
         if (!command) {
@@ -296,24 +294,12 @@ describe('production workflow operation isolation', () => {
           runInNewContext(condition, {
             github: { event_name: event },
             inputs: { operation },
-            steps: {
-              ingestPaths: { outputs: { run: ingestPathsRun } },
-            },
           });
         return enabled ? [command[1] ?? command[2]] : [];
       });
       expect(commands).toEqual(expected);
     },
   );
-
-  it('re-ingests a merge only when source, classifier, or ingest files change', () => {
-    expect(workflow).toContain('id: ingestPaths');
-    expect(workflow).toContain('scripts/ingest\\.ts');
-    expect(workflow).toContain('lib/sources/');
-    expect(workflow).toContain('lib/ingestion/');
-    expect(workflow).toContain('lib/classification/');
-    expect(workflow).toContain('.github/workflows/ingest\\.yml');
-  });
 
   it('deploys migrations before the quality check so Vercel cannot serve new columns first', () => {
     const install = steps.findIndex((step) =>

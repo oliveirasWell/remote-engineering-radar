@@ -62,22 +62,18 @@ const TECHNOLOGY_NAMES = new Set(
   [...RELEVANT_TECHNOLOGY_NAMES].map((name) => name.toLowerCase()),
 );
 
-const hasBalancedParentheses = (value: string): boolean => {
-  let depth = 0;
-
-  for (const character of value) {
-    if (character === '(') {
-      depth += 1;
-    } else if (character === ')') {
-      depth -= 1;
-      if (depth < 0) {
-        return false;
-      }
-    }
-  }
-
-  return depth === 0;
+const PARENTHESIS_DEPTH_CHANGE: Readonly<Record<string, number>> = {
+  '(': 1,
+  ')': -1,
 };
+
+/** Depth sticks below zero once a ')' closes nothing. */
+const hasBalancedParentheses = (value: string): boolean =>
+  [...value].reduce(
+    (depth, character) =>
+      depth < 0 ? depth : depth + (PARENTHESIS_DEPTH_CHANGE[character] ?? 0),
+    0,
+  ) === 0;
 
 const asString = (value: unknown): string | undefined => {
   if (typeof value !== 'string') {
@@ -88,8 +84,8 @@ const asString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
-const readLabelNames = (value: unknown): string[] => {
-  return Array.isArray(value)
+const readLabelNames = (value: unknown): string[] =>
+  Array.isArray(value)
     ? value
         .map((label) =>
           typeof label === 'string'
@@ -99,22 +95,14 @@ const readLabelNames = (value: unknown): string[] => {
         .filter((name): name is string => Boolean(name))
         .map((name) => name.toLowerCase())
     : [];
-};
 
 const highestRanked = (
   labelNames: string[],
   rules: readonly ClassificationRule[],
 ): string | undefined => {
   const names = new Set(labelNames);
-  let best: string | undefined;
-
-  for (const rule of rules) {
-    if (rule.labels.some((label) => names.has(label))) {
-      best = rule.value;
-    }
-  }
-
-  return best;
+  return rules.findLast((rule) => rule.labels.some((label) => names.has(label)))
+    ?.value;
 };
 
 const readRemotePolicyFromLocation = (
@@ -132,6 +120,20 @@ const readRemotePolicyFromLocation = (
     : undefined;
 };
 
+const splitOnSeparator = (
+  remainder: string,
+  separator: string,
+): { title: string; company: string } | undefined => {
+  const index = remainder.toLowerCase().lastIndexOf(separator);
+  if (index <= 0) {
+    return undefined;
+  }
+
+  const title = asString(remainder.slice(0, index));
+  const company = asString(remainder.slice(index + separator.length));
+  return title && company ? { title, company } : undefined;
+};
+
 /**
  * frontendbr/vagas titles follow `[Local] Cargo na EMPRESA`, but posts drift to
  * `Cargo - EMPRESA` and `Cargo (EMPRESA)`. Titles naming no company at all are
@@ -146,15 +148,11 @@ const splitTitle = (
     ? rawTitle.slice(bracket[0].length).trim()
     : rawTitle.trim();
 
-  for (const separator of COMPANY_SEPARATORS) {
-    const index = remainder.toLowerCase().lastIndexOf(separator);
-    if (index > 0) {
-      const title = asString(remainder.slice(0, index));
-      const company = asString(remainder.slice(index + separator.length));
-      if (title && company) {
-        return { location, title, company };
-      }
-    }
+  const separated = COMPANY_SEPARATORS.map((separator) =>
+    splitOnSeparator(remainder, separator),
+  ).find((split) => split !== undefined);
+  if (separated) {
+    return { location, ...separated };
   }
 
   const parentheticalThenCompany = remainder.match(

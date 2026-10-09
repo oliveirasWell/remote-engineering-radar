@@ -1,4 +1,4 @@
-import type { JobSource, NormalizedJob } from '../types';
+import type { JobSource } from '../types';
 import {
   discardResponse,
   fetchWithRetry,
@@ -69,37 +69,34 @@ const fetchAllJobs = async (
   jobsPerPage: number,
   maxPages: number,
   fetchImpl: typeof fetch,
+  page = 1,
 ): ReturnType<JobSource['fetchJobs']> => {
-  const normalized: NormalizedJob[] = [];
-
-  for (let page = 1; page <= maxPages; page += 1) {
-    const payload = await fetchJobsPage(page, jobsPerPage, fetchImpl);
-    const records = payload.data.filter(isJobRecord);
-
-    for (const record of records) {
-      const job = normalizeGetOnBrdJob(record);
-      if (job) {
-        normalized.push(job);
-      }
-    }
-
-    const totalPages =
-      typeof payload.meta?.total_pages === 'number'
-        ? payload.meta.total_pages
-        : undefined;
-    if (totalPages !== undefined && page >= totalPages) {
-      return { jobs: normalized, complete: true };
-    }
-
-    if (payload.data.length < jobsPerPage && totalPages === undefined) {
-      return { jobs: normalized, complete: true };
-    }
-    if (payload.data.length === 0) {
-      return { jobs: normalized, complete: false };
-    }
+  if (page > maxPages) {
+    return { jobs: [], complete: false };
   }
 
-  return { jobs: normalized, complete: false };
+  const payload = await fetchJobsPage(page, jobsPerPage, fetchImpl);
+  const jobs = payload.data
+    .filter(isJobRecord)
+    .flatMap((record) => normalizeGetOnBrdJob(record) ?? []);
+
+  const totalPages =
+    typeof payload.meta?.total_pages === 'number'
+      ? payload.meta.total_pages
+      : undefined;
+  if (totalPages !== undefined && page >= totalPages) {
+    return { jobs, complete: true };
+  }
+
+  if (payload.data.length < jobsPerPage && totalPages === undefined) {
+    return { jobs, complete: true };
+  }
+  if (payload.data.length === 0) {
+    return { jobs, complete: false };
+  }
+
+  const rest = await fetchAllJobs(jobsPerPage, maxPages, fetchImpl, page + 1);
+  return { jobs: [...jobs, ...rest.jobs], complete: rest.complete };
 };
 
 export const createGetOnBrdAdapter = (

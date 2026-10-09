@@ -1,0 +1,3 @@
+export const BOARD_DISCOVERY_BUDGET_MS = 180_000;
+export const BOARD_PROBE_DELAY_MS = 150;
+export const BOARD_RECHECK_DAYS = 30;

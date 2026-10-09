@@ -1,4 +1,5 @@
 import { TECHNOLOGY_PATTERNS } from '../constants';
+import { VOCABULARY } from '../vocabulary/vocabulary';
 
 /**
  * React the library, in a title: a poster who writes "React" there has chosen
@@ -15,7 +16,9 @@ export const REACT_BODY_ANCHORS = [
   /\breact\s*native\b/i,
   /\breact\s*[+/,]/i,
   /\breact\s+and\b/i,
-  /\b(?:with|in|using)\s+react\b(?!\s+(?:engineers?|developers?|devs?|teams?))/i,
+  // "work with React engineers" describes the neighbours, not the job.
+  /\b(?:with|in|using)\s+react\b(?!\s+(?:engineers?|developers?))/i,
+  /\b(?:with|in|using)\s+react\b(?!\s+(?:devs?|teams?))/i,
   /\breact\s+(?:application|applications|app|apps|component|components|codebase|ecosystem|hooks|stack)\b/i,
 ] as const;
 
@@ -48,8 +51,29 @@ export const CLOUD_SUPPORT_TERMS = TECHNOLOGY_PATTERNS.filter(
 
 export const CLOUD_SUPPORT_MINIMUM = 2;
 
+/** A title that names mobile work. The posting must still name a platform. */
+export const MOBILE_TITLE_NAMES = [
+  /\bmobile\b/i,
+  /\bios\b/i,
+  /\bandroid\b/i,
+  /\breact\s*native\b/i,
+  /\bflutter\b/i,
+] as const;
+
 /**
  * React Native and Flutter are absent on purpose: a cross-platform framework
  * says what the job is built with, not that the job targets a phone.
  */
 export const MOBILE_TERMS = [/\bios\b/i, /\bandroid\b/i] as const;
+
+/** Positions that test software rather than build it. */
+export const QA_POSITIONS = [
+  /\bqa\b|\bquality\s+assurance\b|\bsdet\b/i,
+  /\btest(?:ing)?\s+(?:engineer|analyst|automation)\b/i,
+] as const;
+
+/** Positions that own or design a product rather than build it. */
+export const PRODUCT_POSITIONS = [
+  ...VOCABULARY.productTitle,
+  /\bproduct\s+designer\b/i,
+] as const;

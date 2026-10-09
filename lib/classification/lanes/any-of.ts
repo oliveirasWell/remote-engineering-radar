@@ -1,5 +1,5 @@
 import { countMatches } from './count-matches';
-import type { LaneMatcher } from './types';
+import type { LaneRule } from './types';
 
 /**
  * At least `n` terms. `titleOnly` is what keeps a lane whose vocabulary is a
@@ -14,6 +14,6 @@ export const anyOf =
     terms: readonly RegExp[];
     n?: number;
     titleOnly?: boolean;
-  }): LaneMatcher =>
+  }): LaneRule =>
   (input) =>
     countMatches(terms, titleOnly ? input.title : input.haystack) >= n;
