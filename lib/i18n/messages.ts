@@ -34,10 +34,14 @@ export const EN_MESSAGES = {
     countryAll: 'All countries',
     sortLabel: 'Sort',
     sortOptions: {
-      default: 'Hiring signal',
+      default: 'Newest jobs',
       jobs: 'Open roles',
       name: 'Name (A–Z)',
     },
+    newJobs: (count: number) =>
+      count === 1
+        ? '1 new job in the last update'
+        : `${count} new jobs in the last update`,
     loading: 'Loading companies…',
   },
   jobs: {
@@ -142,6 +146,10 @@ export const EN_MESSAGES = {
     viewOriginal: 'View original job',
     postedLabel: 'Posted',
     unknownCompany: 'Unknown company',
+    clickedCount: (count: number) =>
+      count === 1
+        ? '1 person already clicked'
+        : `${count} people already clicked`,
   },
   companyCard: {
     hiringSignalLabel: 'Hiring signal',
@@ -278,10 +286,14 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     countryAll: 'Todos os países',
     sortLabel: 'Ordenar',
     sortOptions: {
-      default: 'Sinal de contratação',
+      default: 'Vagas mais recentes',
       jobs: 'Vagas abertas',
       name: 'Nome (A–Z)',
     },
+    newJobs: (count: number) =>
+      count === 1
+        ? '1 vaga nova na última atualização'
+        : `${count} vagas novas na última atualização`,
     loading: 'Carregando empresas…',
   },
   jobs: {
@@ -387,6 +399,8 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     viewOriginal: 'Ver vaga original',
     postedLabel: 'Publicada',
     unknownCompany: 'Empresa desconhecida',
+    clickedCount: (count: number) =>
+      count === 1 ? '1 pessoa já clicou' : `${count} pessoas já clicaram`,
   },
   companyCard: {
     hiringSignalLabel: 'Sinal de contratação',

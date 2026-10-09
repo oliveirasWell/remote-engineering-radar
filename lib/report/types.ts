@@ -11,6 +11,7 @@ export type ReportJobCard = {
   score: number;
   postedAt: Date | null;
   url: string;
+  clickCount: number;
 };
 
 /** The detail page is the only view that explains why a job scored. */

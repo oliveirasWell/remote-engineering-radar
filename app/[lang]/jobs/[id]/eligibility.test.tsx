@@ -41,6 +41,7 @@ const createJob = (overrides: Partial<Job> = {}): Job => ({
   firstSeenAt: NOW,
   lastSeenAt: NOW,
   isActive: true,
+  clickCount: 0,
   createdAt: NOW,
   updatedAt: NOW,
   ...overrides,

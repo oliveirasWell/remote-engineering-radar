@@ -20,6 +20,7 @@ export type Job = {
   firstSeenAt: Date;
   lastSeenAt: Date;
   isActive: boolean;
+  clickCount: number;
   createdAt: Date;
   updatedAt: Date;
 };

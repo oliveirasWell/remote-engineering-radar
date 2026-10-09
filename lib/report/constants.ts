@@ -14,5 +14,8 @@ export const REPORT_CACHE_LIFE = {
   revalidate: 3600,
   expire: 86_400,
 } as const;
+
+/** Window used when the catalog has only one completed ingest. */
+export const INGEST_NEW_JOBS_LOOKBACK_MS = 1000 * 60 * 60 * 24;
 export const EMPTY_COMPANIES_MESSAGE = EN_MESSAGES.report.emptyCompanies;
 export const REPORT_ERROR_MESSAGE = EN_MESSAGES.report.error;

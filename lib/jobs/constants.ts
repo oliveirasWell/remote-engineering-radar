@@ -18,6 +18,16 @@ export const DEFAULT_JOB_SORT: JobSort = 'newest';
  */
 export const JOB_RETENTION_MS = 1000 * 60 * 60 * 24 * 60;
 
+export const JOB_CLICK_PATH = '/api/job-clicks';
+
+export const JOB_CLICK_ERRORS = {
+  invalid: 'invalid_job_id',
+  missing: 'job_not_found',
+} as const;
+
+export const JOB_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const JOB_COUNTRY_FILTER_OPTIONS = [
   { slug: 'brazil', label: 'Brazil' },
   { slug: 'chile', label: 'Chile' },

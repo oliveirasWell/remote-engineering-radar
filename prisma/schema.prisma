@@ -58,6 +58,7 @@ model Job {
   firstSeenAt  DateTime  @default(now()) @map("first_seen_at") @db.Timestamptz(6)
   lastSeenAt   DateTime  @default(now()) @map("last_seen_at") @db.Timestamptz(6)
   isActive     Boolean   @default(true) @map("is_active")
+  clickCount   Int       @default(0) @map("click_count")
   createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
   company      Company   @relation(fields: [companyId], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "jobs_company_id_companies_id_fk")

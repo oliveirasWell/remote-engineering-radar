@@ -13,6 +13,7 @@ import { CompanySummary } from '@/components/report/CompanySummary/CompanySummar
 import { LANGUAGE_OPTIONS } from '@/components/i18n/LanguagePicker/constants';
 import { TEST_REPORT_COMPANY } from '@/components/report/test-fixtures';
 import { messagesFor } from '@/lib/i18n/messages';
+import { getLatestIngestNewJobs } from '@/lib/report/get-latest-ingest-new-jobs';
 import GlobalError from '../global-error';
 import { HOME_SECTIONS } from './home-constants';
 import { I18N_TEST } from './i18n-fixtures';
@@ -57,6 +58,12 @@ vi.mock('@/components/observability/GoogleAnalytics/GoogleAnalytics', () => ({
   GoogleAnalytics: () => null,
 }));
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
+const LATEST_INGEST_NEW_JOBS = 4;
+
+vi.mock('@/lib/report/get-latest-ingest-new-jobs', () => ({
+  getLatestIngestNewJobs: vi.fn(async () => LATEST_INGEST_NEW_JOBS),
+}));
 
 const NOT_FOUND = 'NEXT_NOT_FOUND';
 const PORTUGUESE_JOBS_PATH = '/pt-BR/jobs';
@@ -170,6 +177,20 @@ describe('site language and navigation', () => {
       `${I18N_TEST.cookieName}=${I18N_TEST.english}; path=/; max-age=31536000; SameSite=Lax`,
     );
   });
+
+  it.each([I18N_TEST.english, I18N_TEST.portuguese] as const)(
+    'shows new jobs from the last ingest under the header in %s',
+    async (locale) => {
+      render(await layoutFor(locale), { container: document });
+
+      expect(
+        screen.getByText(
+          messagesFor(locale).home.newJobs(LATEST_INGEST_NEW_JOBS),
+        ),
+      ).toBeInTheDocument();
+      expect(getLatestIngestNewJobs).toHaveBeenCalled();
+    },
+  );
 
   it('answers not found for an unsupported locale segment', async () => {
     await expect(layoutFor(I18N_TEST.invalidLocale)).rejects.toThrow(NOT_FOUND);
