@@ -76,8 +76,10 @@ jobs:
         env:
           DATABASE_MIGRATION_URL: ${{ secrets.DATABASE_MIGRATION_URL }}
           NODE_ENV: production
+      # Merging a pull request is a push to main. Schedule and manual ingest already
+      # run this step; a push must too, or the merge deploys migrations and skips the catalog.
       - run: pnpm ingest
-        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'ingest')
+        if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'ingest')
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}
