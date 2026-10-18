@@ -9,6 +9,23 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      DATABASE_URL: postgres://postgres@127.0.0.1:5432/radar
+      DATABASE_MIGRATION_URL: postgres://postgres@127.0.0.1:5432/radar
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: radar
+        ports:
+          - '127.0.0.1:5432:5432'
+        options: >-
+          --health-cmd="pg_isready -U postgres -d radar"
+          --health-interval=2s
+          --health-timeout=3s
+          --health-retries=15
     permissions:
       contents: read
     steps:
@@ -21,6 +38,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm db:deploy
       - run: pnpm quality
       - run: pnpm db:smoke
       - run: pnpm audit --prod

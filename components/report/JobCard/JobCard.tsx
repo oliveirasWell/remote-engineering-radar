@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { JOB_CLICK_PATH } from '@/lib/jobs/constants';
@@ -17,7 +17,7 @@ type JobCardProps = {
 export const JobCard = ({ job }: JobCardProps) => {
   const {
     locale,
-    messages: { jobCard, remote },
+    messages: { jobCard, remote, report },
   } = useI18n();
   const isHidden = useSyncExternalStore(
     hiddenJobsStore.subscribe,
@@ -25,6 +25,11 @@ export const JobCard = ({ job }: JobCardProps) => {
     () => false,
   );
   const [clickCount, setClickCount] = useState(job.clickCount);
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setNow(new Date()), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
   const remotePolicy =
     new Map(Object.entries(remote)).get(job.remotePolicy ?? '') ??
     job.remotePolicy;
@@ -91,7 +96,11 @@ export const JobCard = ({ job }: JobCardProps) => {
       ) : null}
       <p className="mt-1 text-sm text-muted-foreground">
         {jobCard.postedLabel}:{' '}
-        {formatRelativeTime(job.postedAt, undefined, locale)}
+        <time dateTime={job.postedAt?.toISOString()}>
+          {now
+            ? formatRelativeTime(job.postedAt, now, locale)
+            : (job.postedAt?.toISOString().slice(0, 10) ?? report.unknownTime)}
+        </time>
       </p>
       <div className="mt-3 flex items-center gap-4">
         {isSafeExternalUrl(job.url) ? (

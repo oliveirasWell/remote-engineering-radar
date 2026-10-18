@@ -22,8 +22,8 @@ import {
 import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
 import { I18N_TEST, EN_ROUTE_PARAMS } from './i18n-fixtures';
 import { CompaniesReport } from './home-presentation';
-import Home from './page';
-import * as homeRoute from './page';
+import Home from './filtered/page';
+import * as homeRoute from './filtered/page';
 import PageError from './error';
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));

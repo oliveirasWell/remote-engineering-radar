@@ -11,7 +11,7 @@ import {
   TEST_REPORT_ERROR_MESSAGE,
 } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
-import Home, { generateMetadata as homeMetadata } from '../page';
+import Home, { generateMetadata as homeMetadata } from '../filtered/page';
 import Jobs, { generateMetadata as jobsMetadata } from './page';
 import Detail, { generateMetadata as detailMetadata } from './[id]/page';
 

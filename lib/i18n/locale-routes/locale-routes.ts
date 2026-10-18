@@ -13,6 +13,13 @@ const RETURNING_PORTUGUESE_READER = [
 
 /** English keeps its unprefixed URLs; the app renders them under app/[lang]. */
 export const LOCALE_REWRITES = [
+  ...(['/', '/pt-BR'] as const).flatMap((source) =>
+    ['country', 'focus'].map((key) => ({
+      source,
+      has: [{ type: 'query' as const, key }],
+      destination: source === '/' ? '/en/filtered' : '/pt-BR/filtered',
+    })),
+  ),
   { source: '/', destination: '/en' },
   { source: `/:path(${UNPREFIXED_PAGE})`, destination: '/en/:path' },
 ];

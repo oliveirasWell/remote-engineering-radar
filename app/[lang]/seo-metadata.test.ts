@@ -8,7 +8,8 @@ import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
 import { MIN_INDEXABLE_JOBS } from '@/lib/seo/constants';
 import { filterJobCount } from '@/lib/seo/filter-job-count';
-import { generateMetadata as homeMetadata } from './page';
+import { generateMetadata as homeMetadata } from './filtered/page';
+import { generateMetadata as staticHomeMetadata } from './page';
 import { generateMetadata as jobsMetadata } from './jobs/page';
 
 vi.mock('@/lib/report/get-companies-page-data', () => ({
@@ -31,10 +32,7 @@ beforeEach(() => {
 describe('search metadata', () => {
   it('titles the unfiltered pages by what the radar covers', async () => {
     await expect(
-      homeMetadata({
-        params: EN_ROUTE_PARAMS,
-        searchParams: Promise.resolve({}),
-      }),
+      staticHomeMetadata({ params: EN_ROUTE_PARAMS }),
     ).resolves.toMatchObject({
       title: seo.homeTitle,
       robots: { index: true },
