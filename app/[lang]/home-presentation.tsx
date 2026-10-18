@@ -3,9 +3,7 @@
 import { useState } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
-import { CompanyCard } from '@/components/report/CompanyCard/CompanyCard';
-import { CompanySummary } from '@/components/report/CompanySummary/CompanySummary';
-import { CompanyJobs } from '@/components/report/CompanyJobs/CompanyJobs';
+import { CompanyRow } from '@/components/report/CompanyRow/CompanyRow';
 import {
   JOB_COUNTRY_FILTER_OPTIONS,
   JOB_FOCUS_FILTER_OPTIONS,
@@ -14,7 +12,6 @@ import {
 } from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import type { CompaniesPageData } from '@/lib/report/get-companies-page-data';
-import { isSafeExternalUrl } from '@/lib/urls/external-url';
 import { COMPANY_SORTS, type CompanySort } from './home-constants';
 import Link from 'next/link';
 
@@ -141,56 +138,22 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
         ) : (
           <div className="mt-2 flex flex-col">
             {companies.map((company) => (
-              <details
-                key={company.id}
-                className="group border-b border-border pb-4"
-              >
-                <summary className="-mx-3 cursor-pointer list-none px-3 py-3 marker:content-none hover:bg-muted/40">
-                  <div className="flex items-baseline justify-between gap-3">
-                    <CompanySummary company={company} />
-                    <span
-                      aria-hidden
-                      className="text-sm text-muted-foreground opacity-70 transition-transform group-open:rotate-90 hover:opacity-100"
-                    >
-                      &rsaquo;
-                    </span>
-                  </div>
-                </summary>
-                <CompanyCard company={company} />
-                {company.signalSourceUrls.length > 0 ? (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium">
-                      {messages.home.evidence}
-                    </p>
-                    <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">
-                      {company.signalSourceUrls
-                        .filter(isSafeExternalUrl)
-                        .map((url) => (
-                          <li key={url}>
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-muted-foreground underline underline-offset-2"
-                            >
-                              {url}
-                            </a>
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ) : null}
-                {company.jobs.length > 0 ? (
-                  <CompanyJobs
-                    jobs={company.jobs}
-                    totalJobs={company.openEngineeringJobs}
-                    allJobsHref={localizedPath(
-                      locale,
-                      companyJobsHref(company.slug, data.country, data.focus),
-                    )}
-                  />
-                ) : null}
-              </details>
+              <CompanyRow
+                key={JSON.stringify([
+                  company.id,
+                  data.country,
+                  data.focus,
+                  data.updatedAt,
+                ])}
+                company={company}
+                country={data.country}
+                focus={data.focus}
+                updatedAt={data.updatedAt}
+                allJobsHref={localizedPath(
+                  locale,
+                  companyJobsHref(company.slug, data.country, data.focus),
+                )}
+              />
             ))}
           </div>
         )}

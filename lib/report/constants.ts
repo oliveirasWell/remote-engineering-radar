@@ -4,6 +4,7 @@ export const COMPANIES_PAGE_LIMIT = 100;
 
 /** Jobs rendered under each company; the rest are one link away. */
 export const COMPANY_JOBS_PREVIEW_LIMIT = 5;
+export const COMPANY_DETAILS_API_PATH = '/api/company-details';
 
 /**
  * Ingest writes once a day from GitHub Actions, which cannot reach the Next

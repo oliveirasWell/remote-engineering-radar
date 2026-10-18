@@ -25,13 +25,37 @@ const routeFor = (routes: readonly Route[], path: string) =>
   routes.find(({ source }) => pathToRegexp(source).test(path));
 
 describe('locale routes', () => {
+  it('routes filtered home requests separately from the prerendered home in each locale', () => {
+    for (const [path, destination] of [
+      ['/', '/en/filtered'],
+      ['/pt-BR', '/pt-BR/filtered'],
+    ]) {
+      for (const key of ['country', 'focus']) {
+        expect(
+          LOCALE_REWRITES.find(
+            (route) =>
+              pathToRegexp(route.source).test(path) &&
+              'has' in route &&
+              route.has.some(
+                (condition) =>
+                  condition.type === 'query' && condition.key === key,
+              ),
+          )?.destination,
+        ).toBe(destination);
+      }
+    }
+  });
+
   it('serves every unprefixed page from the English route', () => {
-    expect(routeFor(LOCALE_REWRITES, '/')?.destination).toBe('/en');
+    const unfilteredRoutes = LOCALE_REWRITES.filter(
+      (route) => !('has' in route),
+    );
+    expect(routeFor(unfilteredRoutes, '/')?.destination).toBe('/en');
     for (const path of PAGE_PATHS) {
-      expect(routeFor(LOCALE_REWRITES, path)?.destination).toBe('/en/:path');
+      expect(routeFor(unfilteredRoutes, path)?.destination).toBe('/en/:path');
     }
     for (const path of SKIPPED_PATHS) {
-      expect(routeFor(LOCALE_REWRITES, path)).toBeUndefined();
+      expect(routeFor(unfilteredRoutes, path)).toBeUndefined();
     }
   });
 

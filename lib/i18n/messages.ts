@@ -170,6 +170,8 @@ export const EN_MESSAGES = {
   report: {
     emptyCompanies: 'No companies to watch yet.',
     error: 'The report could not be loaded from the database.',
+    detailsLoading: 'Loading company details…',
+    detailsError: 'Company details could not be loaded.',
     unknownTime: 'Unknown',
     updated: (value: string) => `Updated: ${value}`,
   },
@@ -421,6 +423,8 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   report: {
     emptyCompanies: 'Ainda não há empresas para acompanhar.',
     error: 'Não foi possível carregar o relatório do banco de dados.',
+    detailsLoading: 'Carregando detalhes da empresa…',
+    detailsError: 'Não foi possível carregar os detalhes da empresa.',
     unknownTime: 'Desconhecida',
     updated: (value: string) => `Atualizado: ${value}`,
   },
