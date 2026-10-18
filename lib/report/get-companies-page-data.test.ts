@@ -53,6 +53,27 @@ const seedCompanies = async (
 };
 
 describe('getCompaniesPageData', () => {
+  it('keeps company counts but skips hidden job and signal reads in overview mode', async () => {
+    const db = await createTestDb();
+    await seedCompanies(db, 2);
+    const { proxy, counter } = countingDb(db);
+    vi.mocked(getDb).mockReturnValue(proxy);
+
+    await getCompaniesPageData();
+    const fullReads = counter.selects;
+    counter.selects = 0;
+    const overview = await getCompaniesPageData({ includeDetails: false });
+
+    expect(overview.companies).toHaveLength(2);
+    expect(overview.companies[0]).toMatchObject({
+      openEngineeringJobs: 1,
+      jobs: [],
+      signalDescriptions: [],
+      detailsLoaded: false,
+    });
+    expect(counter.selects).toBeLessThan(fullReads);
+  });
+
   it.each(COUNTRY_FILTER_CASES)(
     'returns only eligible jobs and counts when country is $country',
     async ({ country, expectedIndexes }) => {

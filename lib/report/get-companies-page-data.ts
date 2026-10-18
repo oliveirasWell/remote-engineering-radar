@@ -20,6 +20,7 @@ import type { ReportCompanyCard, ReportJobCard } from './types';
 export type CompaniesPageItem = ReportCompanyCard & {
   jobs: ReportJobCard[];
   signalSourceUrls: string[];
+  detailsLoaded?: false;
 };
 
 export type CompaniesPageData = {
@@ -32,6 +33,7 @@ export type CompaniesPageData = {
 export type CompaniesPageOptions = {
   country?: JobCountrySlug;
   focus?: JobFocusSlug;
+  includeDetails?: boolean;
 };
 
 const groupByCompanyId = <T extends { companyId: string }>(
@@ -46,7 +48,7 @@ export const getCompaniesPageData = async (
   'use cache';
   cacheLife(REPORT_CACHE_LIFE);
 
-  const { country, focus } = options;
+  const { country, focus, includeDetails = true } = options;
 
   try {
     const db = getDb();
@@ -68,11 +70,15 @@ export const getCompaniesPageData = async (
     const jobFilters = { maxAgeMs: JOB_MAX_AGE_MS, now, country, focus };
     // Batched reads instead of one set per company.
     const [signals, jobs, jobCounts, updatedAt] = await Promise.all([
-      hiringSignalsRepository.listByCompanyIds(companyIds),
-      jobsRepository.listCardsByCompanyIds(companyIds, {
-        ...jobFilters,
-        perCompanyLimit: COMPANY_JOBS_PREVIEW_LIMIT,
-      }),
+      includeDetails
+        ? hiringSignalsRepository.listByCompanyIds(companyIds)
+        : [],
+      includeDetails
+        ? jobsRepository.listCardsByCompanyIds(companyIds, {
+            ...jobFilters,
+            perCompanyLimit: COMPANY_JOBS_PREVIEW_LIMIT,
+          })
+        : [],
       jobsRepository.countByCompanyIds(companyIds, jobFilters),
       createIngestionRunsRepository(db).getLatestCompletedAt(),
     ]);
@@ -117,6 +123,7 @@ export const getCompaniesPageData = async (
               .filter((url): url is string => Boolean(url)),
           ),
         ],
+        ...(includeDetails ? {} : { detailsLoaded: false as const }),
       };
     });
 

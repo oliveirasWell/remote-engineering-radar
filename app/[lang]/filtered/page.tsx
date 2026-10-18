@@ -22,7 +22,7 @@ type HomeProps = {
 
 const readCompanies = cache(
   (country: JobCountrySlug | undefined, focus: JobFocusSlug | undefined) =>
-    getCompaniesPageData({ country, focus }),
+    getCompaniesPageData({ country, focus, includeDetails: false }),
 );
 
 export const generateMetadata = async ({

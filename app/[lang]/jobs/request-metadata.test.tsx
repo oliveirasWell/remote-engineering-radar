@@ -75,7 +75,11 @@ describe('metadata and page request reads', () => {
       }),
       resolvePageSection(Home({ searchParams: Promise.resolve({ country }) })),
     ]);
-    expect(getCompaniesPageData).toHaveBeenCalledExactlyOnceWith({ country });
+    expect(getCompaniesPageData).toHaveBeenCalledExactlyOnceWith({
+      country,
+      focus: undefined,
+      includeDetails: false,
+    });
   });
 
   it('shares normalized job queries, not raw parameter object identity or ignored spellings', async () => {

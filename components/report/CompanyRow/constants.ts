@@ -1,0 +1,2 @@
+export const HOVER_PREFETCH_DELAY_MS = 120;
+export const COMPANY_DETAILS_CACHE_LIMIT = 100;

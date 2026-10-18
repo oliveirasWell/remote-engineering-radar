@@ -14,6 +14,12 @@ export type ReportJobCard = {
   clickCount: number;
 };
 
+export type CompanyDetails = {
+  signalDescriptions: string[];
+  signalSourceUrls: string[];
+  jobs: ReportJobCard[];
+};
+
 /** The detail page is the only view that explains why a job scored. */
 export type ReportJobDetail = ReportJobCard & {
   reasons: string[];

@@ -182,6 +182,8 @@ describe('home country tabs', () => {
     }
     expect(getCompaniesPageData).toHaveBeenLastCalledWith({
       country: undefined,
+      focus: undefined,
+      includeDetails: false,
     });
   });
 
@@ -267,6 +269,7 @@ describe('home focus tabs', () => {
     expect(getCompaniesPageData).toHaveBeenLastCalledWith({
       country: brazil.slug,
       focus: JOB_FOCUS_CLOUD_OPS,
+      includeDetails: false,
     });
     expect(
       focusNav.getByRole('link', {
@@ -372,7 +375,7 @@ describe('Home cache boundary', () => {
 
     expect(vi.mocked(getCompaniesPageData).mock.calls).toStrictEqual(
       Array.from({ length: 6 }, () => [
-        { country: undefined, focus: undefined },
+        { country: undefined, focus: undefined, includeDetails: false },
       ]),
     );
   });
@@ -388,6 +391,8 @@ describe('Home cache boundary', () => {
 
       expect(getCompaniesPageData).toHaveBeenCalledExactlyOnceWith({
         country: slug,
+        focus: undefined,
+        includeDetails: false,
       });
     },
   );
@@ -415,12 +420,12 @@ describe('Home cache boundary', () => {
       screen.getByText(formatUpdatedLabel(UPDATED_AT)),
     ).toBeInTheDocument();
     expect(vi.mocked(getCompaniesPageData).mock.calls).toStrictEqual([
-      [{ country: country.slug, focus: undefined }],
-      [{ country: country.slug, focus: undefined }],
+      [{ country: country.slug, focus: undefined, includeDetails: false }],
+      [{ country: country.slug, focus: undefined, includeDetails: false }],
     ]);
   });
 
-  it('gates metadata on the full read and self-canonicalizes normalized country filters', async () => {
+  it('gates metadata on the overview read and self-canonicalizes normalized country filters', async () => {
     expect(homeRoute).toHaveProperty('generateMetadata', expect.any(Function));
     const country = JOB_COUNTRY_FILTER_OPTIONS[0].slug;
     const metadata = await homeRoute.generateMetadata({
@@ -431,7 +436,11 @@ describe('Home cache boundary', () => {
       alternates: { canonical: `/?country=${country}` },
       robots: { index: false, follow: true },
     });
-    expect(getCompaniesPageData).toHaveBeenCalledExactlyOnceWith({ country });
+    expect(getCompaniesPageData).toHaveBeenCalledExactlyOnceWith({
+      country,
+      focus: undefined,
+      includeDetails: false,
+    });
     const error = new Error(TEST_REPORT_ERROR_MESSAGE);
     vi.mocked(getCompaniesPageData).mockRejectedValueOnce(error);
     await expect(

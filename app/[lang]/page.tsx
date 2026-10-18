@@ -13,7 +13,7 @@ export const generateMetadata = async ({
   searchMetadata('companies', '/', {}, await routeLocale(params));
 
 const Home = async () => {
-  const data = await getCompaniesPageData();
+  const data = await getCompaniesPageData({ includeDetails: false });
   return renderHomeContent(<CompaniesReport data={data} />);
 };
 
