@@ -32,7 +32,8 @@ IPv4-capable Supabase pooler with verified TLS: the direct database hostname
 resolves to IPv6, which the Vercel build worker cannot reach.
 CI also needs a temporary migrated Postgres instance during `next build`, so
 its static prerender runs against an empty schema instead of silently shipping
-an empty or failed report.
+an empty or failed report. This isolated CI service uses local trust
+authentication without adding a repository secret that forked PRs cannot read.
 
 ## Plan
 
