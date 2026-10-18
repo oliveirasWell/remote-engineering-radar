@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { messagesFor } from '@/lib/i18n/messages';
@@ -59,6 +59,55 @@ describe('AdUnit', () => {
     expect(push).toHaveBeenCalledExactlyOnceWith({});
   });
 
+  it('replaces an unfilled header unit with a compact dark bar', async () => {
+    const push = vi.fn();
+    vi.stubGlobal('adsbygoogle', { push });
+    render(<AdUnit placement="topbar" slot={ADSENSE_TEST.slot} />);
+
+    const region = screen.getByRole('complementary', {
+      name: messagesFor().marketing.advertisement,
+    });
+    const ad = region.querySelector('ins.adsbygoogle')!;
+    ad.setAttribute('data-ad-status', 'unfilled');
+
+    await waitFor(() => expect(region).toHaveClass('bg-black'));
+    expect(region).toHaveTextContent(messagesFor().marketing.advertisement);
+    expect(ad).toHaveClass('data-[ad-status=unfilled]:hidden!');
+    expect(push).toHaveBeenCalledOnce();
+  });
+
+  it('collapses an unfilled home unit without leaving the ad label gap', async () => {
+    vi.stubGlobal('adsbygoogle', { push: vi.fn() });
+    render(<AdUnit placement="home" slot={ADSENSE_TEST.slot} />);
+
+    const region = screen.getByRole('complementary', {
+      name: messagesFor().marketing.advertisement,
+    });
+    region
+      .querySelector('ins.adsbygoogle')!
+      .setAttribute('data-ad-status', 'unfilled');
+
+    await waitFor(() =>
+      expect(region.lastElementChild).toHaveClass('h-6', 'bg-black'),
+    );
+    expect(region).toHaveTextContent(messagesFor().marketing.advertisement);
+    expect(region.querySelector('span')).toBeNull();
+  });
+
+  it('keeps a filled ad and does not show the empty fallback', () => {
+    vi.stubGlobal('adsbygoogle', { push: vi.fn() });
+    render(<AdUnit placement="topbar" slot={ADSENSE_TEST.slot} />);
+
+    const region = screen.getByRole('complementary', {
+      name: messagesFor().marketing.advertisement,
+    });
+    region
+      .querySelector('ins.adsbygoogle')!
+      .setAttribute('data-ad-status', 'filled');
+    expect(region).not.toHaveClass('bg-black');
+    expect(region).not.toHaveTextContent(messagesFor().marketing.preview);
+  });
+
   it('does not render or request ads while the slot is unconfigured', () => {
     const push = vi.fn();
     vi.stubGlobal('adsbygoogle', { push });
@@ -79,6 +128,8 @@ describe('AdUnit', () => {
       name: messagesFor().marketing.advertisement,
     });
     expect(region).toHaveTextContent(messagesFor().marketing.preview);
+    expect(region).toHaveClass('bg-black');
+    expect(region.firstElementChild).toHaveClass('h-6');
     expect(region.querySelector('ins.adsbygoogle')).toBeNull();
     expect(push).not.toHaveBeenCalled();
   });
@@ -95,6 +146,11 @@ describe('AdUnit', () => {
         name: messagesFor('pt-BR').marketing.advertisement,
       }),
     ).toHaveTextContent(messagesFor('pt-BR').marketing.preview);
+    expect(
+      screen.getByRole('complementary', {
+        name: messagesFor('pt-BR').marketing.advertisement,
+      }).lastElementChild,
+    ).toHaveClass('h-6', 'bg-black');
   });
 
   it('does not request the same ad twice under StrictMode', () => {

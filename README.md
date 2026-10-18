@@ -65,6 +65,8 @@ are configured in [`lib/marketing/adsense.ts`](lib/marketing/adsense.ts). The
 header unit is a responsive display ad above the site header on every page.
 The home banner slot is still empty; set it there when the unit exists. Empty
 slots suppress their ads in production. Preview deployments (including beta)
-show labeled layout placeholders until a slot is filled, without requesting an
-ad. The script loads in every environment; ad delivery still depends on
-Google's site approval. Verify `/ads.txt` on the approved site.
+show a compact black labeled placeholder until a slot is configured, without
+requesting that ad. A configured unit that Google marks `unfilled` collapses
+to the same small dark bar instead of keeping an empty iframe. The script
+loads in every environment; ad delivery still depends on Google's site
+approval. Verify `/ads.txt` on the approved site.

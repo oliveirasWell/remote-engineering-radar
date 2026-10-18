@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { ADSENSE_CLIENT_ID } from '@/lib/marketing/adsense';
 
@@ -15,7 +15,27 @@ export const AdUnit = ({
 }) => {
   const { messages } = useI18n();
   const initialized = useRef(false);
+  const adRef = useRef<HTMLModElement>(null);
+  const [unfilled, setUnfilled] = useState(false);
   const configured = Boolean(ADSENSE_CLIENT_ID && slot);
+  const empty = !configured || unfilled;
+
+  useEffect(() => {
+    const ad = adRef.current;
+    if (!ad) {
+      return;
+    }
+    const update = () => setUnfilled(ad.dataset.adStatus === 'unfilled');
+    const observer = new MutationObserver(update);
+    observer.observe(ad, {
+      attributes: true,
+      attributeFilter: ['data-ad-status'],
+    });
+    queueMicrotask(update);
+    return () => {
+      observer.disconnect();
+    };
+  }, [slot]);
 
   useEffect(() => {
     if (ADSENSE_CLIENT_ID && slot && !initialized.current) {
@@ -32,7 +52,8 @@ export const AdUnit = ({
 
   const responsiveAd = (
     <ins
-      className="adsbygoogle"
+      ref={adRef}
+      className="adsbygoogle data-[ad-status=unfilled]:hidden!"
       style={{ display: 'block' }}
       data-ad-client={ADSENSE_CLIENT_ID}
       data-ad-slot={slot}
@@ -40,32 +61,31 @@ export const AdUnit = ({
       data-full-width-responsive="true"
     />
   );
+  const emptyBar = (
+    <div className="flex h-6 w-full items-center justify-center bg-black text-xs text-white">
+      {configured
+        ? messages.marketing.advertisement
+        : messages.marketing.preview}
+    </div>
+  );
 
   return placement === 'topbar' ? (
     <aside
       aria-label={messages.marketing.advertisement}
-      className="w-full border-b border-border bg-muted/30"
+      className={`w-full border-b border-border ${empty ? 'bg-black' : 'bg-muted/30'}`}
     >
-      {configured ? (
-        responsiveAd
-      ) : (
-        <div className="mx-auto flex h-[50px] w-full max-w-[468px] items-center justify-center border border-dashed border-border text-xs text-muted-foreground">
-          {messages.marketing.preview}
-        </div>
-      )}
+      {configured ? responsiveAd : null}
+      {empty ? emptyBar : null}
     </aside>
   ) : (
     <aside aria-label={messages.marketing.advertisement} className="w-full">
-      <span className="mb-2 block text-center text-xs text-muted-foreground">
-        {messages.marketing.advertisement}
-      </span>
-      {configured ? (
-        responsiveAd
-      ) : (
-        <div className="flex min-h-[120px] items-center justify-center border border-dashed border-border text-sm text-muted-foreground">
-          {messages.marketing.preview}
-        </div>
+      {empty ? null : (
+        <span className="mb-2 block text-center text-xs text-muted-foreground">
+          {messages.marketing.advertisement}
+        </span>
       )}
+      {configured ? responsiveAd : null}
+      {empty ? emptyBar : null}
     </aside>
   );
 };
