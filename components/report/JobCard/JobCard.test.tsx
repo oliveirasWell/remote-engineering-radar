@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { fireEvent, render, screen } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { JobCard } from './JobCard';
 import { JOB_CLICK_PATH } from '@/lib/jobs/constants';
 import { HIDDEN_JOBS_STORAGE_KEY, JOB_CARD_COPY } from '../constants';
@@ -21,7 +22,17 @@ afterEach(() => {
 });
 
 describe('JobCard', () => {
-  it('translates actions, confirmation, and relative time without translating job data', () => {
+  it('renders a stable posting date in prerendered HTML before calculating relative time in the browser', () => {
+    const html = renderToString(
+      <I18nProvider>
+        <JobCard job={job} />
+      </I18nProvider>,
+    );
+
+    expect(html).toContain(job.postedAt.toISOString().slice(0, 10));
+  });
+
+  it('translates actions, confirmation, and relative time without translating job data', async () => {
     const locale = 'pt-BR';
     const { jobCard, remote } = messagesFor(locale);
     vi.spyOn(window, 'confirm').mockReturnValue(false);
@@ -33,11 +44,15 @@ describe('JobCard', () => {
     expect(
       screen.getByRole('link', { name: jobCard.viewOriginal }),
     ).toHaveAttribute('href', job.url);
-    expect(
-      screen.getByText(
-        `${jobCard.postedLabel}: ${formatRelativeTime(job.postedAt, new Date(), locale)}`,
-      ),
-    ).toBeInTheDocument();
+    const time = await screen.findByText(
+      formatRelativeTime(job.postedAt, new Date(), locale),
+      {
+        selector: 'time',
+      },
+    );
+    expect(time.parentElement).toHaveTextContent(
+      `${jobCard.postedLabel}: ${formatRelativeTime(job.postedAt, new Date(), locale)}`,
+    );
     expect(screen.getByText(job.title)).toBeInTheDocument();
     expect(screen.getByText(job.companyName)).toBeInTheDocument();
     expect(
