@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
+import { cacheLife } from 'next/cache';
 import { cache, Suspense } from 'react';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import type { CompaniesPageOptions } from '@/lib/report/get-companies-page-data';
+import { REPORT_CACHE_LIFE } from '@/lib/report/constants';
 import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
 import { routeLocale } from '@/lib/i18n/route-locale/route-locale';
 import { searchMetadata } from '@/lib/seo/search-metadata/search-metadata';
@@ -39,14 +42,23 @@ export const generateMetadata = async ({
   );
 };
 
-const CompaniesSection = async ({ searchParams }: HomeProps) => {
-  const params = await searchParams;
-  const data = await readCompanies(
-    parseCountryFilter(params.country),
-    parseFocusFilter(params.focus),
-  );
+const renderCompaniesSection = async ({
+  country,
+  focus,
+}: CompaniesPageOptions) => {
+  'use cache';
+  cacheLife(REPORT_CACHE_LIFE);
+  const data = await readCompanies(country, focus);
 
   return <CompaniesReport data={data} />;
+};
+
+const CompaniesSection = async ({ searchParams }: HomeProps) => {
+  const params = await searchParams;
+  return renderCompaniesSection({
+    country: parseCountryFilter(params.country),
+    focus: parseFocusFilter(params.focus),
+  });
 };
 
 const Home = ({ searchParams }: HomeProps) => (
