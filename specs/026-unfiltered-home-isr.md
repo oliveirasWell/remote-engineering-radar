@@ -30,6 +30,9 @@ Build-time prerendering also requires `DATABASE_URL` in the preview deployment;
 grant it only to the review branch rather than every preview branch. Use the
 IPv4-capable Supabase pooler with verified TLS: the direct database hostname
 resolves to IPv6, which the Vercel build worker cannot reach.
+CI also needs a temporary migrated Postgres instance during `next build`, so
+its static prerender runs against an empty schema instead of silently shipping
+an empty or failed report.
 
 ## Plan
 
@@ -46,7 +49,8 @@ resolves to IPv6, which the Vercel build worker cannot reach.
 3. Write failing routing/page/date regression tests before implementation. Run
    the focused tests, the repository checks, and a production build. On a
    preview, request `/` and `/pt-BR` twice and inspect cache headers and
-   content. Verify filtered URLs and locale redirects remain correct.
+   content. Verify filtered URLs and locale redirects remain correct. Provide
+   a migrated ephemeral database for the same build in CI.
 
 ## Acceptance
 
