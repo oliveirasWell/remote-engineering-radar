@@ -26,6 +26,8 @@ matched Proxy removes the User-Agent only from unfiltered home requests, so
 Next can serve their fully prerendered HTML while all other routes keep the
 existing error status behavior. This adds one lightweight Proxy invocation
 before home cache hits; compare that cost with the avoided origin CPU.
+Build-time prerendering also requires `DATABASE_URL` in the preview deployment;
+grant it only to the review branch rather than every preview branch.
 
 ## Plan
 
