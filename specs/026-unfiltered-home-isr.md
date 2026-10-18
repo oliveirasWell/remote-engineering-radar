@@ -27,7 +27,9 @@ Next can serve their fully prerendered HTML while all other routes keep the
 existing error status behavior. This adds one lightweight Proxy invocation
 before home cache hits; compare that cost with the avoided origin CPU.
 Build-time prerendering also requires `DATABASE_URL` in the preview deployment;
-grant it only to the review branch rather than every preview branch.
+grant it only to the review branch rather than every preview branch. Use the
+IPv4-capable Supabase pooler with verified TLS: the direct database hostname
+resolves to IPv6, which the Vercel build worker cannot reach.
 
 ## Plan
 
