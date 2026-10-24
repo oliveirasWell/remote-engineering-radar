@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { messagesFor } from '@/lib/i18n/messages';
 import { TEST_JOB_ID } from '@/lib/report/test-fixtures';
 import { LANGUAGE_OPTIONS } from '@/components/i18n/LanguagePicker/constants';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 import { SiteHeader } from './SiteHeader';
 
 vi.mock('next/navigation', () => ({
@@ -16,12 +17,14 @@ const { navigation } = messagesFor();
 const LINKS = [
   { href: '/', label: navigation.companies },
   { href: '/jobs', label: navigation.jobs },
+  { href: GUIDE_PATH, label: navigation.guide },
   { href: '/about', label: navigation.about },
 ];
 const ROUTES = [
   { pathname: '/', activeHref: '/' },
   { pathname: '/jobs', activeHref: '/jobs' },
   { pathname: `/jobs/${TEST_JOB_ID}`, activeHref: '/jobs' },
+  { pathname: GUIDE_PATH, activeHref: GUIDE_PATH },
   { pathname: '/about', activeHref: '/about' },
   { pathname: '/jobs-other', activeHref: undefined },
 ];

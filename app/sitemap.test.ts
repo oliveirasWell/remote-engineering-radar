@@ -9,7 +9,12 @@ import {
   JOB_MAX_AGE_MS,
   REMOTE_POLICY_REMOTE,
 } from '@/lib/jobs/constants';
-import { DEFAULT_SITE_ORIGIN, MIN_INDEXABLE_JOBS } from '@/lib/seo/constants';
+import {
+  DEFAULT_SITE_ORIGIN,
+  GUIDE_PATH,
+  MIN_INDEXABLE_JOBS,
+  PRIVACY_PATH,
+} from '@/lib/seo/constants';
 import { filterJobCount } from '@/lib/seo/filter-job-count';
 import sitemap from './sitemap';
 
@@ -62,9 +67,14 @@ describe('sitemap', () => {
     });
 
     await expect(sitemap()).resolves.toStrictEqual(
-      ['/', '/jobs', '/about', ...JOBS.map(({ id }) => `/jobs/${id}`)].flatMap(
-        entriesFor,
-      ),
+      [
+        '/',
+        '/jobs',
+        '/about',
+        GUIDE_PATH,
+        PRIVACY_PATH,
+        ...JOBS.map(({ id }) => `/jobs/${id}`),
+      ].flatMap(entriesFor),
     );
     const cutoff = new Date(NOW.getTime() - JOB_MAX_AGE_MS);
     expect(findMany).toHaveBeenCalledExactlyOnceWith({
@@ -103,7 +113,7 @@ describe('sitemap', () => {
     } as unknown as ReturnType<typeof getDb>);
     await expect(sitemap()).rejects.toBe(error);
     await expect(sitemap()).resolves.toHaveLength(
-      (JOBS.length + 3) * LANGUAGE_COUNT,
+      (JOBS.length + 5) * LANGUAGE_COUNT,
     );
   });
 
@@ -126,6 +136,10 @@ describe('sitemap', () => {
         '/pt-BR/jobs',
         '/about',
         '/pt-BR/about',
+        GUIDE_PATH,
+        `/pt-BR${GUIDE_PATH}`,
+        PRIVACY_PATH,
+        `/pt-BR${PRIVACY_PATH}`,
         `/?country=${brazil.slug}`,
         `/pt-BR?country=${brazil.slug}`,
         `/jobs?country=${brazil.slug}`,

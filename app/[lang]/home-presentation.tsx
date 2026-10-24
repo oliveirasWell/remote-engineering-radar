@@ -12,6 +12,7 @@ import {
 } from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import type { CompaniesPageData } from '@/lib/report/get-companies-page-data';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 import { COMPANY_SORTS, type CompanySort } from './home-constants';
 import Link from 'next/link';
 
@@ -56,9 +57,20 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
   const { locale, messages } = useI18n();
   const [sort, setSort] = useState<CompanySort>('default');
   const companies = [...data.companies].sort(COMPANY_SORTS[sort]);
+  const scope = [
+    data.focus ? messages.focus[data.focus] : null,
+    data.country ? messages.countries[data.country] : null,
+  ]
+    .filter((part) => part !== null)
+    .join(' · ');
 
   return (
     <>
+      {scope ? (
+        <p className="text-sm text-muted-foreground">
+          {messages.home.filteredScope(scope)}
+        </p>
+      ) : null}
       <nav
         aria-label={messages.jobs.focusLabel}
         className="flex flex-wrap gap-3 text-sm"
@@ -163,10 +175,19 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
 };
 
 export const HomeHeading = () => {
-  const { messages } = useI18n();
+  const { locale, messages } = useI18n();
   return (
-    <h1 className="text-2xl font-semibold tracking-tight text-balance">
-      {messages.home.subtitle}
-    </h1>
+    <header className="flex flex-col gap-3">
+      <h1 className="text-2xl font-semibold tracking-tight text-balance">
+        {messages.home.subtitle}
+      </h1>
+      <p className="text-muted-foreground">{messages.home.overview}</p>
+      <Link
+        href={localizedPath(locale, GUIDE_PATH)}
+        className="text-muted-foreground underline underline-offset-2"
+      >
+        {messages.navigation.guide}
+      </Link>
+    </header>
   );
 };

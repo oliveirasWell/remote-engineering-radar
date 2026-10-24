@@ -15,7 +15,10 @@ export const EN_MESSAGES = {
     label: 'Main navigation',
     companies: 'Companies',
     jobs: 'Jobs',
+    guide: 'How it works',
     about: 'About',
+    privacy: 'Privacy',
+    footer: 'Site information',
     language: 'Language',
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
@@ -24,6 +27,10 @@ export const EN_MESSAGES = {
   home: {
     subtitle:
       'Companies hiring remote senior talent in React, TypeScript, Node.js, GraphQL and React Native, Cloud & Ops, Product, and Data Annotation.',
+    overview:
+      'Companies on this page are rebuilt from public posts each day. A row is here because its remote roles match a focus area and show a hiring signal. Open a row for the evidence, or open a job to read the quoted listing and the score behind it.',
+    filteredScope: (scope: string) =>
+      `This view is limited to ${scope}. Hiring signals and the daily update are the same as the full radar.`,
     companiesToWatch: 'Companies to watch',
     relevantJobs: 'Relevant jobs',
     seeAllJobs: (count: number) => `See all ${count} jobs`,
@@ -48,6 +55,8 @@ export const EN_MESSAGES = {
     title: 'Jobs',
     subtitle:
       'Search remote senior openings in React, TypeScript, Node.js, GraphQL and React Native, Cloud & Ops, Product, and Data Annotation.',
+    curation:
+      'Each row is a remote role from the current listing window. Open it for the text quoted from the source and the reasons it scored.',
     metaTitle: 'Remote React, Cloud, Product & AI Annotation Jobs',
     filtersHeading: 'Filters',
     focusLabel: 'Focus area',
@@ -63,7 +72,6 @@ export const EN_MESSAGES = {
     notFound: 'This job is inactive or was not found.',
     backToJobs: 'Back to jobs',
     loading: 'Loading jobs…',
-    whyRelevant: 'Why this is relevant:',
     sortLabel: 'Sort jobs',
     sortOptions: {
       newest: 'Newest first',
@@ -180,6 +188,51 @@ export const EN_MESSAGES = {
     description: 'The page could not be rendered. Trying again may be enough.',
     retry: 'Try again',
   },
+  jobDetail: {
+    score: (score: number) => `Relevance score: ${score} out of 100`,
+    reasonsTitle: 'Why this score',
+    technology: (name: string) =>
+      `${name} is named in the public listing and adds its weight on the focus table.`,
+    listingTitle: 'Listing text',
+    listingAttribution: (source: string) =>
+      `Quoted from the public ${source} listing. This site did not write it.`,
+    listingMissing:
+      'This source did not include a public description we could store. The score uses the title, location, seniority, and technologies only. Read the original listing before you decide.',
+    verify:
+      'The radar does not accept applications. Confirm compensation, time zone, and the application path on the original listing.',
+    reasonText: {
+      Senior:
+        'The title reads as senior. Senior titles gain points because this radar is built for senior roles.',
+      Staff:
+        'The title reads as staff. Staff titles gain points, a step under senior, because they sit next to the senior work this radar tracks.',
+      'Mid-level':
+        'The title reads as mid-level. Mid-level roles lose points because the radar is aimed at senior work.',
+      Junior:
+        'The title reads as junior. Junior roles are heavily down-ranked.',
+      Frontend:
+        'The role is classified as frontend, one of the focus areas, which adds points.',
+      Fullstack:
+        'The role is classified as fullstack, one of the focus areas, which adds points.',
+      Platform:
+        'The role is classified as Cloud & Ops. Cloud technologies are scored on their own table, not the React table.',
+      Remote:
+        'The listing is remote. Only remote roles stay on the public pages.',
+      'On-site only':
+        'The listing reads as on-site only, which removes a large share of the score.',
+      Brazil:
+        'The public text names Brazil or a Brazilian place, which adds geography points.',
+      LATAM:
+        'The public text is open to Latin America, which adds geography points.',
+      Americas:
+        'The public text is open to the Americas, which adds geography points.',
+      'Relocation required':
+        'The listing requires relocation, which is down-ranked.',
+      'Unrelated stack':
+        'The technologies sit outside the focus stacks, which is down-ranked.',
+      'Unrelated role':
+        'The role sits outside the focus areas, which is down-ranked.',
+    },
+  },
   about: {
     title: 'About the radar',
     introduction:
@@ -269,7 +322,10 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     label: 'Navegação principal',
     companies: 'Empresas',
     jobs: 'Vagas',
+    guide: 'Como funciona',
     about: 'Sobre',
+    privacy: 'Privacidade',
+    footer: 'Informações do site',
     language: 'Idioma',
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
@@ -278,6 +334,10 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   home: {
     subtitle:
       'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, Cloud & Ops, Produto e Anotação de Dados.',
+    overview:
+      'As empresas desta página são reconstruídas todo dia a partir de anúncios públicos. Uma linha aparece porque as vagas remotas batem com uma área de foco e mostram um sinal de contratação. Abra a linha para ver as evidências, ou abra uma vaga para ler o texto citado e a pontuação.',
+    filteredScope: (scope: string) =>
+      `Esta visão está limitada a ${scope}. Os sinais de contratação e a atualização diária são os mesmos do radar completo.`,
     companiesToWatch: 'Empresas para acompanhar',
     relevantJobs: 'Vagas relevantes',
     seeAllJobs: (count: number) => `Ver todas as ${count} vagas`,
@@ -302,6 +362,8 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     title: 'Vagas',
     subtitle:
       'Busque vagas remotas sênior em React, TypeScript, Node.js, GraphQL e React Native, Cloud & Ops, Produto e Anotação de Dados.',
+    curation:
+      'Cada linha é uma vaga remota da janela atual de listagem. Abra para ver o texto citado da fonte e os motivos da pontuação.',
     metaTitle: 'Vagas remotas em React, Cloud, Produto e Anotação de IA',
     filtersHeading: 'Filtros',
     focusLabel: 'Área de foco',
@@ -317,7 +379,6 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     notFound: 'Esta vaga está inativa ou não foi encontrada.',
     backToJobs: 'Voltar para vagas',
     loading: 'Carregando vagas…',
-    whyRelevant: 'Por que esta vaga é relevante:',
     sortLabel: 'Ordenar vagas',
     sortOptions: {
       newest: 'Mais recentes',
@@ -433,6 +494,51 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     description:
       'Não foi possível exibir a página. Tentar novamente pode resolver.',
     retry: 'Tentar novamente',
+  },
+  jobDetail: {
+    score: (score: number) => `Pontuação de relevância: ${score} de 100`,
+    reasonsTitle: 'Por que esta pontuação',
+    technology: (name: string) =>
+      `${name} aparece no anúncio público e soma o peso da tabela de foco.`,
+    listingTitle: 'Texto do anúncio',
+    listingAttribution: (source: string) =>
+      `Citado do anúncio público de ${source}. Este site não escreveu esse texto.`,
+    listingMissing:
+      'Esta fonte não trouxe uma descrição pública que pudéssemos guardar. A pontuação usa só o título, o local, a senioridade e as tecnologias. Leia o anúncio original antes de decidir.',
+    verify:
+      'O radar não recebe candidaturas. Confirme remuneração, fuso horário e o caminho de candidatura no anúncio original.',
+    reasonText: {
+      Senior:
+        'O título indica senioridade sênior. Títulos sênior ganham pontos porque o radar é feito para esse nível.',
+      Staff:
+        'O título indica staff. Títulos staff ganham pontos, um degrau abaixo de sênior, porque ficam ao lado do trabalho sênior que o radar acompanha.',
+      'Mid-level':
+        'O título indica nível pleno. Vagas pleno perdem pontos porque o radar mira trabalho sênior.',
+      Junior:
+        'O título indica nível júnior. Vagas júnior são fortemente rebaixadas.',
+      Frontend:
+        'A vaga é classificada como frontend, uma das áreas de foco, e isso soma pontos.',
+      Fullstack:
+        'A vaga é classificada como fullstack, uma das áreas de foco, e isso soma pontos.',
+      Platform:
+        'A vaga é classificada como Cloud & Ops. As tecnologias de cloud são pontuadas na tabela própria, não na tabela de React.',
+      Remote:
+        'A vaga é remota. Só vagas remotas permanecem nas páginas públicas.',
+      'On-site only':
+        'O texto indica trabalho somente presencial, o que tira uma parte grande da pontuação.',
+      Brazil:
+        'O texto público cita o Brasil ou uma cidade brasileira, o que soma pontos de geografia.',
+      LATAM:
+        'O texto público está aberto à América Latina, o que soma pontos de geografia.',
+      Americas:
+        'O texto público está aberto às Américas, o que soma pontos de geografia.',
+      'Relocation required':
+        'A vaga exige mudança de cidade ou país, e isso reduz a pontuação.',
+      'Unrelated stack':
+        'As tecnologias ficam fora das stacks de foco, e isso reduz a pontuação.',
+      'Unrelated role':
+        'O cargo fica fora das áreas de foco, e isso reduz a pontuação.',
+    },
   },
   about: {
     title: 'Sobre o radar',

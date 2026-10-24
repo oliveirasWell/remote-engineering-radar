@@ -14,6 +14,7 @@ import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import { APP_DESCRIPTION, APP_NAME, FOCUS_TECHNOLOGIES } from './constants';
 import { HOME_SECTIONS } from './home-constants';
 import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import {
   TEST_REPORT_COMPANY,
@@ -122,8 +123,12 @@ describe('home report copy', () => {
         {page.props.children[1].props.fallback}
       </I18nProvider>,
     );
-    const { home } = messagesFor(I18N_TEST.portuguese);
+    const { home, navigation } = messagesFor(I18N_TEST.portuguese);
     expect(screen.getByText(home.subtitle)).toBeInTheDocument();
+    expect(screen.getByText(home.overview)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: navigation.guide }),
+    ).toHaveAttribute('href', localizedPath(I18N_TEST.portuguese, GUIDE_PATH));
     expect(screen.getByText(home.loading)).toBeInTheDocument();
   });
 
@@ -333,6 +338,13 @@ describe('home company job previews', () => {
       />,
     );
 
+    expect(
+      screen.getByText(
+        EN_MESSAGES.home.filteredScope(
+          `${EN_MESSAGES.focus[JOB_FOCUS_CLOUD_OPS]} · ${EN_MESSAGES.countries[brazil.slug]}`,
+        ),
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('link', {
         name: EN_MESSAGES.home.seeAllJobs(
