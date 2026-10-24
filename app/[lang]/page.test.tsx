@@ -9,6 +9,7 @@ import {
 } from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import { DATABASE_URL_ENV } from '@/lib/db/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import { APP_DESCRIPTION, APP_NAME, FOCUS_TECHNOLOGIES } from './constants';
@@ -461,6 +462,29 @@ describe('Home cache boundary', () => {
         searchParams: Promise.resolve({}),
       }),
     ).rejects.toBe(error);
+  });
+
+  it('renders an empty home without reading companies when no database is configured', async () => {
+    vi.mocked(getCompaniesPageData).mockClear();
+    vi.stubEnv(DATABASE_URL_ENV, '');
+
+    await expect(
+      homeRoute.generateMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
+    ).resolves.toMatchObject({
+      alternates: { canonical: '/' },
+    });
+    render(
+      await resolvePageSection(Home({ searchParams: Promise.resolve({}) })),
+    );
+
+    expect(
+      screen.getByText(EN_MESSAGES.report.emptyCompanies),
+    ).toBeInTheDocument();
+    expect(getCompaniesPageData).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 
   it.each([undefined, '', '   ', ...UNKNOWN_COUNTRIES])(

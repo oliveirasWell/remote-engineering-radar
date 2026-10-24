@@ -14,6 +14,7 @@ import {
   JOB_FOCUS_CLOUD_OPS,
   JOB_FOCUS_DATA_ANNOTATION,
 } from '@/lib/jobs/constants';
+import { DATABASE_URL_ENV } from '@/lib/db/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import JobsPage from './page';
@@ -233,6 +234,21 @@ describe('JobsPage', () => {
         searchParams: Promise.resolve({}),
       }),
     ).rejects.toBe(error);
+  });
+
+  it('builds job metadata without reading jobs when no database is configured', async () => {
+    vi.stubEnv(DATABASE_URL_ENV, '');
+
+    await expect(
+      jobsRoute.generateMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
+    ).resolves.toMatchObject({
+      alternates: { canonical: '/jobs' },
+    });
+    expect(getJobsPageData).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 
   it.each([

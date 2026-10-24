@@ -3,10 +3,15 @@ import { getDb } from '@/lib/db/client';
 import { REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
 import { readLatestIngestNewJobs } from './read-latest-ingest-new-jobs';
+import { reportDatabaseConfigured } from './report-database-configured';
 
 export const getLatestIngestNewJobs = async (): Promise<number | null> => {
   'use cache';
   cacheLife(REPORT_CACHE_LIFE);
+
+  if (!reportDatabaseConfigured()) {
+    return null;
+  }
 
   try {
     return await readLatestIngestNewJobs(getDb());
