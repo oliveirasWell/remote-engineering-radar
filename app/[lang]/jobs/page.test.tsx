@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { render, screen, within } from '@testing-library/react';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
@@ -43,11 +45,15 @@ describe('JobsPage', () => {
         {page.props.children[1].props.fallback}
       </I18nProvider>,
     );
-    const { jobs } = messagesFor(I18N_TEST.portuguese);
+    const { jobs, navigation } = messagesFor(I18N_TEST.portuguese);
     expect(
       screen.getByRole('heading', { name: jobs.title }),
     ).toBeInTheDocument();
     expect(screen.getByText(jobs.subtitle)).toBeInTheDocument();
+    expect(screen.getByText(jobs.curation)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: navigation.guide }),
+    ).toHaveAttribute('href', localizedPath(I18N_TEST.portuguese, GUIDE_PATH));
     expect(screen.getByText(jobs.loading)).toBeInTheDocument();
   });
 

@@ -20,9 +20,11 @@ export type CompanyDetails = {
   jobs: ReportJobCard[];
 };
 
-/** The detail page is the only view that explains why a job scored. */
+/** The detail page quotes the listing and explains why the job scored. */
 export type ReportJobDetail = ReportJobCard & {
   reasons: string[];
+  description: string | null;
+  source: string;
 };
 
 export type ReportCompanyCard = {

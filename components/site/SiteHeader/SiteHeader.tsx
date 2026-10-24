@@ -13,6 +13,7 @@ import {
   unlocalizedPath,
 } from '@/lib/i18n/localized-path/localized-path';
 import { SiteWordmark } from '@/components/site/SiteWordmark/SiteWordmark';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 
 const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
   const { locale, messages } = useI18n();
@@ -20,6 +21,7 @@ const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
   const links = [
     { href: '/', label: messages.navigation.companies },
     { href: '/jobs', label: messages.navigation.jobs },
+    { href: GUIDE_PATH, label: messages.navigation.guide },
     { href: '/about', label: messages.navigation.about },
   ];
 

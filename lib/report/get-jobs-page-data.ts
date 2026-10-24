@@ -115,7 +115,7 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
     }
 
     const company = await companiesRepository.findById(job.companyId);
-    // Only the detail page reads the description, and only for one job.
+    // The detail page quotes this description and scores from the same text.
     const scored = scoreJob({
       title: job.title,
       description: job.description ?? undefined,
@@ -129,6 +129,8 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
       job: {
         ...toJobCard(job, company?.name ?? null),
         reasons: scored.reasons,
+        description: job.description,
+        source: job.source,
       },
     };
   } catch (error) {

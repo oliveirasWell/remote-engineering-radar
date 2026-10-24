@@ -2,7 +2,11 @@ import type { MetadataRoute } from 'next';
 import { connection } from 'next/server';
 import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { LOCALES } from '@/lib/i18n/messages';
-import { MIN_INDEXABLE_JOBS } from '@/lib/seo/constants';
+import {
+  GUIDE_PATH,
+  MIN_INDEXABLE_JOBS,
+  PRIVACY_PATH,
+} from '@/lib/seo/constants';
 import { filterJobCount } from '@/lib/seo/filter-job-count';
 import { INDEXABLE_FILTERS } from '@/lib/seo/indexable-filter/indexable-filter';
 import { sitemapJobs } from '@/lib/seo/sitemap-jobs';
@@ -34,6 +38,8 @@ const sitemap = async (): Promise<MetadataRoute.Sitemap> => {
     '/',
     '/jobs',
     '/about',
+    GUIDE_PATH,
+    PRIVACY_PATH,
     ...indexableFilters.flatMap((query) => [`/?${query}`, `/jobs?${query}`]),
     ...jobs.map(({ id }) => `/jobs/${id}`),
   ].flatMap((path) => {
