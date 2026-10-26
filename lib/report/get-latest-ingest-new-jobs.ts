@@ -4,19 +4,21 @@ import { REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
 import { readLatestIngestNewJobs } from './read-latest-ingest-new-jobs';
 import { reportDatabaseConfigured } from './report-database-configured';
+import type { LatestIngest } from './types';
 
-export const getLatestIngestNewJobs = async (): Promise<number | null> => {
-  'use cache';
-  cacheLife(REPORT_CACHE_LIFE);
+export const getLatestIngestNewJobs =
+  async (): Promise<LatestIngest | null> => {
+    'use cache';
+    cacheLife(REPORT_CACHE_LIFE);
 
-  if (!reportDatabaseConfigured()) {
-    return null;
-  }
+    if (!reportDatabaseConfigured()) {
+      return null;
+    }
 
-  try {
-    return await readLatestIngestNewJobs(getDb());
-  } catch (error) {
-    logReportError('latest-ingest-new-jobs', error);
-    return null;
-  }
-};
+    try {
+      return await readLatestIngestNewJobs(getDb());
+    } catch (error) {
+      logReportError('latest-ingest-new-jobs', error);
+      return null;
+    }
+  };

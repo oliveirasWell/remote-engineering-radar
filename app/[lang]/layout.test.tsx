@@ -64,10 +64,13 @@ vi.mock('@/components/observability/GoogleAnalytics/GoogleAnalytics', () => ({
 }));
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
-const LATEST_INGEST_NEW_JOBS = 4;
+const LATEST_INGEST = vi.hoisted(() => ({
+  newJobs: 4,
+  completedAt: new Date('2026-10-26T09:30:00.000Z'),
+}));
 
 vi.mock('@/lib/report/get-latest-ingest-new-jobs', () => ({
-  getLatestIngestNewJobs: vi.fn(async () => LATEST_INGEST_NEW_JOBS),
+  getLatestIngestNewJobs: vi.fn(async () => LATEST_INGEST),
 }));
 
 const NOT_FOUND = 'NEXT_NOT_FOUND';
@@ -185,15 +188,26 @@ describe('site language and navigation', () => {
   });
 
   it.each([I18N_TEST.english, I18N_TEST.portuguese] as const)(
-    'shows new jobs from the last ingest under the header in %s',
+    'shows new jobs and the local time of the last ingest under the header in %s',
     async (locale) => {
       render(await layoutFor(locale), { container: document });
 
       expect(
         screen.getByText(
-          messagesFor(locale).home.newJobs(LATEST_INGEST_NEW_JOBS),
+          messagesFor(locale).home.newJobs(LATEST_INGEST.newJobs),
+          {
+            exact: false,
+          },
         ),
       ).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          new Intl.DateTimeFormat(locale, {
+            dateStyle: 'medium',
+            timeStyle: 'short',
+          }).format(LATEST_INGEST.completedAt),
+        ),
+      ).toHaveAttribute('datetime', LATEST_INGEST.completedAt.toISOString());
       expect(getLatestIngestNewJobs).toHaveBeenCalled();
     },
   );
