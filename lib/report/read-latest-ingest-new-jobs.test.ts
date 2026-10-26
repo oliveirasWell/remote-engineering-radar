@@ -81,7 +81,10 @@ describe('readLatestIngestNewJobs', () => {
       companiesUpdated: 1,
     });
 
-    await expect(readLatestIngestNewJobs(db)).resolves.toBe(2);
+    await expect(readLatestIngestNewJobs(db)).resolves.toEqual({
+      newJobs: 2,
+      completedAt: LATEST_COMPLETED_AT,
+    });
   });
 
   it('looks back one day when only one ingest exists', async () => {
@@ -116,6 +119,9 @@ describe('readLatestIngestNewJobs', () => {
       companiesUpdated: 1,
     });
 
-    await expect(readLatestIngestNewJobs(db)).resolves.toBe(1);
+    await expect(readLatestIngestNewJobs(db)).resolves.toEqual({
+      newJobs: 1,
+      completedAt,
+    });
   });
 });

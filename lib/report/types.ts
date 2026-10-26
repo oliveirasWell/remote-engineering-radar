@@ -38,3 +38,8 @@ export type ReportCompanyCard = {
   websiteUrl: string | null;
   openEngineeringJobs: number;
 };
+
+export type LatestIngest = {
+  newJobs: number;
+  completedAt: Date;
+};

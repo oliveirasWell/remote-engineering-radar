@@ -8,6 +8,7 @@ import { AdUnit } from '@/components/marketing/AdUnit/AdUnit';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { SiteHeader } from '@/components/site/SiteHeader/SiteHeader';
 import { SiteFooter } from '@/components/site/SiteFooter/SiteFooter';
+import { LatestIngestNotice } from '@/components/report/LatestIngestNotice/LatestIngestNotice';
 import { isLocale, LOCALES, messagesFor } from '@/lib/i18n/messages';
 import { routeLocale } from '@/lib/i18n/route-locale/route-locale';
 import { siteOrigin } from '@/lib/seo/site-origin/site-origin';
@@ -60,8 +61,7 @@ const RootLayout = async ({
     notFound();
   }
 
-  const newJobs = await getLatestIngestNewJobs();
-  const { home } = messagesFor(lang);
+  const latestIngest = await getLatestIngestNewJobs();
 
   return (
     <html lang={lang} className={inter.variable}>
@@ -81,10 +81,8 @@ const RootLayout = async ({
             preview={process.env.VERCEL_ENV === 'preview'}
           />
           <SiteHeader />
-          {newJobs === null ? null : (
-            <p className="mx-auto w-full max-w-3xl px-6 pt-3 text-sm text-muted-foreground">
-              {home.newJobs(newJobs)}
-            </p>
+          {latestIngest === null ? null : (
+            <LatestIngestNotice {...latestIngest} />
           )}
           {children}
           <SiteFooter />
