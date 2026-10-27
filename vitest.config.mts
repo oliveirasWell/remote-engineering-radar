@@ -13,6 +13,9 @@ const vitestConfig = defineConfig({
     hookTimeout: 15000,
     maxWorkers: 4,
     setupFiles: ['./test/setup.ts'],
+    // Mirrors CI so pages take their database-backed path; tests that need
+    // no database stub it empty.
+    env: { DATABASE_URL: 'postgres://postgres@127.0.0.1:5432/radar' },
     include: ['{app,components,lib,scripts}/**/*.test.{ts,tsx}'],
     alias: {
       'server-only': fileURLToPath(
