@@ -10,6 +10,7 @@ import {
   JOB_FOCUS_FILTER_OPTIONS,
   type JobFocusSlug,
 } from '@/lib/jobs/constants';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 import Link from 'next/link';
 
 const CHIP_BASE = 'inline-flex min-h-[44px] items-center';
@@ -169,6 +170,13 @@ export const JobsHeading = () => {
       </p>
       <PageTitle as="h1">{messages.jobs.title}</PageTitle>
       <p className="text-lg text-muted-foreground">{messages.jobs.subtitle}</p>
+      <p className="text-muted-foreground">{messages.jobs.curation}</p>
+      <Link
+        href={localizedPath(locale, GUIDE_PATH)}
+        className="text-muted-foreground underline underline-offset-2"
+      >
+        {messages.navigation.guide}
+      </Link>
     </header>
   );
 };

@@ -9,11 +9,13 @@ import {
 } from '@/lib/jobs/constants';
 import { formatUpdatedLabel } from '@/lib/report/format';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import { DATABASE_URL_ENV } from '@/lib/db/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import { APP_DESCRIPTION, APP_NAME, FOCUS_TECHNOLOGIES } from './constants';
 import { HOME_SECTIONS } from './home-constants';
 import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import {
   TEST_REPORT_COMPANY,
@@ -122,8 +124,12 @@ describe('home report copy', () => {
         {page.props.children[1].props.fallback}
       </I18nProvider>,
     );
-    const { home } = messagesFor(I18N_TEST.portuguese);
+    const { home, navigation } = messagesFor(I18N_TEST.portuguese);
     expect(screen.getByText(home.subtitle)).toBeInTheDocument();
+    expect(screen.getByText(home.overview)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: navigation.guide }),
+    ).toHaveAttribute('href', localizedPath(I18N_TEST.portuguese, GUIDE_PATH));
     expect(screen.getByText(home.loading)).toBeInTheDocument();
   });
 
@@ -334,6 +340,13 @@ describe('home company job previews', () => {
     );
 
     expect(
+      screen.getByText(
+        EN_MESSAGES.home.filteredScope(
+          `${EN_MESSAGES.focus[JOB_FOCUS_CLOUD_OPS]} · ${EN_MESSAGES.countries[brazil.slug]}`,
+        ),
+      ),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole('link', {
         name: EN_MESSAGES.home.seeAllJobs(
           TEST_REPORT_COMPANY.openEngineeringJobs,
@@ -449,6 +462,29 @@ describe('Home cache boundary', () => {
         searchParams: Promise.resolve({}),
       }),
     ).rejects.toBe(error);
+  });
+
+  it('renders an empty home without reading companies when no database is configured', async () => {
+    vi.mocked(getCompaniesPageData).mockClear();
+    vi.stubEnv(DATABASE_URL_ENV, '');
+
+    await expect(
+      homeRoute.generateMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
+    ).resolves.toMatchObject({
+      alternates: { canonical: '/' },
+    });
+    render(
+      await resolvePageSection(Home({ searchParams: Promise.resolve({}) })),
+    );
+
+    expect(
+      screen.getByText(EN_MESSAGES.report.emptyCompanies),
+    ).toBeInTheDocument();
+    expect(getCompaniesPageData).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 
   it.each([undefined, '', '   ', ...UNKNOWN_COUNTRIES])(

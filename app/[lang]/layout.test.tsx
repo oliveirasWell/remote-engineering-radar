@@ -214,7 +214,9 @@ describe('site language and navigation', () => {
       screen.getByRole('heading', { name: I18N_TEST.portugueseError }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('link', { name: I18N_TEST.portugueseAbout }),
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: I18N_TEST.portugueseAbout,
+      }),
     ).toHaveAttribute('href', '/pt-BR/about');
     expect(document.documentElement.lang).toBe(I18N_TEST.portuguese);
     fireEvent.click(

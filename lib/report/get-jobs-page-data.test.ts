@@ -119,12 +119,17 @@ describe('getJobsPageData', () => {
       seniority: 'senior',
       remotePolicy: 'remote',
       score: 50,
+      description: 'Quoted listing body.',
     });
 
     const report = await getJobsPageData();
     expect(report.jobs[0]?.id).toBe(job.id);
+    expect(report.jobs[0]).not.toHaveProperty('description');
+    expect(report.jobs[0]).not.toHaveProperty('source');
 
     const detail = await getJobDetailData(job.id);
     expect(detail.job?.reasons).toContain('Senior');
+    expect(detail.job?.description).toBe('Quoted listing body.');
+    expect(detail.job?.source).toBe('frontendbr');
   });
 });

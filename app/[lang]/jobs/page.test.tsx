@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { render, screen, within } from '@testing-library/react';
+import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
+import { GUIDE_PATH } from '@/lib/seo/constants';
 import { JOBS_PAGE_COPY, JOBS_PAGE_LIMIT } from './constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { EN_MESSAGES, LOCALE_COOKIE, messagesFor } from '@/lib/i18n/messages';
@@ -12,6 +14,7 @@ import {
   JOB_FOCUS_CLOUD_OPS,
   JOB_FOCUS_DATA_ANNOTATION,
 } from '@/lib/jobs/constants';
+import { DATABASE_URL_ENV } from '@/lib/db/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import JobsPage from './page';
@@ -43,11 +46,15 @@ describe('JobsPage', () => {
         {page.props.children[1].props.fallback}
       </I18nProvider>,
     );
-    const { jobs } = messagesFor(I18N_TEST.portuguese);
+    const { jobs, navigation } = messagesFor(I18N_TEST.portuguese);
     expect(
       screen.getByRole('heading', { name: jobs.title }),
     ).toBeInTheDocument();
     expect(screen.getByText(jobs.subtitle)).toBeInTheDocument();
+    expect(screen.getByText(jobs.curation)).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: navigation.guide }),
+    ).toHaveAttribute('href', localizedPath(I18N_TEST.portuguese, GUIDE_PATH));
     expect(screen.getByText(jobs.loading)).toBeInTheDocument();
   });
 
@@ -227,6 +234,21 @@ describe('JobsPage', () => {
         searchParams: Promise.resolve({}),
       }),
     ).rejects.toBe(error);
+  });
+
+  it('builds job metadata without reading jobs when no database is configured', async () => {
+    vi.stubEnv(DATABASE_URL_ENV, '');
+
+    await expect(
+      jobsRoute.generateMetadata({
+        params: EN_ROUTE_PARAMS,
+        searchParams: Promise.resolve({}),
+      }),
+    ).resolves.toMatchObject({
+      alternates: { canonical: '/jobs' },
+    });
+    expect(getJobsPageData).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 
   it.each([

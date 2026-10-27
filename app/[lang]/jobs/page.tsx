@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { cache, Suspense } from 'react';
 import { ReportLoading } from '@/components/report/ReportLoading/ReportLoading';
 import { getJobsPageData } from '@/lib/report/get-jobs-page-data';
+import { reportDatabaseConfigured } from '@/lib/report/report-database-configured';
 import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
 import { routeLocale } from '@/lib/i18n/route-locale/route-locale';
 import { searchMetadata } from '@/lib/seo/search-metadata/search-metadata';
@@ -38,6 +39,9 @@ const readJobs = cache(
 
 const readResults = async (params: JobsSearchParams) => {
   const filters = parseJobFilters(params);
+  if (!reportDatabaseConfigured()) {
+    return { filters, data: { jobs: [] } };
+  }
   const data = await readJobs(
     filters.technology,
     filters.seniority,

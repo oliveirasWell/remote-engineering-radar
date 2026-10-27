@@ -82,7 +82,9 @@ describe('JobDetailPage translation', () => {
     );
     const list = within(screen.getByRole('list'));
     expect(
-      list.getAllByRole('listitem').map(({ textContent }) => textContent),
+      list
+        .getAllByRole('listitem')
+        .map((item) => item.querySelector('span')?.textContent),
     ).toEqual([
       ...GENERATED_REASONS.map(({ translated }) => translated),
       ...unchangedReasons,
@@ -92,7 +94,7 @@ describe('JobDetailPage translation', () => {
   it.each([{ data: { job: detailJob } }])(
     'translates the detail state without altering original content',
     async ({ data }) => {
-      const { jobs } = messagesFor('pt-BR');
+      const { jobDetail, jobs } = messagesFor('pt-BR');
       vi.mocked(getJobDetailData).mockResolvedValue(data);
       const page = JobDetailPage({
         params: Promise.resolve({ id: detailJob.id }),
@@ -108,7 +110,10 @@ describe('JobDetailPage translation', () => {
       expect(
         screen.getByRole('heading', { level: 1, name: data.job.title }),
       ).toBeInTheDocument();
-      expect(screen.getByText(jobs.whyRelevant)).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: jobDetail.reasonsTitle }),
+      ).toBeInTheDocument();
+      expect(screen.getByText(detailJob.description ?? '')).toBeInTheDocument();
       for (const reason of data.job.reasons) {
         expect(screen.getByText(reason)).toBeInTheDocument();
       }

@@ -29,4 +29,6 @@ export const TEST_REPORT_JOB = {
   url: 'https://example.com/jobs/1',
   clickCount: 0,
   reasons: ['Matches the focus stack'],
+  description: 'Build React applications with TypeScript.',
+  source: 'greenhouse',
 } satisfies ReportJobDetail;

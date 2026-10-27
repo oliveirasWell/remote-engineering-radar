@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import { GUIDE_PATH, PRIVACY_PATH } from '@/lib/seo/constants';
 import { LOCALE_COOKIE } from '../messages';
 import { LOCALE_REDIRECTS, LOCALE_REWRITES } from './locale-routes';
 
@@ -7,7 +8,14 @@ const { pathToRegexp } = createRequire(import.meta.url)(
   'next/dist/compiled/path-to-regexp',
 ) as { pathToRegexp: (path: string) => RegExp };
 
-const PAGE_PATHS = ['/jobs', '/jobs/abc-123', '/about', '/english'];
+const PAGE_PATHS = [
+  '/jobs',
+  '/jobs/abc-123',
+  '/about',
+  GUIDE_PATH,
+  PRIVACY_PATH,
+  '/english',
+];
 const SKIPPED_PATHS = [
   '/pt-BR',
   '/pt-BR/jobs',

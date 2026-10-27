@@ -2,6 +2,7 @@
 
 import { render, screen } from '@testing-library/react';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
+import { DATABASE_URL_ENV } from '@/lib/db/constants';
 import {
   TEST_REPORT_COMPANY,
   TEST_REPORT_JOB,
@@ -46,4 +47,17 @@ it('renders the unfiltered home and its canonical metadata without request searc
     title: EN_MESSAGES.seo.homeTitle,
     alternates: { canonical: '/' },
   });
+});
+
+it('renders an empty home without reading companies when no database is configured', async () => {
+  vi.mocked(getCompaniesPageData).mockClear();
+  vi.stubEnv(DATABASE_URL_ENV, '');
+
+  render(<I18nProvider>{await Home()}</I18nProvider>);
+
+  expect(
+    screen.getByText(EN_MESSAGES.report.emptyCompanies),
+  ).toBeInTheDocument();
+  expect(getCompaniesPageData).not.toHaveBeenCalled();
+  vi.unstubAllEnvs();
 });

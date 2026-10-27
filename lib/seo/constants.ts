@@ -14,3 +14,6 @@ export const SITEMAP_CACHE_LIFE = {
  * jobs, so search engines never see near-empty pages.
  */
 export const MIN_INDEXABLE_JOBS = 10;
+
+export const GUIDE_PATH = '/how-it-works';
+export const PRIVACY_PATH = '/privacy';

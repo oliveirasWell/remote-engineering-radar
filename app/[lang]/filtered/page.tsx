@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { cacheLife } from 'next/cache';
 import { cache, Suspense } from 'react';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
+import { reportDatabaseConfigured } from '@/lib/report/report-database-configured';
 import type { CompaniesPageOptions } from '@/lib/report/get-companies-page-data';
 import { REPORT_CACHE_LIFE } from '@/lib/report/constants';
 import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
@@ -22,7 +23,9 @@ type HomeProps = {
 
 const readCompanies = cache(
   (country: JobCountrySlug | undefined, focus: JobFocusSlug | undefined) =>
-    getCompaniesPageData({ country, focus, includeDetails: false }),
+    reportDatabaseConfigured()
+      ? getCompaniesPageData({ country, focus, includeDetails: false })
+      : { companies: [], country, focus, updatedAt: null },
 );
 
 export const generateMetadata = async ({
