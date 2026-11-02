@@ -17,6 +17,11 @@ Stack for this app:
 Sentry DSN is not committed; it is set in Vercel / local `.env.local` only. The GA4
 measurement id is a public client identifier and lives as a named constant.
 
+An optional, **not yet connected** Datadog GitHub integration for repository
+and workflow trends is documented in [SPEC-029](029-datadog-github-free.md).
+It does not replace this stack or enable application APM, CI Visibility, or
+Vercel log/trace drains.
+
 ## Acceptance
 
 - App builds and tests pass with Sentry env vars unset (local/CI default)

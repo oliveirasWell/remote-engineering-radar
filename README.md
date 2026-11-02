@@ -57,6 +57,9 @@ See [`package.json`](package.json) for all scripts.
 - [Specs](specs/) — feature requirements and technical decisions.
 - [Prisma data layer](specs/014-prisma-data-layer.md) — production baseline,
   migration rollout, and rollback instructions.
+- [Datadog GitHub integration](specs/029-datadog-github-free.md) — optional
+  repository/workflow trends; account authorization is still pending. It does
+  not add APM, CI Visibility, or billable Vercel log/trace drains.
 
 ## AdSense
 
