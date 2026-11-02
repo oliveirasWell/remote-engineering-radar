@@ -51,6 +51,8 @@ Open:
 - [SPEC-024](024-ats-board-discovery.md) — ATS board discovery (versioned seed boards,
   per-board failure isolation, automatic discovery in the ingest, direct board wins
   over the aggregator)
+- [SPEC-029](029-datadog-github-free.md) — optional no-cost Datadog GitHub
+  integration; owner authorization and billing verification pending
 
 ---
 
