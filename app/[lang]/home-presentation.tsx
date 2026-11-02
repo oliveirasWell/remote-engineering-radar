@@ -53,7 +53,92 @@ const companyJobsHref = (
   return `/jobs?${params.toString()}`;
 };
 
-export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
+const SubscribeLane = ({
+  focus,
+  country,
+}: {
+  focus: JobFocusSlug;
+  country: JobCountrySlug | undefined;
+}) => {
+  const { locale, messages } = useI18n();
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>(
+    'idle',
+  );
+  const statusMessages: Record<string, string> = {
+    sent: messages.newsletter.sent,
+    error: messages.newsletter.error,
+  };
+
+  const subscribe = async (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus('sending');
+    const form = event.currentTarget;
+    const email = new FormData(form).get('email');
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          focus,
+          country: country ?? null,
+          locale,
+        }),
+      });
+      setStatus(response.ok ? 'sent' : 'error');
+      if (response.ok) {
+        form.reset();
+      }
+    } catch {
+      setStatus('error');
+    }
+  };
+
+  return (
+    <section className="rounded border border-border bg-card p-4">
+      <h2 className="font-semibold">{messages.newsletter.title}</h2>
+      <p className="text-sm text-muted-foreground">
+        {messages.newsletter.description}
+      </p>
+      <form
+        onSubmit={subscribe}
+        className="mt-3 flex flex-wrap items-end gap-2"
+      >
+        <label className="flex flex-1 flex-col gap-1 text-sm">
+          {messages.newsletter.email}
+          <input
+            name="email"
+            type="email"
+            required
+            maxLength={254}
+            autoComplete="email"
+            className="rounded border border-border bg-background px-3 py-2"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={status === 'sending'}
+          className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {status === 'sending'
+            ? messages.newsletter.sending
+            : messages.newsletter.submit}
+        </button>
+      </form>
+      <p aria-live="polite" className="mt-2 text-sm">
+        {statusMessages[status] ?? null}
+      </p>
+    </section>
+  );
+};
+
+export const CompaniesReport = ({
+  data,
+  newsletterEnabled = false,
+}: {
+  data: CompaniesPageData;
+  newsletterEnabled?: boolean;
+}) => {
   const { locale, messages } = useI18n();
   const [sort, setSort] = useState<CompanySort>('default');
   const companies = [...data.companies].sort(COMPANY_SORTS[sort]);
@@ -111,6 +196,13 @@ export const CompaniesReport = ({ data }: { data: CompaniesPageData }) => {
           </Link>
         ))}
       </nav>
+      {newsletterEnabled && data.focus ? (
+        <SubscribeLane
+          key={`${data.focus}:${data.country ?? ''}`}
+          focus={data.focus}
+          country={data.country}
+        />
+      ) : null}
       <section aria-labelledby="companies-to-watch">
         <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h2 id="companies-to-watch" className="text-xl font-semibold">

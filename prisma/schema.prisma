@@ -100,3 +100,31 @@ model IngestionRun {
   @@index([completedAt], map: "ingestion_runs_completed_at_idx")
   @@map("ingestion_runs")
 }
+
+model NewsletterSubscription {
+  email              String    @id @db.Text
+  focus              String?   @db.Text
+  country            String?   @db.Text
+  locale             String    @default("en") @db.Text
+  pendingFocus       String?   @map("pending_focus") @db.Text
+  pendingCountry     String?   @map("pending_country") @db.Text
+  pendingLocale      String?   @map("pending_locale") @db.Text
+  tokenHash          String?   @unique(map: "newsletter_subscriptions_token_hash_unique") @map("token_hash") @db.Text
+  tokenIssuedAt      DateTime? @map("token_issued_at") @db.Timestamptz(6)
+  confirmedAt        DateTime? @map("confirmed_at") @db.Timestamptz(6)
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([confirmedAt], map: "newsletter_subscriptions_confirmed_at_idx")
+  @@index([tokenIssuedAt], map: "newsletter_subscriptions_token_issued_at_idx")
+  @@map("newsletter_subscriptions")
+}
+
+model NewsletterDispatch {
+  date        String    @id @db.Text
+  broadcastId String    @map("broadcast_id") @db.Text
+  sentAt      DateTime? @map("sent_at") @db.Timestamptz(6)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("newsletter_dispatches")
+}
