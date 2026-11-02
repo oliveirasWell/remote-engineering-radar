@@ -119,6 +119,7 @@ const EN_EDITORIAL: Editorial = {
           'The site does not ask for your name. Choosing a language stores that choice in a first-party cookie so the next visit stays in the same language. That cookie is not used to build an advertising profile.',
           'View original job adds one to a counter stored with that listing. The page shows the total. The request sends the job id only.',
           'Hide job writes that id into local storage in this browser. The server does not receive the list.',
+          'If you subscribe to a lane, we store your email, chosen focus and country, language, and confirmation status. Resend sends the confirmation and daily digest and handles unsubscribe links. Unsubscribing stops future broadcasts; contact us at the address below to request deletion of your stored preferences.',
         ],
       },
       {
@@ -227,6 +228,7 @@ const PT_EDITORIAL: Editorial = {
           'O site não pede o seu nome. Escolher um idioma guarda essa escolha num cookie primário para a próxima visita continuar no mesmo idioma. Esse cookie não é usado para montar um perfil de publicidade.',
           'Ver vaga original soma um num contador guardado com aquele anúncio. A página mostra o total. O pedido envia só o id da vaga.',
           'Ocultar vaga grava esse id no armazenamento local deste navegador. O servidor não recebe a lista.',
+          'Se você assinar uma lane, guardamos seu e-mail, área e país escolhidos, idioma e confirmação. A Resend envia a confirmação e o resumo diário e gerencia o descadastro. Descadastrar-se interrompe os envios; para pedir a exclusão das preferências guardadas, contate o e-mail abaixo.',
         ],
       },
       {

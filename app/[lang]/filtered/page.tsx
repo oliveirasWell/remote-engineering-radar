@@ -44,23 +44,32 @@ export const generateMetadata = async ({
   );
 };
 
-const renderCompaniesSection = async ({
-  country,
-  focus,
-}: CompaniesPageOptions) => {
+const renderCompaniesSection = async (
+  { country, focus }: CompaniesPageOptions,
+  newsletterEnabled: boolean,
+) => {
   'use cache';
   cacheLife(REPORT_CACHE_LIFE);
   const data = await readCompanies(country, focus);
 
-  return <CompaniesReport data={data} />;
+  return <CompaniesReport data={data} newsletterEnabled={newsletterEnabled} />;
 };
 
 const CompaniesSection = async ({ searchParams }: HomeProps) => {
   const params = await searchParams;
-  return renderCompaniesSection({
-    country: parseCountryFilter(params.country),
-    focus: parseFocusFilter(params.focus),
-  });
+  return renderCompaniesSection(
+    {
+      country: parseCountryFilter(params.country),
+      focus: parseFocusFilter(params.focus),
+    },
+    Boolean(
+      process.env.DATABASE_URL &&
+      process.env.RESEND_API_KEY &&
+      process.env.RESEND_FROM &&
+      process.env.RESEND_SEGMENT_ID &&
+      (process.env.VERCEL_ENV !== 'preview' || process.env.SITE_URL),
+    ),
+  );
 };
 
 const Home = ({ searchParams }: HomeProps) =>

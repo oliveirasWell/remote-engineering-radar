@@ -30,17 +30,45 @@ CREATE TABLE IF NOT EXISTS public.data_migrations (
     CONSTRAINT data_migrations_pkey PRIMARY KEY (name)
 );
 
+-- A legacy database is brought up to the current Prisma schema before its
+-- historical baseline can be resolved. The matching migration is idempotent.
+CREATE TABLE IF NOT EXISTS public.newsletter_subscriptions (
+    email text NOT NULL PRIMARY KEY,
+    focus text,
+    country text,
+    locale text NOT NULL DEFAULT 'en',
+    pending_focus text,
+    pending_country text,
+    pending_locale text,
+    token_hash text,
+    token_issued_at timestamptz,
+    confirmed_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS newsletter_subscriptions_token_hash_unique ON public.newsletter_subscriptions(token_hash);
+CREATE INDEX IF NOT EXISTS newsletter_subscriptions_confirmed_at_idx ON public.newsletter_subscriptions(confirmed_at);
+CREATE INDEX IF NOT EXISTS newsletter_subscriptions_token_issued_at_idx ON public.newsletter_subscriptions(token_issued_at);
+CREATE TABLE IF NOT EXISTS public.newsletter_dispatches (
+    date text NOT NULL PRIMARY KEY,
+    broadcast_id text NOT NULL,
+    sent_at timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.newsletter_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.newsletter_dispatches ENABLE ROW LEVEL SECURITY;
+
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards FROM anon;
+        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards, public.newsletter_subscriptions, public.newsletter_dispatches FROM anon;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE ALL ON TABLES FROM anon;
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
         END IF;
     END IF;
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards FROM authenticated;
+        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards, public.newsletter_subscriptions, public.newsletter_dispatches FROM authenticated;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE ALL ON TABLES FROM authenticated;
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM authenticated;
