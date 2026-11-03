@@ -1,0 +1,46 @@
+{
+  "name": "@oliveiraswell/ds",
+  "version": "0.1.0",
+  "description": "Design tokens and primitives shared by Remote Engineering Radar applications.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oliveirasWell/remote-engineering-radar.git",
+    "directory": "packages/design-system"
+  },
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./theme.css": "./theme.css"
+  },
+  "files": [
+    "dist",
+    "theme.css"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "pnpm build"
+  },
+  "dependencies": {
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.6.0"
+  },
+  "peerDependencies": {
+    "react": ">=19",
+    "tailwindcss": ">=4.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "react": "19.3.0",
+    "typescript": "6.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

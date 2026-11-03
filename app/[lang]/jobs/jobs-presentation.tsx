@@ -3,7 +3,7 @@
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { JobCard } from '@/components/report/JobCard/JobCard';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
+import { PageTitle } from '@oliveiraswell/ds';
 import type { JobFilters, JobsPageData } from '@/lib/report/get-jobs-page-data';
 import { TECHNOLOGY_NAMES } from '@/lib/classification/constants';
 import {

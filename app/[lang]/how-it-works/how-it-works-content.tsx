@@ -13,7 +13,7 @@ import {
   SCORE_WEIGHT_GROUP_IDS,
   scoreWeightRows,
 } from '@/lib/scoring/weight-rows/weight-rows';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
+import { PageTitle } from '@oliveiraswell/ds';
 
 const MS_PER_DAY = 1000 * 60 * 60 * 24;
 

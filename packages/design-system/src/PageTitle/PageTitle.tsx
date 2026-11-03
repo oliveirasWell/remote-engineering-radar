@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '../cn';
+import { cn } from '../cn.js';
 
 const pageTitle = cva('text-3xl font-bold', {
   variants: {

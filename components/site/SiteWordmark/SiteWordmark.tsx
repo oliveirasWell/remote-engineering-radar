@@ -1,4 +1,4 @@
-import { cn } from '@/components/ui/cn';
+import { cn } from '@oliveiraswell/ds';
 import { EN_MESSAGES } from '@/lib/i18n/messages';
 
 const WORDMARK_LINES = EN_MESSAGES.app.name.split(' ');
