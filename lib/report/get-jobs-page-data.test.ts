@@ -33,6 +33,15 @@ const FALLBACK_NAMED_COMPANY = {
   source: 'frontendbr',
 };
 
+const PUBLIC_COMPANY = {
+  name: 'Acme Robotics',
+  slug: 'acme-robotics',
+  websiteUrl: 'https://acme.example',
+  logoUrl: 'https://acme.example/logo.png',
+  source: 'greenhouse',
+};
+const SENIORITY = 'senior';
+
 const SORTING_CASES = [
   { ageMs: 7 * 24 * 60 * 60 * 1000, score: 95 },
   { ageMs: 0, score: 20 },
@@ -94,11 +103,41 @@ describe('getJobsPageData', () => {
       findById: vi.fn(async () => null),
     });
     try {
-      expect((await getJobsPageData()).jobs[0]?.companyName).toBeNull();
-      expect((await getJobDetailData(job.id)).job?.companyName).toBeNull();
+      expect((await getJobsPageData()).jobs[0]).toMatchObject({
+        companyName: null,
+        company: null,
+      });
+      expect((await getJobDetailData(job.id)).job).toMatchObject({
+        companyName: null,
+        company: null,
+      });
     } finally {
       vi.mocked(createCompaniesRepository).mockReset();
     }
+  });
+
+  it('projects seniority and the public company fields', async () => {
+    const db = await createTestDb();
+    vi.mocked(getDb).mockReturnValue(db as ReturnType<typeof getDb>);
+    const company = await createCompaniesRepository(db).create(PUBLIC_COMPANY);
+    const job = await createJobsRepository(db).create({
+      ...MISSING_COMPANY_JOB,
+      companyId: company.id,
+      seniority: SENIORITY,
+    });
+    const expected = {
+      seniority: SENIORITY,
+      company: {
+        id: company.id,
+        name: PUBLIC_COMPANY.name,
+        slug: PUBLIC_COMPANY.slug,
+        websiteUrl: PUBLIC_COMPANY.websiteUrl,
+        logoUrl: PUBLIC_COMPANY.logoUrl,
+      },
+    };
+
+    expect((await getJobsPageData()).jobs[0]).toMatchObject(expected);
+    expect((await getJobDetailData(job.id)).job).toMatchObject(expected);
   });
 
   it('uses stored seniority when generating detail reasons', async () => {

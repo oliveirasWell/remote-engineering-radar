@@ -1,4 +1,5 @@
 import type { CompanyKind } from '@/lib/companies/constants';
+import type { Company } from '@/lib/companies/types';
 
 export type ReportJobCard = {
   id: string;
@@ -20,8 +21,19 @@ export type CompanyDetails = {
   jobs: ReportJobCard[];
 };
 
+export type ReportJobCompany = Pick<
+  Company,
+  'id' | 'name' | 'slug' | 'websiteUrl' | 'logoUrl'
+>;
+
+/** A jobs-page or API listing: the card plus the fields the API exposes. */
+export type ReportJobListing = ReportJobCard & {
+  seniority: string | null;
+  company: ReportJobCompany | null;
+};
+
 /** The detail page quotes the listing and explains why the job scored. */
-export type ReportJobDetail = ReportJobCard & {
+export type ReportJobDetail = ReportJobListing & {
   reasons: string[];
   description: string | null;
   source: string;
