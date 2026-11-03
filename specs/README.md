@@ -51,6 +51,7 @@ Open:
 - [SPEC-024](024-ats-board-discovery.md) — ATS board discovery (versioned seed boards,
   per-board failure isolation, automatic discovery in the ingest, direct board wins
   over the aggregator)
+- [SPEC-031](031-area-link.md) — header link to the members area
 
 ---
 
