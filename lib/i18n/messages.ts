@@ -24,7 +24,13 @@ export const EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
-  marketing: { advertisement: 'Advertisements', preview: 'Ad preview' },
+  marketing: {
+    advertisement: 'Advertisements',
+    preview: 'Ad preview',
+    advertiseHere: 'Advertise here',
+    advertiseDescription: 'Reach people looking for remote tech roles.',
+    advertiseSubject: 'Advertising on Remote Engineering Radar',
+  },
   newsletter: {
     title: 'Subscribe to this lane',
     description:
@@ -342,7 +348,14 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
-  marketing: { advertisement: 'Publicidade', preview: 'Prévia do anúncio' },
+  marketing: {
+    advertisement: 'Publicidade',
+    preview: 'Prévia do anúncio',
+    advertiseHere: 'Anuncie aqui',
+    advertiseDescription:
+      'Alcance pessoas buscando vagas remotas em tecnologia.',
+    advertiseSubject: 'Publicidade no Remote Engineering Radar',
+  },
   newsletter: {
     title: 'Assine esta lane',
     description:

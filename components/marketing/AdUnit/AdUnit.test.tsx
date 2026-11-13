@@ -118,6 +118,21 @@ describe('AdUnit', () => {
     expect(push).not.toHaveBeenCalled();
   });
 
+  it('offers a contact link in the empty home ad slot', () => {
+    render(
+      <I18nProvider locale="pt-BR">
+        <AdUnit placement="home" slot="" />
+      </I18nProvider>,
+    );
+
+    expect(
+      screen.getByRole('link', {
+        name: messagesFor('pt-BR').marketing.advertiseHere,
+      }),
+    ).toHaveAttribute('href', expect.stringMatching(/^mailto:.*\?subject=/));
+    expect(document.querySelector('ins.adsbygoogle')).toBeNull();
+  });
+
   it('shows a compact beta preview without requesting an ad', () => {
     const push = vi.fn();
     vi.stubGlobal('adsbygoogle', { push });
