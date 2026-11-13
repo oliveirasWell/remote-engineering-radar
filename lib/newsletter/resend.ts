@@ -20,11 +20,23 @@ export const resendConfig = () => {
   return { key, from, segmentId };
 };
 
+/** Contact and segment operations; sending email also needs `RESEND_FROM`. */
+export const resendSegmentId = () => {
+  const segmentId = process.env.RESEND_SEGMENT_ID;
+  if (!segmentId) {
+    throw new Error('Newsletter requires RESEND_SEGMENT_ID');
+  }
+  return segmentId;
+};
+
 export const resendRequest = async <T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> => {
-  const { key } = resendConfig();
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw new Error('Newsletter requires RESEND_API_KEY');
+  }
   const response = await fetch(`${API}${path}`, {
     method: options.method ?? 'GET',
     headers: {

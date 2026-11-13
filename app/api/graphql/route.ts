@@ -1,6 +1,6 @@
 import { createYoga } from 'graphql-yoga';
 import { GRAPHQL_ENDPOINT } from './constants';
-import { isAuthorizedRequest } from './is-authorized-request';
+import { isAuthorizedRequest } from '@/lib/api/is-authorized-request';
 import { radarSchema } from './schema';
 
 const yoga = createYoga({
