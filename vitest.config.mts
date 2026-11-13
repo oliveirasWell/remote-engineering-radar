@@ -16,7 +16,10 @@ const vitestConfig = defineConfig({
     // Mirrors CI so pages take their database-backed path; tests that need
     // no database stub it empty.
     env: { DATABASE_URL: 'postgres://postgres@127.0.0.1:5432/radar' },
-    include: ['{app,components,lib,scripts}/**/*.test.{ts,tsx}'],
+    include: [
+      '{app,components,lib,scripts}/**/*.test.{ts,tsx}',
+      'packages/*/src/**/*.test.{ts,tsx}',
+    ],
     alias: {
       'server-only': fileURLToPath(
         new URL('./test/server-only-stub.ts', import.meta.url),

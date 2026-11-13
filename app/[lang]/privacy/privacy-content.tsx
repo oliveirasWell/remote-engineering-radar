@@ -11,7 +11,7 @@ import {
 import { GA_MEASUREMENT_ID } from '@/components/observability/GoogleAnalytics/constants';
 import { CONTACT_EMAIL } from '@/components/site/constants';
 import { isSafeExternalUrl } from '@/lib/urls/external-url';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
+import { PageTitle } from '@oliveiraswell/ds';
 
 const TEXT_LINK = 'text-muted-foreground underline underline-offset-2';
 

@@ -6,7 +6,7 @@ import { localizedPath } from '@/lib/i18n/localized-path/localized-path';
 import { jobSourceLabel } from '@/lib/jobs/source-labels/source-labels';
 import { JobCard } from '@/components/report/JobCard/JobCard';
 import { explanationForReason } from '@/lib/report/explanation-for-reason/explanation-for-reason';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
+import { PageTitle } from '@oliveiraswell/ds';
 import { GUIDE_PATH } from '@/lib/seo/constants';
 import type { JobDetailData } from '@/lib/report/get-jobs-page-data';
 

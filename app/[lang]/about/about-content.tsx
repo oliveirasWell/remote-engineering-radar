@@ -1,7 +1,7 @@
 'use client';
 
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
-import { PageTitle } from '@/components/ui/PageTitle/PageTitle';
+import { PageTitle } from '@oliveiraswell/ds';
 import {
   CONTACT_EMAIL,
   PERSONAL_SITE_URL,

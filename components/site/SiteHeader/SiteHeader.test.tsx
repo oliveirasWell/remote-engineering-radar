@@ -20,6 +20,8 @@ const LINKS = [
   { href: GUIDE_PATH, label: navigation.guide },
   { href: '/about', label: navigation.about },
 ];
+const AREA_URL = 'https://area.example';
+
 const ROUTES = [
   { pathname: '/', activeHref: '/' },
   { pathname: '/jobs', activeHref: '/jobs' },
@@ -98,5 +100,33 @@ describe('SiteHeader navigation tabs', () => {
         screen.getByRole('group', { name: navigation.language }),
       ).getAllByRole('link'),
     ).toHaveLength(LANGUAGE_OPTIONS.length);
+  });
+
+  describe('members area link', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('links to the area after the navigation links when configured', () => {
+      vi.stubEnv('NEXT_PUBLIC_AREA_URL', AREA_URL);
+      vi.mocked(usePathname).mockReturnValue(LINKS[0].href);
+      render(<SiteHeader />);
+
+      const links = within(
+        screen.getByRole('navigation', { name: navigation.label }),
+      ).getAllByRole('link');
+      expect(links.at(-1)).toHaveAccessibleName(navigation.area);
+      expect(links.at(-1)).toHaveAttribute('href', AREA_URL);
+    });
+
+    it('renders no area link when unset', () => {
+      vi.stubEnv('NEXT_PUBLIC_AREA_URL', '');
+      vi.mocked(usePathname).mockReturnValue(LINKS[0].href);
+      render(<SiteHeader />);
+
+      expect(
+        screen.queryByRole('link', { name: navigation.area }),
+      ).not.toBeInTheDocument();
+    });
   });
 });
