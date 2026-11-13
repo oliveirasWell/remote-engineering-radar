@@ -38,6 +38,8 @@ export const JobDetailReport = ({
   const { jobDetail } = messages;
   const reasons = new Map(Object.entries(messages.jobReasons));
   const listing = data.job.description?.trim() ?? '';
+  // Inlined at build time; the area is a separate application.
+  const areaUrl = process.env.NEXT_PUBLIC_AREA_URL;
 
   return (
     <>
@@ -45,6 +47,14 @@ export const JobDetailReport = ({
       <p className="text-sm text-foreground">
         {jobDetail.score(data.job.score)}
       </p>
+      {areaUrl ? (
+        <a
+          href={`${areaUrl}/save?job=${encodeURIComponent(data.job.id)}`}
+          className="inline-flex min-h-[44px] items-center font-medium text-foreground underline underline-offset-2"
+        >
+          {jobDetail.save}
+        </a>
+      ) : null}
       <JobCard job={data.job} />
       {data.job.reasons.length > 0 ? (
         <section className="space-y-3">
