@@ -25,6 +25,16 @@ export const EN_MESSAGES = {
     github: 'GitHub',
   },
   marketing: { advertisement: 'Advertisements', preview: 'Ad preview' },
+  newsletter: {
+    title: 'Subscribe to this lane',
+    description:
+      'Get a morning email with new jobs for this focus and country. Confirm your address first; unsubscribe in any email.',
+    email: 'Email address',
+    submit: 'Subscribe',
+    sending: 'Sending…',
+    sent: 'Check your inbox for the confirmation link.',
+    error: 'Could not subscribe right now. Please try again later.',
+  },
   home: {
     subtitle:
       'Companies hiring remote senior talent in React, TypeScript, Node.js, GraphQL and React Native, Cloud & Ops, Product, and Data Annotation.',
@@ -333,6 +343,16 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     github: 'GitHub',
   },
   marketing: { advertisement: 'Publicidade', preview: 'Prévia do anúncio' },
+  newsletter: {
+    title: 'Assine esta lane',
+    description:
+      'Receba pela manhã as vagas novas desta área e país. Confirme seu e-mail antes; descadastre-se por qualquer mensagem.',
+    email: 'Seu e-mail',
+    submit: 'Assinar',
+    sending: 'Enviando…',
+    sent: 'Confira o link de confirmação no seu e-mail.',
+    error: 'Não foi possível assinar agora. Tente novamente mais tarde.',
+  },
   home: {
     subtitle:
       'Empresas contratando profissionais sênior para trabalho remoto em React, TypeScript, Node.js, GraphQL e React Native, Cloud & Ops, Produto e Anotação de Dados.',

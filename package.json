@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/ingest.ts",
+    "newsletter:send": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/send-newsletter.ts",
     "db:generate": "prisma generate",
     "db:deploy": "tsx --conditions=react-server --env-file-if-exists=.env.local scripts/migrate-deploy.ts",
     "db:migrate": "pnpm db:deploy",

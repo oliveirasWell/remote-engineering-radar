@@ -53,6 +53,46 @@ const UNKNOWN_COUNTRIES = ['atlantis', 'unknown-country'];
 const UPDATED_AT = new Date('2026-09-01T12:00:00Z');
 
 describe('home report copy', () => {
+  it('offers a subscription for the selected lane and country', async () => {
+    const send = vi.fn(async () => new Response(null, { status: 202 }));
+    vi.stubGlobal('fetch', send);
+    const messages = messagesFor('pt-BR');
+    render(
+      <I18nProvider locale="pt-BR">
+        <CompaniesReport
+          data={{
+            companies: [],
+            focus: JOB_FOCUS_CLOUD_OPS,
+            country: 'brazil',
+            updatedAt: null,
+          }}
+          newsletterEnabled
+        />
+      </I18nProvider>,
+    );
+    fireEvent.change(
+      screen.getByRole('textbox', { name: messages.newsletter.email }),
+      {
+        target: { value: 'person@example.com' },
+      },
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: messages.newsletter.submit }),
+    );
+    await screen.findByText(messages.newsletter.sent);
+    expect(send).toHaveBeenCalledWith(
+      '/api/newsletter/subscribe',
+      expect.objectContaining({
+        body: JSON.stringify({
+          email: 'person@example.com',
+          focus: JOB_FOCUS_CLOUD_OPS,
+          country: 'brazil',
+          locale: 'pt-BR',
+        }),
+      }),
+    );
+  });
+
   it('shows the home ad preview on beta while the ad slots are pending', () => {
     vi.stubEnv('VERCEL_ENV', 'preview');
     const page = Home({ searchParams: Promise.resolve({}) });
