@@ -70,6 +70,11 @@ set `RESEND_SEGMENT_ID` in Vercel. Without these values, signups fail closed.
 Sending to arbitrary subscribers requires a domain you control; the Resend
 free tier does not cover buying a domain if you do not already have one.
 
+Members of the area can subscribe without the public form through the
+token-protected `/api/newsletter/members` (SPEC-034). It needs only
+`RESEND_API_KEY` and `RESEND_SEGMENT_ID` in Vercel; leave `RESEND_FROM` unset
+there to keep the public form hidden until a sending domain is verified.
+
 The [Resend Free plan](https://resend.com/pricing) currently allows 1,000 marketing contacts and broadcasts;
 confirmation emails use its transactional allowance (100/day, 3,000/month).
 The app caps new confirmations at 80/day. No emails are sent when there are no

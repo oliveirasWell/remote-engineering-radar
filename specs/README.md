@@ -55,6 +55,7 @@ Open:
 - [SPEC-030](030-graphql-read-api.md) — read-only GraphQL API for the members area
 - [SPEC-031](031-area-link.md) — header link to the members area
 - [SPEC-033](033-save-job-link.md) — "Save to my area" link on the job detail page
+- [SPEC-034](034-member-newsletter-api.md) — newsletter subscriptions for members-area users
 
 ---
 
