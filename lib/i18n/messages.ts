@@ -201,6 +201,7 @@ export const EN_MESSAGES = {
   },
   jobDetail: {
     score: (score: number) => `Relevance score: ${score} out of 100`,
+    save: 'Save to my area',
     reasonsTitle: 'Why this score',
     technology: (name: string) =>
       `${name} is named in the public listing and adds its weight on the focus table.`,
@@ -519,6 +520,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
   },
   jobDetail: {
     score: (score: number) => `Pontuação de relevância: ${score} de 100`,
+    save: 'Salvar na minha área',
     reasonsTitle: 'Por que esta pontuação',
     technology: (name: string) =>
       `${name} aparece no anúncio público e soma o peso da tabela de foco.`,
