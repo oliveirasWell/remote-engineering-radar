@@ -15,8 +15,13 @@ import {
 import { SiteWordmark } from '@/components/site/SiteWordmark/SiteWordmark';
 import { GUIDE_PATH } from '@/lib/seo/constants';
 
+const LINK_CLASS_NAME =
+  'inline-flex min-h-[44px] items-center text-muted-foreground underline underline-offset-2';
+
 const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
   const { locale, messages } = useI18n();
+  // Inlined at build time; a separate application, so a plain anchor.
+  const areaUrl = process.env.NEXT_PUBLIC_AREA_URL;
   const sharedPath = pathname ? unlocalizedPath(pathname) : undefined;
   const links = [
     { href: '/', label: messages.navigation.companies },
@@ -43,13 +48,18 @@ const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
             className={
               selected
                 ? 'inline-flex min-h-[44px] items-center font-semibold text-foreground shadow-[inset_0_-2px_0_var(--primary)]'
-                : 'inline-flex min-h-[44px] items-center text-muted-foreground underline underline-offset-2'
+                : LINK_CLASS_NAME
             }
           >
             {label}
           </Link>
         );
       })}
+      {areaUrl ? (
+        <a href={areaUrl} className={LINK_CLASS_NAME}>
+          {messages.navigation.area}
+        </a>
+      ) : null}
     </nav>
   );
 };

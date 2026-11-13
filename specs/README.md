@@ -53,6 +53,7 @@ Open:
   over the aggregator)
 - [SPEC-029](029-design-system-package.md) — design-system package `@oliveiraswell/ds`
 - [SPEC-030](030-graphql-read-api.md) — read-only GraphQL API for the members area
+- [SPEC-031](031-area-link.md) — header link to the members area
 
 ---
 
