@@ -2,6 +2,7 @@ import { cacheLife } from 'next/cache';
 import { getDb } from '@/lib/db/client';
 import { createCompaniesRepository } from '@/lib/db/repositories/companies-repository';
 import { createJobsRepository } from '@/lib/db/repositories/jobs-repository';
+import type { Company } from '@/lib/companies/types';
 import type { JobCard } from '@/lib/jobs/types';
 import {
   DEFAULT_JOB_SORT,
@@ -13,7 +14,11 @@ import {
 import { scoreJob } from '@/lib/scoring/score-job';
 import { REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
-import type { ReportJobCard, ReportJobDetail } from './types';
+import type {
+  ReportJobCompany,
+  ReportJobDetail,
+  ReportJobListing,
+} from './types';
 
 export type JobFilters = {
   technology?: string;
@@ -27,20 +32,30 @@ export type JobFilters = {
 };
 
 export type JobsPageData = {
-  jobs: ReportJobCard[];
+  jobs: ReportJobListing[];
 };
 
 export type JobDetailData = {
   job: ReportJobDetail | null;
 };
 
-const toJobCard = (
+const toReportCompany = ({
+  id,
+  name,
+  slug,
+  websiteUrl,
+  logoUrl,
+}: Company): ReportJobCompany => ({ id, name, slug, websiteUrl, logoUrl });
+
+const toJobListing = (
   job: JobCard,
-  companyName: string | null,
-): ReportJobCard => ({
+  company: Company | undefined,
+): ReportJobListing => ({
   id: job.id,
   title: job.title,
-  companyName,
+  companyName: company?.name ?? null,
+  company: company ? toReportCompany(company) : null,
+  seniority: job.seniority,
   companyId: job.companyId,
   technologies: job.technologies,
   location: job.location,
@@ -78,13 +93,13 @@ export const getJobsPageData = async (
     const companies = await companiesRepository.listByIds([
       ...new Set(jobs.map((job) => job.companyId)),
     ]);
-    const companyNames = new Map(
-      companies.map((company) => [company.id, company.name]),
+    const companiesById = new Map(
+      companies.map((company) => [company.id, company]),
     );
 
     return {
       jobs: jobs.map((job) =>
-        toJobCard(job, companyNames.get(job.companyId) ?? null),
+        toJobListing(job, companiesById.get(job.companyId)),
       ),
     };
   } catch (error) {
@@ -127,7 +142,7 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
 
     return {
       job: {
-        ...toJobCard(job, company?.name ?? null),
+        ...toJobListing(job, company ?? undefined),
         reasons: scored.reasons,
         description: job.description,
         source: job.source,

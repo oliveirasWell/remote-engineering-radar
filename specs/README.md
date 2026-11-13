@@ -52,6 +52,7 @@ Open:
   per-board failure isolation, automatic discovery in the ingest, direct board wins
   over the aggregator)
 - [SPEC-029](029-design-system-package.md) — design-system package `@oliveiraswell/ds`
+- [SPEC-030](030-graphql-read-api.md) — read-only GraphQL API for the members area
 
 ---
 
