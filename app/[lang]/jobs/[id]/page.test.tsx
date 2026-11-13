@@ -40,6 +40,8 @@ const GENERATED_REASONS = [
 ];
 
 const PORTUGUESE_JOBS_PATH = localizedPath('pt-BR', '/jobs');
+const AREA_URL = 'https://area.example';
+const AREA_SAVE_PATH = '/save';
 vi.mock('@/lib/report/get-jobs-page-data', () => ({
   getJobDetailData: vi.fn(),
 }));
@@ -246,5 +248,46 @@ describe('JobDetailPage cache boundary', () => {
     expect(metadata.description).toContain(detailJob.title);
     expect(metadata.description).toContain(detailJob.companyName);
     expect(getJobDetailData).toHaveBeenCalledExactlyOnceWith(TEST_JOB_ID);
+  });
+});
+
+describe('save to the members area', () => {
+  const renderDetail = async () => {
+    vi.mocked(getJobDetailData).mockResolvedValue({ job: detailJob });
+    const page = JobDetailPage({
+      params: Promise.resolve({ id: detailJob.id }),
+    });
+    render(
+      <I18nProvider locale="pt-BR">
+        {await resolvePageSection(page)}
+      </I18nProvider>,
+    );
+  };
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('links to the area save route for this job when configured', async () => {
+    vi.stubEnv('NEXT_PUBLIC_AREA_URL', AREA_URL);
+    await renderDetail();
+
+    expect(
+      screen.getByRole('link', { name: messagesFor('pt-BR').jobDetail.save }),
+    ).toHaveAttribute(
+      'href',
+      `${AREA_URL}${AREA_SAVE_PATH}?job=${detailJob.id}`,
+    );
+  });
+
+  it('renders no save link when the area is not configured', async () => {
+    vi.stubEnv('NEXT_PUBLIC_AREA_URL', '');
+    await renderDetail();
+
+    expect(
+      screen.queryByRole('link', {
+        name: messagesFor('pt-BR').jobDetail.save,
+      }),
+    ).not.toBeInTheDocument();
   });
 });
