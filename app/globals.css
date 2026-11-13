@@ -1,2 +1,4 @@
 @import 'tailwindcss';
-@import './theme.css';
+@import '@oliveiraswell/ds/theme.css';
+@source '../packages/design-system/src';
+@source not '../packages/design-system/src/**/*.test.tsx';
