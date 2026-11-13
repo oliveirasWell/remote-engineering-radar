@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
+import { CONTACT_EMAIL } from '@/components/site/constants';
 import { ADSENSE_CLIENT_ID } from '@/lib/marketing/adsense';
 
 export const AdUnit = ({
@@ -46,7 +47,7 @@ export const AdUnit = ({
     }
   }, [slot]);
 
-  if (!configured && !preview) {
+  if (!configured && !preview && placement === 'topbar') {
     return null;
   }
 
@@ -79,13 +80,26 @@ export const AdUnit = ({
     </aside>
   ) : (
     <aside aria-label={messages.marketing.advertisement} className="w-full">
+      {configured ? null : (
+        <div className="rounded border border-border bg-card px-4 py-3 text-center text-sm">
+          <a
+            href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(messages.marketing.advertiseSubject)}`}
+            className="font-medium text-foreground underline underline-offset-2"
+          >
+            {messages.marketing.advertiseHere}
+          </a>
+          <p className="text-muted-foreground">
+            {messages.marketing.advertiseDescription}
+          </p>
+        </div>
+      )}
       {empty ? null : (
         <span className="mb-2 block text-center text-xs text-muted-foreground">
           {messages.marketing.advertisement}
         </span>
       )}
       {configured ? responsiveAd : null}
-      {empty ? emptyBar : null}
+      {empty && (configured || preview) ? emptyBar : null}
     </aside>
   );
 };

@@ -93,6 +93,9 @@ flow. No daily broadcast is sent from PR previews; it runs only after a
 successful scheduled production ingest. Keep the production GitHub Actions
 secret unset until the beta flow has been verified and the PR is approved.
 
+The empty home ad placement links to the maintainer for a manually negotiated
+fixed-term ad. It does not collect Pix or publish paid content automatically.
+
 ## Documentation
 
 - [Specs](specs/) — feature requirements and technical decisions.
