@@ -27,6 +27,24 @@ describe('normalizeAshbyJob', () => {
     });
   });
 
+  it.each([
+    { workplaceType: 'Hybrid', isRemote: true, expected: 'hybrid' },
+    { workplaceType: 'OnSite', isRemote: true, expected: 'onsite' },
+    { workplaceType: 'Remote', isRemote: false, expected: 'remote' },
+    { workplaceType: undefined, isRemote: true, expected: 'remote' },
+  ])(
+    'trusts workplaceType $workplaceType over isRemote $isRemote',
+    ({ workplaceType, isRemote, expected }) => {
+      // Ashby sets isRemote on hybrid roles too; workplaceType is the policy.
+      const job = normalizeAshbyJob(
+        { ...page1.jobs[0], workplaceType, isRemote },
+        BOARD_NAME,
+      );
+
+      expect(job?.remotePolicy).toBe(expected);
+    },
+  );
+
   it('returns null for missing required fields or unlisted jobs', () => {
     expect(normalizeAshbyJob({ title: 'No id' }, BOARD_NAME)).toBeNull();
     expect(
