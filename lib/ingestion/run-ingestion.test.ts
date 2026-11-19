@@ -452,6 +452,91 @@ describe('runIngestion', () => {
     ).toEqual(completedAt);
   });
 
+  it('records per-source metrics so sources can be compared', async () => {
+    const db = await createTestDb();
+    const now = new Date('2026-11-19T12:00:00.000Z');
+    const postedAt = new Date('2026-11-18T12:00:00.000Z');
+    const eligible = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'eligible',
+      title: 'Senior Frontend Engineer',
+      url: 'https://example.com/jobs/eligible',
+      postedAt,
+    });
+    const onsite = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'onsite',
+      title: 'Senior Frontend Engineer, Office',
+      url: 'https://example.com/jobs/onsite',
+      remotePolicy: 'onsite',
+      location: 'Paris',
+      description: 'React TypeScript Senior on-site in Paris',
+    });
+    const sources: JobSource[] = [
+      {
+        name: 'greenhouse',
+        fetchJobs: async () => ({ complete: true, jobs: [eligible, onsite] }),
+      },
+      {
+        name: 'himalayas',
+        fetchJobs: async () => ({
+          complete: false,
+          jobs: [{ ...eligible, source: 'himalayas', sourceJobId: 'twin' }],
+        }),
+      },
+      {
+        name: 'jobicy',
+        fetchJobs: async () => {
+          throw new Error('Jobicy request failed: 503');
+        },
+      },
+    ];
+
+    await runIngestion({ db, sources, now: () => now });
+
+    const runs = await db.ingestionSourceRun.findMany({
+      orderBy: { source: 'asc' },
+      select: {
+        source: true,
+        fetched: true,
+        eligible: true,
+        persisted: true,
+        newJobs: true,
+        medianAgeHours: true,
+        error: true,
+      },
+    });
+    expect(runs).toEqual([
+      {
+        source: 'greenhouse',
+        fetched: 2,
+        eligible: 1,
+        persisted: 1,
+        newJobs: 1,
+        medianAgeHours: 24,
+        error: null,
+      },
+      {
+        source: 'himalayas',
+        fetched: 1,
+        eligible: 1,
+        persisted: 0,
+        newJobs: 0,
+        medianAgeHours: 24,
+        error: null,
+      },
+      {
+        source: 'jobicy',
+        fetched: 0,
+        eligible: 0,
+        persisted: 0,
+        newJobs: 0,
+        medianAgeHours: null,
+        error: 'Jobicy request failed: 503',
+      },
+    ]);
+  });
+
   it('is idempotent across duplicate executions', async () => {
     const db = await createTestDb();
     const source: JobSource = {

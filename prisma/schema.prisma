@@ -101,6 +101,28 @@ model IngestionRun {
   @@map("ingestion_runs")
 }
 
+/// One row per source per ingestion run, to compare source quality over time.
+/// `runId` has no foreign key: rows are written with their run in the ingest
+/// transaction, and legacy baselines may predate `ingestion_runs`.
+model IngestionSourceRun {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  runId          String       @map("run_id") @db.Uuid
+  source         String       @db.Text
+  fetched        Int          @default(0)
+  /// Remote, on-topic and recent enough to keep, before cross-source dedupe.
+  eligible       Int          @default(0)
+  /// Kept after cross-source dedupe.
+  persisted      Int          @default(0)
+  /// First seen in this run.
+  newJobs        Int          @default(0) @map("new_jobs")
+  medianAgeHours Float?       @map("median_age_hours")
+  error          String?      @db.Text
+
+  @@index([runId], map: "ingestion_source_runs_run_id_idx")
+  @@index([source], map: "ingestion_source_runs_source_idx")
+  @@map("ingestion_source_runs")
+}
+
 model NewsletterSubscription {
   email              String    @id @db.Text
   focus              String?   @db.Text
