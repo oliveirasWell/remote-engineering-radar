@@ -5,6 +5,38 @@ import { createAtsBoardsRepository } from './ats-boards-repository';
 import { TEST_COMPANY, TEST_JOB } from './test-fixtures';
 
 describe('createAtsBoardsRepository', () => {
+  it('uses any non-board source as discovery evidence, so retiring a Himalayas twin keeps the company', async () => {
+    const db = await createTestDb();
+    const repository = createAtsBoardsRepository(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const jobs = createJobsRepository(db);
+    await jobs.create({
+      ...TEST_JOB,
+      technologies: [...TEST_JOB.technologies],
+      companyId: company.id,
+      source: 'getonbrd',
+      sourceJobId: 'getonbrd-only',
+      title: 'Senior React Engineer',
+      roleFocus: ['software'],
+    });
+    await jobs.create({
+      ...TEST_JOB,
+      technologies: [...TEST_JOB.technologies],
+      companyId: company.id,
+      source: 'greenhouse',
+      sourceJobId: 'direct-board',
+      title: 'Staff Backend Engineer',
+      roleFocus: ['software'],
+    });
+
+    expect(await repository.listCandidates(new Date())).toEqual([
+      { id: company.id, name: company.name },
+    ]);
+    expect(await repository.listEvidenceTitles(company.id)).toEqual([
+      'Senior React Engineer',
+    ]);
+  });
+
   it('ranks aggregator-backed software companies, checks them, and keeps verified board links unique', async () => {
     const db = await createTestDb();
     const repository = createAtsBoardsRepository(db);

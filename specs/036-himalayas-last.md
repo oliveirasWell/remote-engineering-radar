@@ -17,6 +17,10 @@ Lever board listed the same role.
   A title Himalayas lists more than once for a company stays, because a title
   alone cannot tell those openings apart.
 - Jobicy keeps the stricter rule: only a verified direct board retires it.
+- Board discovery takes its evidence from any active job not read from a
+  direct board (it used to read only Himalayas and Jobicy), so retiring a
+  Himalayas twin keeps the other source's copy as evidence, and companies
+  seen only on Get on Board, Hacker News or YC become candidates too.
 
 ## Measuring it
 
