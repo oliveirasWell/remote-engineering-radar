@@ -11,4 +11,10 @@ export const GREENHOUSE_BOARD_TOKENS: readonly string[] = [
   'vtex',
   'doximity',
   'grafanalabs',
+  // Brazilian tech companies with public boards, checked 2026-11-19.
+  'gympass',
+  'jusbrasil',
+  'wildlifestudios',
+  'ebanx',
+  'rdstation',
 ];

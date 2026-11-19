@@ -11,4 +11,6 @@ export const ASHBY_BOARD_NAMES: readonly string[] = [
   'cursor',
   'vanta',
   'resend',
+  // Brazilian; checked 2026-11-19 (105 roles, few remote yet).
+  'nubank',
 ];
