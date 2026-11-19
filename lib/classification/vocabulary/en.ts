@@ -107,6 +107,9 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
     /\b(?:sales\s+development|business\s+development)\s+representative\b/i,
     /\bsales\s+(?:manager|director|engineer|associate|executive)\b/i,
     /\bpeople\s+partner\b/i,
+    // French franchise ads ("Consultant en recrutement indépendant H/F"):
+    // on-site and commission-only. Titles are accent-folded before matching.
+    /\brecrutement\s+independant\b/i,
     /\bcustomer\s+success\b/i,
     /\baccount\s+manager\b/i,
     /\b(?:marketing\s+manager|growth\s+marketing|product\s+marketing|content\s+marketing)\b/i,
