@@ -107,11 +107,6 @@ export const RECRUITING_LANE_CASES: readonly RecruitingLaneCase[] = [
     recruiting: true,
     source: 'himalayas',
   },
-  {
-    title: 'Consultant en recrutement indépendant H/F - Nanterre',
-    recruiting: true,
-    source: 'himalayas',
-  },
   { title: 'Tech Recruiter', recruiting: true, source: 'synthetic' },
   { title: 'Recrutador(a) Tech Pleno', recruiting: true, source: 'synthetic' },
   {
@@ -220,6 +215,23 @@ export const RECRUITING_LANE_CASES: readonly RecruitingLaneCase[] = [
     title: 'Analista de Departamento Pessoal',
     recruiting: false,
     source: 'synthetic',
+  },
+
+  // French franchise postings: on-site, commission-only, not a remote job.
+  {
+    title: 'Consultant en recrutement indépendant H/F - Nanterre',
+    recruiting: false,
+    source: 'himalayas',
+  },
+  {
+    title: 'Consultant en recrutement indépendant H/F - Grenoble',
+    recruiting: false,
+    source: 'himalayas',
+  },
+  {
+    title: 'Consultant en recrutement indépendant H/F - Rennes',
+    recruiting: false,
+    source: 'himalayas',
   },
 
   // Engineering jobs whose product or team is recruiting.

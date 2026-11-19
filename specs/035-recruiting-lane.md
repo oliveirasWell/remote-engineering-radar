@@ -20,7 +20,10 @@ queried for engineering categories only.
   `RECRUITING_TITLE_VETOES` (engineer, developer, designer, marketing, brand),
   so "Software Engineer, Recruiting Platform" and "Product Marketing Manager -
   Recruitment Cloud" stay off.
-- Recruiting terms leave `unrelatedRoleTitle`; "People Partner" stays there.
+- Recruiting terms leave `unrelatedRoleTitle`; "People Partner" stays there,
+  and French franchise ads ("Consultant en recrutement indépendant H/F") join
+  it: on-site and commission-only, so the ingest drops them and
+  `reclassify-active-jobs` deactivates the copies already stored.
   Procurement "Sourcing Manager" and talent-pool postings ("Banco de
   Talentos") match no recruiting term.
 - Sources: Jobicy also requests `industry=hr`; GetOnBrd also reads the `hr`
@@ -32,8 +35,8 @@ queried for engineering categories only.
 
 ## Eval
 
-`lib/classification/evals/recruiting-lane/` holds 63 labeled titles (36
-recruiting, 27 not) collected on 2026-11-18 from the Greenhouse and Ashby seed
+`lib/classification/evals/recruiting-lane/` holds 65 labeled titles (35
+recruiting, 30 not) collected on 2026-11-18 from the Greenhouse and Ashby seed
 boards, Jobicy `hr`, GetOnBrd `hr` and Himalayas, plus synthetic Brazilian and
 engineering-team cases. A title is predicted on the lane when the ingest
 persists it and `roleFocus` contains `recruiting`. The suite fails below 0.95
