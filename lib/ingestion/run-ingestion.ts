@@ -16,6 +16,7 @@ import { normalizeCompanyName } from '@/lib/deduplication/normalize';
 import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
 import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
+import { median } from '@/lib/ingestion/median/median';
 import { resolveJobCountries } from '@/lib/jobs/countries';
 import {
   JOB_MAX_AGE_MS,
@@ -100,6 +101,19 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
       !isPostedBeyondMaxAge(job, now, JOB_MAX_AGE_MS),
   };
 };
+
+const HOUR_MS = 3_600_000;
+
+/** Hours since posting for the jobs that carry a date, as the source reports it. */
+const medianAgeHours = (
+  jobs: readonly NormalizedJob[],
+  now: Date,
+): number | undefined =>
+  median(
+    jobs.flatMap((job) =>
+      job.postedAt ? [(now.getTime() - job.postedAt.getTime()) / HOUR_MS] : [],
+    ),
+  );
 
 const removeMissingVerifiedBoards = async (
   db: RootDb,
@@ -194,6 +208,7 @@ export const runIngestion = async (options: {
   }, new Map<string, NewCompany>());
 
   const persistedBySource = new Map<string, number>();
+  const newJobsBySource = new Map<string, number>();
 
   const { persistedJobs, companiesUpdated } = await options.db.$transaction(
     async (tx) => {
@@ -209,6 +224,20 @@ export const runIngestion = async (options: {
       ])) {
         companyIdsBySlug.set(slug, id);
         companyIds.add(id);
+      }
+
+      for (const [source, jobs] of Map.groupBy(
+        uniqueJobs,
+        (job) => job.source,
+      )) {
+        const existing = await jobsRepository.findExistingSourceJobIds(
+          source,
+          jobs.map((job) => job.sourceJobId),
+        );
+        newJobsBySource.set(
+          source,
+          jobs.filter((job) => !existing.has(job.sourceJobId)).length,
+        );
       }
 
       const persistedJobs = await jobsRepository.upsertManyBySourceJobId(
@@ -333,6 +362,20 @@ export const runIngestion = async (options: {
         completedAt: options.completedAt?.(),
         persistedJobs,
         companiesUpdated,
+        sources: sourceResults.map((result) => {
+          const eligible = persistable.filter(
+            (job) => job.source === result.name,
+          );
+          return {
+            source: result.name,
+            fetched: result.fetched,
+            eligible: eligible.length,
+            persisted: persistedBySource.get(result.name) ?? 0,
+            newJobs: newJobsBySource.get(result.name) ?? 0,
+            medianAgeHours: medianAgeHours(eligible, now),
+            error: result.error,
+          };
+        }),
       });
 
       return { persistedJobs, companiesUpdated };

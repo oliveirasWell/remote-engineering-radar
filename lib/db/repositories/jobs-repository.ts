@@ -442,6 +442,22 @@ export const createJobsRepository = (db: Db) => ({
       : writeJobBatches(db, chunkRows(rows, JOB_UPSERT_BATCH_SIZE), new Date());
   },
 
+  /** Which of these source job ids are already stored, to count new jobs. */
+  findExistingSourceJobIds: async (
+    source: string,
+    sourceJobIds: readonly string[],
+  ): Promise<Set<string>> =>
+    sourceJobIds.length === 0
+      ? new Set()
+      : new Set(
+          (
+            await db.job.findMany({
+              where: { source, sourceJobId: { in: [...sourceJobIds] } },
+              select: { sourceJobId: true },
+            })
+          ).map(({ sourceJobId }) => sourceJobId),
+        ),
+
   deactivateMissingBySource: async (
     source: string,
     sourceJobIds: string[],
