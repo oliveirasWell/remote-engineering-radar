@@ -52,6 +52,58 @@ const COUNTRY_TABS = [
 const UNKNOWN_COUNTRIES = ['atlantis', 'unknown-country'];
 const UPDATED_AT = new Date('2026-09-01T12:00:00Z');
 
+const AREA_URL = 'https://area.example';
+const AREA_NEWSLETTER_PATH = '/newsletter';
+
+describe('lane email link to the members area', () => {
+  const renderLane = () =>
+    render(
+      <I18nProvider locale="pt-BR">
+        <CompaniesReport
+          data={{
+            companies: [],
+            focus: JOB_FOCUS_PRODUCT,
+            country: 'brazil',
+            updatedAt: null,
+          }}
+        />
+      </I18nProvider>,
+    );
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('opens the members area with the selected lane, country and language', () => {
+    vi.stubEnv('NEXT_PUBLIC_AREA_URL', AREA_URL);
+    renderLane();
+
+    const link = screen.getByRole('link', {
+      name: messagesFor('pt-BR').newsletter.emailInArea,
+    });
+    const url = new URL(link.getAttribute('href') ?? '');
+    expect(`${url.origin}${url.pathname}`).toBe(
+      `${AREA_URL}${AREA_NEWSLETTER_PATH}`,
+    );
+    expect(Object.fromEntries(url.searchParams)).toEqual({
+      focus: JOB_FOCUS_PRODUCT,
+      country: 'brazil',
+      locale: 'pt-BR',
+    });
+  });
+
+  it('shows no link when the members area is not configured', () => {
+    vi.stubEnv('NEXT_PUBLIC_AREA_URL', '');
+    renderLane();
+
+    expect(
+      screen.queryByRole('link', {
+        name: messagesFor('pt-BR').newsletter.emailInArea,
+      }),
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe('home report copy', () => {
   it('offers a subscription for the selected lane and country', async () => {
     const send = vi.fn(async () => new Response(null, { status: 202 }));

@@ -34,6 +34,7 @@ export const EN_MESSAGES = {
     sending: 'Sending…',
     sent: 'Check your inbox for the confirmation link.',
     error: 'Could not subscribe right now. Please try again later.',
+    emailInArea: 'Get these jobs by email',
   },
   home: {
     subtitle:
@@ -354,6 +355,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     sending: 'Enviando…',
     sent: 'Confira o link de confirmação no seu e-mail.',
     error: 'Não foi possível assinar agora. Tente novamente mais tarde.',
+    emailInArea: 'Receber essas vagas por email',
   },
   home: {
     subtitle:
