@@ -14,7 +14,8 @@ import { focusFilter } from './focus-filter';
 import { coalescedPostedAtFilter } from './posted-at-filter';
 import { JOB_ORDER_BY, JOB_UPSERT_BATCH_SIZE } from './constants';
 
-const AGGREGATOR_SOURCES = ['himalayas', 'jobicy'] as const;
+const HIMALAYAS_SOURCE = 'himalayas';
+const AGGREGATOR_SOURCES = [HIMALAYAS_SOURCE, 'jobicy'] as const;
 const DIRECT_BOARD_SOURCES = ['greenhouse', 'ashby', 'lever'] as const;
 
 const toStringArray = (column: string, value: Prisma.JsonValue): string[] => {
@@ -512,6 +513,36 @@ export const createJobsRepository = (db: Db) => ({
             )
         ) = 1
       RETURNING aggregator.company_id AS "companyId"
+    `),
+
+  /**
+   * Himalayas is the source of last resort: a copy any other source also
+   * lists (same company, same normalized title) adds nothing, so it retires.
+   * Like `deactivateAggregatorTwins`, an ambiguous title Himalayas lists more
+   * than once stays, because a title alone cannot tell its openings apart.
+   */
+  deactivateHimalayasTwins: async (): Promise<{ companyId: string }[]> =>
+    db.$queryRaw<{ companyId: string }[]>(Prisma.sql`
+      UPDATE jobs himalayas
+      SET is_active = false, updated_at = ${new Date()}
+      WHERE himalayas.is_active
+        AND himalayas.source = ${HIMALAYAS_SOURCE}
+        AND btrim(regexp_replace(lower(himalayas.title), '[^a-z0-9+#.]+', ' ', 'g')) <> ''
+        AND (
+          SELECT count(*) FROM jobs peer
+          WHERE peer.company_id = himalayas.company_id AND peer.is_active
+            AND peer.source = ${HIMALAYAS_SOURCE}
+            AND btrim(regexp_replace(lower(peer.title), '[^a-z0-9+#.]+', ' ', 'g')) =
+              btrim(regexp_replace(lower(himalayas.title), '[^a-z0-9+#.]+', ' ', 'g'))
+        ) = 1
+        AND EXISTS (
+          SELECT 1 FROM jobs other
+          WHERE other.company_id = himalayas.company_id AND other.is_active
+            AND other.source <> ${HIMALAYAS_SOURCE}
+            AND btrim(regexp_replace(lower(other.title), '[^a-z0-9+#.]+', ' ', 'g')) =
+              btrim(regexp_replace(lower(himalayas.title), '[^a-z0-9+#.]+', ' ', 'g'))
+        )
+      RETURNING himalayas.company_id AS "companyId"
     `),
 
   /** Rows are only ever deactivated, so without this the table grows forever. */

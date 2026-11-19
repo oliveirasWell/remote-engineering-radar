@@ -279,6 +279,9 @@ export const runIngestion = async (options: {
       const aggregatorTwins = await jobsRepository.deactivateAggregatorTwins();
       aggregatorTwins.forEach((job) => companyIds.add(job.companyId));
 
+      const himalayasTwins = await jobsRepository.deactivateHimalayasTwins();
+      himalayasTwins.forEach((job) => companyIds.add(job.companyId));
+
       await jobsRepository.deleteInactiveOlderThan(JOB_RETENTION_MS, now);
 
       // One batched read instead of one query per touched company, and
