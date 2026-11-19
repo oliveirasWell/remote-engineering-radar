@@ -19,4 +19,6 @@ export const GREENHOUSE_BOARD_TOKENS: readonly string[] = [
   'rdstation',
   'stone',
   'c6bank',
+  'ifoodcarreiras',
+  'ifoodcampanhas',
 ];
