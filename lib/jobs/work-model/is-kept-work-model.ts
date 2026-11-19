@@ -1,7 +1,8 @@
+import type { JobRemotePolicy } from '@/lib/classification/types';
 import { REMOTE_POLICY_REMOTE } from '../constants';
 
 const BRAZIL_COUNTRY = 'brazil';
-const ONSITE_POLICY = 'onsite';
+const ONSITE_POLICY: JobRemotePolicy = 'onsite';
 const NON_REMOTE_POLICIES_KEPT_IN_BRAZIL: ReadonlySet<string> = new Set([
   'hybrid',
   'onsite',
@@ -27,5 +28,5 @@ export const isKeptWorkModel = (
  */
 export const defaultWorkModel = (
   countries: readonly string[],
-): string | undefined =>
+): JobRemotePolicy | undefined =>
   countries.includes(BRAZIL_COUNTRY) ? ONSITE_POLICY : undefined;
