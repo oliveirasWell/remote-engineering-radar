@@ -17,4 +17,6 @@ export const GREENHOUSE_BOARD_TOKENS: readonly string[] = [
   'wildlifestudios',
   'ebanx',
   'rdstation',
+  'stone',
+  'c6bank',
 ];
