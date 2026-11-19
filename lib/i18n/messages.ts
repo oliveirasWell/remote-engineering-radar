@@ -24,7 +24,6 @@ export const EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
-  marketing: { advertisement: 'Advertisements', preview: 'Ad preview' },
   newsletter: {
     title: 'Subscribe to this lane',
     description:
@@ -345,7 +344,6 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     languages: { en: 'English', 'pt-BR': 'Português (Brasil)' },
     github: 'GitHub',
   },
-  marketing: { advertisement: 'Publicidade', preview: 'Prévia do anúncio' },
   newsletter: {
     title: 'Assine esta lane',
     description:

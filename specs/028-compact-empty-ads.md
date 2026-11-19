@@ -1,3 +1,5 @@
+> Superseded by [SPEC-038](038-remove-adsense.md): AdSense was removed.
+
 # Compact empty ad placements
 
 ## Amendment
