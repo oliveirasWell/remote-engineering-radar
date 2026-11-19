@@ -33,6 +33,8 @@ export type ClassificationVocabulary = {
   annotationTitle: Patterns;
   annotationText: Patterns;
   productTitle: Patterns;
+  /** Matched against the title alone: a recruiter's title names the job. */
+  recruitingTitle: Patterns;
   /** A title that names a software job; see `SOFTWARE_ROLE_FOCUS`. */
   softwareTitle: Patterns;
   unrelatedRoleTitle: Patterns;

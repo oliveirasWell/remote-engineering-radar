@@ -16,6 +16,7 @@ const CLOUD_OPS_DESCRIPTION =
 const PLATFORM_ROLE_FOCUS = 'platform';
 const DATA_ANNOTATION_ROLE_FOCUS = 'annotation';
 const PRODUCT_ROLE_FOCUS = 'product';
+const RECRUITING_ROLE_FOCUS = 'recruiting';
 const SOFTWARE_ROLE_FOCUS = 'software';
 const REACT_ROLE_FOCUS = 'react';
 const SOFTWARE_TITLES = [
@@ -258,9 +259,9 @@ const PORTUGUESE_ROLE_FOCUS_CASES = [
 const PORTUGUESE_UNRELATED_ROLE_TITLES = [
   'Consultora Comercial',
   'Executivo de Vendas',
-  'Recrutadora Tech',
   'Analista de Sucesso do Cliente',
 ];
+const RECRUITING_TITLES = ['Technical Recruiter', 'Recrutadora Tech'];
 const QUAVE_ANNOTATION_TITLE = 'Senior Full-Stack Engineer';
 const QUAVE_ANNOTATION_DESCRIPTION =
   'Work with a US client developing AI training and evaluation data for coding agents. React, TypeScript, and Node.js.';
@@ -366,17 +367,24 @@ describe('classifyJob', () => {
     expect(result.isUnrelatedRole).toBe(true);
   });
 
-  it('flags Account Executive and recruiter titles as unrelated roles', () => {
+  it('flags Account Executive and Customer Success titles as unrelated roles', () => {
     expect(classifyJob({ title: 'Account Executive' }).isUnrelatedRole).toBe(
-      true,
-    );
-    expect(classifyJob({ title: 'Technical Recruiter' }).isUnrelatedRole).toBe(
       true,
     );
     expect(
       classifyJob({ title: 'Customer Success Manager' }).isUnrelatedRole,
     ).toBe(true);
   });
+
+  it.each(RECRUITING_TITLES)(
+    'keeps %s and places it on the recruiting lane',
+    (title) => {
+      const result = classifyJob({ title });
+
+      expect(shouldPersistClassifiedJob(result)).toBe(true);
+      expect(result.roleFocus).toContain(RECRUITING_ROLE_FOCUS);
+    },
+  );
 
   it('does not flag engineering titles as unrelated roles', () => {
     const result = classifyJob({

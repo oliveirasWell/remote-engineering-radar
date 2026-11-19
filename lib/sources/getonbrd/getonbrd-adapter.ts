@@ -8,7 +8,7 @@ import {
   GETONBRD_API_BASE_URL,
   GETONBRD_JOBS_PER_PAGE,
   GETONBRD_MAX_PAGES,
-  GETONBRD_PROGRAMMING_CATEGORY,
+  GETONBRD_CATEGORIES,
   GETONBRD_SOURCE_NAME,
 } from './constants';
 import {
@@ -16,6 +16,7 @@ import {
   type GetOnBrdJobRecord,
   type GetOnBrdJobsPage,
 } from './normalize-getonbrd-job';
+import { uniqueBySourceJobId } from '../unique-by-source-job-id';
 
 export type GetOnBrdAdapterOptions = {
   fetch?: typeof fetch;
@@ -26,10 +27,12 @@ export type GetOnBrdAdapterOptions = {
 const isJobRecord = (value: unknown): value is GetOnBrdJobRecord =>
   Boolean(value && typeof value === 'object' && 'id' in value);
 
-const buildJobsUrl = (page: number, jobsPerPage: number): string => {
-  const url = new URL(
-    `${GETONBRD_API_BASE_URL}/categories/${GETONBRD_PROGRAMMING_CATEGORY}/jobs`,
-  );
+const buildJobsUrl = (
+  category: string,
+  page: number,
+  jobsPerPage: number,
+): string => {
+  const url = new URL(`${GETONBRD_API_BASE_URL}/categories/${category}/jobs`);
   url.searchParams.set('page', String(page));
   url.searchParams.set('per_page', String(jobsPerPage));
   url.searchParams.append('expand[]', 'company');
@@ -37,12 +40,13 @@ const buildJobsUrl = (page: number, jobsPerPage: number): string => {
 };
 
 const fetchJobsPage = async (
+  category: string,
   page: number,
   jobsPerPage: number,
   fetchImpl: typeof fetch,
 ): Promise<GetOnBrdJobsPage & { data: unknown[] }> => {
   const response = await fetchWithRetry(
-    buildJobsUrl(page, jobsPerPage),
+    buildJobsUrl(category, page, jobsPerPage),
     fetchImpl,
   );
 
@@ -65,7 +69,8 @@ const fetchJobsPage = async (
   return payload as GetOnBrdJobsPage & { data: unknown[] };
 };
 
-const fetchAllJobs = async (
+const fetchCategoryJobs = async (
+  category: string,
   jobsPerPage: number,
   maxPages: number,
   fetchImpl: typeof fetch,
@@ -75,7 +80,7 @@ const fetchAllJobs = async (
     return { jobs: [], complete: false };
   }
 
-  const payload = await fetchJobsPage(page, jobsPerPage, fetchImpl);
+  const payload = await fetchJobsPage(category, page, jobsPerPage, fetchImpl);
   const jobs = payload.data
     .filter(isJobRecord)
     .flatMap((record) => normalizeGetOnBrdJob(record) ?? []);
@@ -95,8 +100,35 @@ const fetchAllJobs = async (
     return { jobs, complete: false };
   }
 
-  const rest = await fetchAllJobs(jobsPerPage, maxPages, fetchImpl, page + 1);
+  const rest = await fetchCategoryJobs(
+    category,
+    jobsPerPage,
+    maxPages,
+    fetchImpl,
+    page + 1,
+  );
   return { jobs: [...jobs, ...rest.jobs], complete: rest.complete };
+};
+
+/**
+ * The combined feed is complete only when every category was read to its
+ * last page; otherwise the ingest must not retire jobs it did not see.
+ */
+const fetchAllJobs = async (
+  jobsPerPage: number,
+  maxPages: number,
+  fetchImpl: typeof fetch,
+): ReturnType<JobSource['fetchJobs']> => {
+  const results: Awaited<ReturnType<JobSource['fetchJobs']>>[] = [];
+  for (const category of GETONBRD_CATEGORIES) {
+    results.push(
+      await fetchCategoryJobs(category, jobsPerPage, maxPages, fetchImpl),
+    );
+  }
+  return {
+    jobs: uniqueBySourceJobId(results.flatMap(({ jobs }) => jobs)),
+    complete: results.every(({ complete }) => complete),
+  };
 };
 
 export const createGetOnBrdAdapter = (

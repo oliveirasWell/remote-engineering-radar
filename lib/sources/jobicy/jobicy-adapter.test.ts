@@ -2,7 +2,7 @@ import { asFetch, jsonResponse } from '@/test/http';
 
 import malformedPage from './fixtures/jobs-malformed.json';
 import page1 from './fixtures/jobs-page-1.json';
-import { JOBICY_INDUSTRY, JOBICY_SOURCE_NAME } from './constants';
+import { JOBICY_INDUSTRIES, JOBICY_SOURCE_NAME } from './constants';
 import { createJobicyAdapter } from './jobicy-adapter';
 import { normalizeJobicyJob } from './normalize-jobicy-job';
 
@@ -52,7 +52,7 @@ describe('normalizeJobicyJob', () => {
 });
 
 describe('createJobicyAdapter', () => {
-  it('fetches engineering jobs in a single request', async () => {
+  it('fetches each industry once and keeps a job listed in both once', async () => {
     const requestedUrls: string[] = [];
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       requestedUrls.push(String(input));
@@ -64,8 +64,9 @@ describe('createJobicyAdapter', () => {
 
     expect(complete).toBe(false);
     expect(adapter.name).toBe(JOBICY_SOURCE_NAME);
-    expect(requestedUrls).toHaveLength(1);
-    expect(requestedUrls[0]).toContain(`industry=${JOBICY_INDUSTRY}`);
+    expect(
+      requestedUrls.map((url) => new URL(url).searchParams.get('industry')),
+    ).toEqual([...JOBICY_INDUSTRIES]);
     expect(jobs.map((job) => job.sourceJobId)).toEqual([
       String(monzoJob.id),
       String(vonageJob.id),

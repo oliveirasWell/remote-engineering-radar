@@ -66,6 +66,20 @@ export const MOBILE_TITLE_NAMES = [
  */
 export const MOBILE_TERMS = [/\bios\b/i, /\bandroid\b/i] as const;
 
+/**
+ * Titles that name recruiting as the product or team rather than the job:
+ * "Software Engineer, Recruiting Platform", "Product Marketing Manager -
+ * Recruitment Cloud". Narrow on purpose: "Recruiter, Product & Engineering"
+ * stays a recruiter.
+ */
+export const RECRUITING_TITLE_VETOES = [
+  /\bengineers?\b/i,
+  /\bdeveloper\b|\bdesenvolvedor/i,
+  /\bdesigner\b/i,
+  /\bmarketing\b/i,
+  /\bbrand\b/i,
+] as const;
+
 /** Positions that test software rather than build it. */
 export const QA_POSITIONS = [
   /\bqa\b|\bquality\s+assurance\b|\bsdet\b/i,

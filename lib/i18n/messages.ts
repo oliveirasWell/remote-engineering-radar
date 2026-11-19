@@ -118,6 +118,7 @@ export const EN_MESSAGES = {
     mobile: 'Mobile',
     'data-annotation': 'Data Annotation',
     product: 'Product',
+    recruiting: 'Recruiting',
   },
   countries: {
     brazil: 'Brazil',
@@ -438,6 +439,7 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     mobile: 'Mobile',
     'data-annotation': 'Anotação de Dados',
     product: 'Produto',
+    recruiting: 'Recrutamento',
   },
   countries: {
     brazil: 'Brasil',

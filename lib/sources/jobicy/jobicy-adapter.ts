@@ -7,7 +7,7 @@ import {
 import {
   JOBICY_API_BASE_URL,
   JOBICY_COUNT,
-  JOBICY_INDUSTRY,
+  JOBICY_INDUSTRIES,
   JOBICY_SOURCE_NAME,
 } from './constants';
 import {
@@ -15,6 +15,7 @@ import {
   type JobicyJobRecord,
   type JobicyJobsPage,
 } from './normalize-jobicy-job';
+import { uniqueBySourceJobId } from '../unique-by-source-job-id';
 
 export type JobicyAdapterOptions = {
   fetch?: typeof fetch;
@@ -24,18 +25,22 @@ export type JobicyAdapterOptions = {
 const isJobRecord = (value: unknown): value is JobicyJobRecord =>
   Boolean(value && typeof value === 'object');
 
-const buildJobsUrl = (count: number): string => {
+const buildJobsUrl = (count: number, industry: string): string => {
   const url = new URL(JOBICY_API_BASE_URL);
   url.searchParams.set('count', String(count));
-  url.searchParams.set('industry', JOBICY_INDUSTRY);
+  url.searchParams.set('industry', industry);
   return url.toString();
 };
 
-const fetchAllJobs = async (
+const fetchIndustryJobs = async (
   count: number,
+  industry: string,
   fetchImpl: typeof fetch,
 ): Promise<NormalizedJob[]> => {
-  const response = await fetchWithRetry(buildJobsUrl(count), fetchImpl);
+  const response = await fetchWithRetry(
+    buildJobsUrl(count, industry),
+    fetchImpl,
+  );
 
   if (!response.ok) {
     await discardResponse(response);
@@ -54,6 +59,18 @@ const fetchAllJobs = async (
   return (payload as JobicyJobsPage & { jobs: unknown[] }).jobs
     .filter(isJobRecord)
     .flatMap((record) => normalizeJobicyJob(record) ?? []);
+};
+
+// Sequential on purpose: the feed is small and Jobicy rate-limits bursts.
+const fetchAllJobs = async (
+  count: number,
+  fetchImpl: typeof fetch,
+): Promise<NormalizedJob[]> => {
+  const jobs: NormalizedJob[] = [];
+  for (const industry of JOBICY_INDUSTRIES) {
+    jobs.push(...(await fetchIndustryJobs(count, industry, fetchImpl)));
+  }
+  return uniqueBySourceJobId(jobs);
 };
 
 export const createJobicyAdapter = (

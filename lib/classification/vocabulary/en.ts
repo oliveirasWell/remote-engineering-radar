@@ -80,6 +80,15 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
     /\bproduct\s+(?:manager|owner|lead|director)\b(?!\s+(?:engineer|designer|developer)\b)/i,
     /\b(?:head|director|vp|vice\s+president)\s+of\s+product\b(?!\s+(?:engineering|design|designer|marketing|operations)\b)/i,
   ],
+  recruitingTitle: [
+    /\brecruit(?:er|ers|ing|ment)\b/i,
+    /\btalent\s+(?:acquisition|partner|sourc(?:er|ing))\b/i,
+    /\bsourcer\b/i,
+    /\bheadhunter\b/i,
+    // LATAM Spanish and French titles arrive through GetOnBrd and Himalayas.
+    /\breclut(?:ador|adora|amiento)\b/i,
+    /\brecrutement\b/i,
+  ],
   softwareTitle: [
     /\bengineer(?:s|ing)?\b/i,
     /\bdeveloper\b/i,
@@ -97,7 +106,7 @@ export const EN_VOCABULARY: ClassificationVocabulary = {
     /\b(?:sdr|bdr)\b/i,
     /\b(?:sales\s+development|business\s+development)\s+representative\b/i,
     /\bsales\s+(?:manager|director|engineer|associate|executive)\b/i,
-    /\brecruiter\b|\btalent\s+acquisition\b|\bpeople\s+partner\b/i,
+    /\bpeople\s+partner\b/i,
     /\bcustomer\s+success\b/i,
     /\baccount\s+manager\b/i,
     /\b(?:marketing\s+manager|growth\s+marketing|product\s+marketing|content\s+marketing)\b/i,

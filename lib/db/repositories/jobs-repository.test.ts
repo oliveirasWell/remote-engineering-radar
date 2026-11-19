@@ -3,6 +3,7 @@ import {
   MOBILE_ROLE_FOCUS,
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
+  RECRUITING_ROLE_FOCUS,
   REACT_ROLE_FOCUS,
   SOFTWARE_ROLE_FOCUS,
 } from '@/lib/classification/constants';
@@ -13,6 +14,7 @@ import {
   JOB_FOCUS_FILTER_OPTIONS,
   JOB_FOCUS_MOBILE,
   JOB_FOCUS_PRODUCT,
+  JOB_FOCUS_RECRUITING,
   JOB_MAX_AGE_MS,
   JOB_RETENTION_MS,
 } from '@/lib/jobs/constants';
@@ -514,6 +516,7 @@ describe('createJobsRepository', () => {
       'mobile-role': [MOBILE_ROLE_FOCUS, SOFTWARE_ROLE_FOCUS],
       'annotation-role': ['fullstack', DATA_ANNOTATION_ROLE_FOCUS],
       'product-role': [PRODUCT_ROLE_FOCUS],
+      'recruiting-role': [RECRUITING_ROLE_FOCUS],
       'software-only-role': ['frontend', SOFTWARE_ROLE_FOCUS],
       'no-signal-role': [],
     };
@@ -545,6 +548,7 @@ describe('createJobsRepository', () => {
       [JOB_FOCUS_MOBILE]: ['mobile-role'],
       [JOB_FOCUS_DATA_ANNOTATION]: ['annotation-role'],
       [JOB_FOCUS_PRODUCT]: ['product-role'],
+      [JOB_FOCUS_RECRUITING]: ['recruiting-role'],
     });
   });
 
