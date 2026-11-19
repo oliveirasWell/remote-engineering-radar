@@ -1,4 +1,7 @@
-import { formatSourceMetrics } from './format-source-metrics';
+import {
+  formatSourceMetrics,
+  formatStorageMetrics,
+} from './format-source-metrics';
 
 const ROW = {
   source: 'greenhouse',
@@ -23,5 +26,14 @@ describe('formatSourceMetrics', () => {
       '| greenhouse | 7 | 900 | 120 | 110 | 12 | 30 | 200 | 75% |',
       '| himalayas | 7 | 900 | 120 | 110 | 12 | — | 200 | — |',
     ]);
+  });
+
+  it('summarizes storage in one line', () => {
+    expect(
+      formatStorageMetrics({
+        databaseBytes: 300 * 1024 * 1024,
+        activeJobsByWorkModel: { hybrid: 40, remote: 900 },
+      }),
+    ).toBe('Database 300 MB · active jobs hybrid 40, remote 900');
   });
 });

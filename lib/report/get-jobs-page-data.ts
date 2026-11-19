@@ -11,6 +11,7 @@ import {
   type JobCountrySlug,
   type JobFocusSlug,
 } from '@/lib/jobs/constants';
+import { isKeptWorkModel } from '@/lib/jobs/work-model/is-kept-work-model';
 import { scoreJob } from '@/lib/scoring/score-job';
 import { REPORT_CACHE_LIFE } from './constants';
 import { logReportError } from './log-report-error';
@@ -77,15 +78,20 @@ export const getJobsPageData = async (
     const jobsRepository = createJobsRepository(db);
     const companiesRepository = createCompaniesRepository(db);
 
+    const remotePolicy = filters.remote ?? REMOTE_POLICY_REMOTE;
     const jobs = await jobsRepository.listActiveByScore({
       sort: DEFAULT_JOB_SORT,
       technology: filters.technology,
       seniority: filters.seniority,
-      remotePolicy: filters.remote ?? REMOTE_POLICY_REMOTE,
+      remotePolicy,
       country: filters.country,
       focus: filters.focus,
       company: filters.company,
-      minimumScore: filters.minimumScore ?? 0,
+      // The on-site penalty only ranks remote lists. A reader who picked a
+      // hybrid or on-site filter sees those roles even below zero.
+      minimumScore:
+        filters.minimumScore ??
+        (remotePolicy === REMOTE_POLICY_REMOTE ? 0 : undefined),
       limit: filters.limit,
       maxAgeMs: JOB_MAX_AGE_MS,
     });
@@ -121,7 +127,7 @@ export const getJobDetailData = async (id: string): Promise<JobDetailData> => {
     const isRecent =
       job &&
       job.isActive &&
-      job.remotePolicy === REMOTE_POLICY_REMOTE &&
+      isKeptWorkModel(job.remotePolicy, job.countries) &&
       now.getTime() - (job.postedAt ?? job.firstSeenAt).getTime() <=
         JOB_MAX_AGE_MS;
 
