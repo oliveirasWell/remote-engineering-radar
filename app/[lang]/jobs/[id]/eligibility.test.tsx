@@ -92,11 +92,16 @@ describe.each([readMetadata, readPage])(
     it.each([
       createJob({ postedAt: CUTOFF }),
       createJob({ postedAt: null, firstSeenAt: CUTOFF }),
-    ])('accepts the inclusive 30-day boundary %#', async (job) => {
-      findById.mockResolvedValueOnce(job);
-      await expect(read()).resolves.toBeDefined();
-      expect(findCompany).toHaveBeenCalledExactlyOnceWith(job.companyId);
-    });
+      createJob({ remotePolicy: 'hybrid', countries: ['brazil'] }),
+      createJob({ remotePolicy: 'onsite', countries: ['brazil'] }),
+    ])(
+      'accepts the inclusive 30-day boundary and Brazilian on-site roles %#',
+      async (job) => {
+        findById.mockResolvedValueOnce(job);
+        await expect(read()).resolves.toBeDefined();
+        expect(findCompany).toHaveBeenCalledExactlyOnceWith(job.companyId);
+      },
+    );
 
     it('preserves DB acquisition failures instead of confusing an outage with a missing job', async () => {
       const error = new Error(TEST_REPORT_ERROR_MESSAGE);

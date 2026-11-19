@@ -588,6 +588,66 @@ describe('runIngestion', () => {
     ]);
   });
 
+  it('keeps hybrid and on-site roles only in Brazil, without feeding hiring signals', async () => {
+    const db = await createTestDb();
+    const brazilHybrid = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'br-hybrid',
+      title: 'Senior Frontend Engineer',
+      url: 'https://example.com/jobs/br-hybrid',
+      location: 'Osasco, Sao Paulo, Brazil',
+      remotePolicy: 'hybrid',
+      description: 'React TypeScript Senior hybrid in Osasco',
+    });
+    const brazilOnsite = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'br-onsite',
+      title: 'Senior Backend Engineer',
+      url: 'https://example.com/jobs/br-onsite',
+      location: 'São Paulo, Brazil',
+      remotePolicy: 'onsite',
+      description: 'Node.js TypeScript Senior on-site in São Paulo',
+    });
+    const berlinHybrid = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'de-hybrid',
+      title: 'Staff Frontend Engineer',
+      url: 'https://example.com/jobs/de-hybrid',
+      location: 'Berlin, Germany',
+      remotePolicy: 'hybrid',
+      description: 'React TypeScript Staff hybrid in Berlin',
+    });
+
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'greenhouse',
+          fetchJobs: async () => ({
+            complete: true,
+            jobs: [brazilHybrid, brazilOnsite, berlinHybrid],
+          }),
+        },
+      ],
+    });
+
+    const repository = createJobsRepository(db);
+    await expect(
+      repository.findBySourceJobId('greenhouse', 'br-hybrid'),
+    ).resolves.toMatchObject({ isActive: true, remotePolicy: 'hybrid' });
+    await expect(
+      repository.findBySourceJobId('greenhouse', 'br-onsite'),
+    ).resolves.toMatchObject({ isActive: true, remotePolicy: 'onsite' });
+    await expect(
+      repository.findBySourceJobId('greenhouse', 'de-hybrid'),
+    ).resolves.toBeNull();
+    const company =
+      await createCompaniesRepository(db).findBySlug('acme-robotics');
+    expect(
+      await createHiringSignalsRepository(db).listByCompanyIds([company!.id]),
+    ).toEqual([]);
+  });
+
   it('is idempotent across duplicate executions', async () => {
     const db = await createTestDb();
     const source: JobSource = {

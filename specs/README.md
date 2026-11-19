@@ -58,6 +58,7 @@ Open:
 - [SPEC-034](034-member-newsletter-api.md) — newsletter subscriptions for members-area users
 - [SPEC-035](035-recruiting-lane.md) — recruiting lane, recruiter sources and its eval
 - [SPEC-036](036-himalayas-last.md) — Himalayas as the source of last resort
+- [SPEC-037](037-brazil-hybrid-onsite.md) — hybrid and on-site roles in Brazil behind the work model filter
 
 ---
 

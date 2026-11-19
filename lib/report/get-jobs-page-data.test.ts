@@ -171,4 +171,39 @@ describe('getJobsPageData', () => {
     expect(detail.job?.description).toBe('Quoted listing body.');
     expect(detail.job?.source).toBe('frontendbr');
   });
+
+  it('lists Brazilian on-site roles under the on-site filter and opens their detail page', async () => {
+    const db = await createTestDb();
+    vi.mocked(getDb).mockReturnValue(db as ReturnType<typeof getDb>);
+    const company = await createCompaniesRepository(db).create(PUBLIC_COMPANY);
+    const jobsRepository = createJobsRepository(db);
+    // On-site jobs carry the −50 on-site penalty, so their score is negative.
+    const onsite = await jobsRepository.create({
+      companyId: company.id,
+      source: 'greenhouse',
+      sourceJobId: 'br-onsite',
+      title: 'Analista de Dados',
+      url: 'https://example.com/jobs/br-onsite',
+      remotePolicy: 'onsite',
+      countries: ['brazil'],
+      score: -35,
+    });
+    await jobsRepository.create({
+      companyId: company.id,
+      source: 'greenhouse',
+      sourceJobId: 'remote',
+      title: 'Senior Frontend Engineer',
+      url: 'https://example.com/jobs/remote',
+      remotePolicy: 'remote',
+      score: 60,
+    });
+
+    expect(
+      (await getJobsPageData({ remote: 'onsite' })).jobs.map((job) => job.id),
+    ).toEqual([onsite.id]);
+    expect(
+      (await getJobsPageData()).jobs.map((job) => job.remotePolicy),
+    ).toEqual(['remote']);
+    expect((await getJobDetailData(onsite.id)).job?.id).toBe(onsite.id);
+  });
 });

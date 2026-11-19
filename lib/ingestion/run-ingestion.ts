@@ -17,6 +17,7 @@ import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
 import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
 import { median } from '@/lib/ingestion/median/median';
+import { isKeptWorkModel } from '@/lib/jobs/work-model/is-kept-work-model';
 import { resolveJobCountries } from '@/lib/jobs/countries';
 import {
   JOB_MAX_AGE_MS,
@@ -97,7 +98,7 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
     roleFocus: classification.roleFocus,
     shouldPersist:
       shouldPersistClassifiedJob(classification) &&
-      remotePolicy === REMOTE_POLICY_REMOTE &&
+      isKeptWorkModel(remotePolicy, countries) &&
       !isPostedBeyondMaxAge(job, now, JOB_MAX_AGE_MS),
   };
 };
@@ -316,9 +317,10 @@ export const runIngestion = async (options: {
       // One batched read instead of one query per touched company, and
       // without the description column, which signal detection never reads.
       const jobsByCompany = new Map<string, JobCard[]>();
-      for (const job of await jobsRepository.listCardsByCompanyIds([
-        ...companyIds,
-      ])) {
+      // Hiring signals and the companies to watch describe remote hiring.
+      for (const job of (
+        await jobsRepository.listCardsByCompanyIds([...companyIds])
+      ).filter((card) => card.remotePolicy === REMOTE_POLICY_REMOTE)) {
         const existing = jobsByCompany.get(job.companyId);
         if (existing) {
           existing.push(job);
