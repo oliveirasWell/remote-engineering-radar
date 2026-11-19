@@ -57,18 +57,33 @@ CREATE TABLE IF NOT EXISTS public.newsletter_dispatches (
 );
 ALTER TABLE public.newsletter_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.newsletter_dispatches ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS public.ingestion_source_runs (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    run_id uuid NOT NULL,
+    source text NOT NULL,
+    fetched integer NOT NULL DEFAULT 0,
+    eligible integer NOT NULL DEFAULT 0,
+    persisted integer NOT NULL DEFAULT 0,
+    new_jobs integer NOT NULL DEFAULT 0,
+    median_age_hours double precision,
+    error text,
+    CONSTRAINT ingestion_source_runs_pkey PRIMARY KEY (id)
+);
+CREATE INDEX IF NOT EXISTS ingestion_source_runs_run_id_idx ON public.ingestion_source_runs(run_id);
+CREATE INDEX IF NOT EXISTS ingestion_source_runs_source_idx ON public.ingestion_source_runs(source);
+ALTER TABLE public.ingestion_source_runs ENABLE ROW LEVEL SECURITY;
 
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards, public.newsletter_subscriptions, public.newsletter_dispatches FROM anon;
+        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards, public.newsletter_subscriptions, public.newsletter_dispatches, public.ingestion_source_runs FROM anon;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE ALL ON TABLES FROM anon;
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon;
         END IF;
     END IF;
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards, public.newsletter_subscriptions, public.newsletter_dispatches FROM authenticated;
+        REVOKE ALL PRIVILEGES ON TABLE public.companies, public.jobs, public.data_migrations, public.ats_boards, public.newsletter_subscriptions, public.newsletter_dispatches, public.ingestion_source_runs FROM authenticated;
         IF current_user = 'postgres' OR pg_has_role(current_user, 'postgres', 'MEMBER') THEN
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE ALL ON TABLES FROM authenticated;
             ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM authenticated;
