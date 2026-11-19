@@ -19,11 +19,6 @@ import { HOME_SECTIONS } from './home-constants';
 import { I18N_TEST } from './i18n-fixtures';
 import RootLayout from './layout';
 
-const ADSENSE_HEADER_SLOT = '6534094031';
-const ADSENSE_TEST = vi.hoisted(() => ({
-  client: 'ca-pub-1234567890123456',
-}));
-
 vi.mock('next/font/google', () => ({ Inter: () => ({ variable: '' }) }));
 vi.mock('next/script', () => ({
   default: ({
@@ -36,22 +31,13 @@ vi.mock('next/script', () => ({
     crossOrigin: string;
   }) => (
     <div
-      data-testid="adsense-script"
+      data-testid="next-script"
       data-src={src}
       data-strategy={strategy}
       data-cross-origin={crossOrigin}
     />
   ),
 }));
-vi.mock('@/lib/marketing/adsense', async () => {
-  const actual = await vi.importActual<
-    typeof import('@/lib/marketing/adsense')
-  >('@/lib/marketing/adsense');
-  return {
-    ...actual,
-    ADSENSE_CLIENT_ID: ADSENSE_TEST.client,
-  };
-});
 vi.mock('next/navigation', () => ({
   usePathname: vi.fn(() => '/'),
   useSearchParams: vi.fn(() => new URLSearchParams()),
@@ -92,25 +78,15 @@ afterEach(() => {
 });
 
 describe('site language and navigation', () => {
-  it('loads AdSense and the top bar in beta as well as production', async () => {
-    vi.stubEnv('VERCEL_ENV', 'preview');
+  it('loads no AdSense script or ad slot', async () => {
     render(await layoutFor(I18N_TEST.english), { container: document });
 
-    const script = screen.getByTestId('adsense-script');
-    expect(script).toHaveAttribute(
-      'data-src',
-      `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_TEST.client}`,
-    );
-    expect(script).toHaveAttribute('data-strategy', 'beforeInteractive');
-    expect(script).toHaveAttribute('data-cross-origin', 'anonymous');
-    const ad = screen
-      .getByRole('complementary', {
-        name: messagesFor().marketing.advertisement,
-      })
-      .querySelector('ins.adsbygoogle');
-    expect(ad).toHaveAttribute('data-ad-slot', ADSENSE_HEADER_SLOT);
-    expect(ad).toHaveAttribute('data-ad-format', 'auto');
-    expect(ad).toHaveAttribute('data-full-width-responsive', 'true');
+    expect(
+      screen
+        .queryAllByTestId('next-script')
+        .map((script) => script.getAttribute('data-src') ?? ''),
+    ).not.toContainEqual(expect.stringContaining('googlesyndication'));
+    expect(document.querySelector('ins.adsbygoogle')).toBeNull();
   });
 
   it('shares navigation, PT/EN language links, and a safe repository footer', async () => {

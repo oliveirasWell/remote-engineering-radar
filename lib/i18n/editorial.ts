@@ -38,10 +38,7 @@ export type Editorial = {
     introduction: string;
     sections: readonly EditorialSection[];
     cookieLabel: string;
-    publisherLabel: string;
     analyticsLabel: string;
-    adsSettingsLabel: string;
-    adCookiesLabel: string;
   };
 };
 
@@ -123,13 +120,6 @@ const EN_EDITORIAL: Editorial = {
         ],
       },
       {
-        title: 'Advertising',
-        paragraphs: [
-          'Pages load Google AdSense to show display ads. Google, as a third-party vendor, uses cookies to serve ads based on visits to this site and other sites. The publisher id is listed below. The ads.txt file at the root of this site names the same publisher.',
-          'You can opt out of personalized advertising in Google’s Ads Settings. How Google uses cookies in advertising is linked below.',
-        ],
-      },
-      {
         title: 'Measurement',
         paragraphs: [
           'Google Analytics counts page views. The measurement id is listed below. This site does not sell a separate export of your identity.',
@@ -149,10 +139,7 @@ const EN_EDITORIAL: Editorial = {
       },
     ],
     cookieLabel: 'Language cookie',
-    publisherLabel: 'AdSense publisher',
     analyticsLabel: 'Analytics measurement',
-    adsSettingsLabel: 'Google Ads Settings',
-    adCookiesLabel: 'How Google uses cookies in advertising',
   },
 };
 
@@ -232,13 +219,6 @@ const PT_EDITORIAL: Editorial = {
         ],
       },
       {
-        title: 'Publicidade',
-        paragraphs: [
-          'As páginas carregam o Google AdSense para exibir anúncios. O Google, como fornecedor terceiro, usa cookies para veicular anúncios com base em visitas a este site e a outros sites. O id de editor está listado abaixo. O arquivo ads.txt na raiz deste site nomeia o mesmo editor.',
-          'Você pode desativar a publicidade personalizada nas Configurações de anúncios do Google. O link de como o Google usa cookies em publicidade está abaixo.',
-        ],
-      },
-      {
         title: 'Medição',
         paragraphs: [
           'O Google Analytics conta visualizações de página. O id de medição está listado abaixo. Este site não vende uma exportação separada da sua identidade.',
@@ -258,10 +238,7 @@ const PT_EDITORIAL: Editorial = {
       },
     ],
     cookieLabel: 'Cookie de idioma',
-    publisherLabel: 'Editor do AdSense',
     analyticsLabel: 'Medição do Analytics',
-    adsSettingsLabel: 'Configurações de anúncios do Google',
-    adCookiesLabel: 'Como o Google usa cookies em publicidade',
   },
 };
 

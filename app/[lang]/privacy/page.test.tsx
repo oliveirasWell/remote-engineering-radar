@@ -6,11 +6,6 @@ import { CONTACT_EMAIL } from '@/components/site/constants';
 import { I18nProvider } from '@/components/i18n/I18nProvider/I18nProvider';
 import { editorialFor } from '@/lib/i18n/editorial';
 import { LOCALE_COOKIE, LOCALES, messagesFor } from '@/lib/i18n/messages';
-import {
-  ADSENSE_CLIENT_ID,
-  GOOGLE_AD_COOKIES_URL,
-  GOOGLE_ADS_SETTINGS_URL,
-} from '@/lib/marketing/adsense';
 import PrivacyPage, { generateMetadata } from './page';
 
 vi.mock('@/lib/db/client', () => {
@@ -41,18 +36,12 @@ describe('PrivacyPage', () => {
         }
       }
       expect(screen.getByText(LOCALE_COOKIE)).toBeInTheDocument();
-      expect(screen.getByText(ADSENSE_CLIENT_ID)).toBeInTheDocument();
       expect(screen.getByText(GA_MEASUREMENT_ID)).toBeInTheDocument();
       expect(screen.getByRole('link', { name: CONTACT_EMAIL })).toHaveAttribute(
         'href',
         `mailto:${CONTACT_EMAIL}`,
       );
-      expect(
-        screen.getByRole('link', { name: privacy.adsSettingsLabel }),
-      ).toHaveAttribute('href', GOOGLE_ADS_SETTINGS_URL);
-      expect(
-        screen.getByRole('link', { name: privacy.adCookiesLabel }),
-      ).toHaveAttribute('href', GOOGLE_AD_COOKIES_URL);
+      expect(screen.queryByText(/AdSense/)).not.toBeInTheDocument();
     },
   );
 
