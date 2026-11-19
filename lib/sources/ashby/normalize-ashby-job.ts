@@ -31,14 +31,14 @@ const asString = (value: unknown): string | undefined => {
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+/**
+ * `workplaceType` is the policy. Ashby also sets `isRemote` on hybrid roles,
+ * so it only decides when `workplaceType` is missing.
+ */
 const readRemotePolicy = (record: AshbyJobRecord): string | undefined => {
-  if (record.isRemote === true) {
-    return 'remote';
-  }
-
   const workplaceType = asString(record.workplaceType)?.toLowerCase();
   if (!workplaceType) {
-    return undefined;
+    return record.isRemote === true ? 'remote' : undefined;
   }
 
   if (workplaceType === 'remote') {
