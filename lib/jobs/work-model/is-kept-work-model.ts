@@ -1,6 +1,7 @@
 import { REMOTE_POLICY_REMOTE } from '../constants';
 
 const BRAZIL_COUNTRY = 'brazil';
+const ONSITE_POLICY = 'onsite';
 const NON_REMOTE_POLICIES_KEPT_IN_BRAZIL: ReadonlySet<string> = new Set([
   'hybrid',
   'onsite',
@@ -18,3 +19,13 @@ export const isKeptWorkModel = (
   remotePolicy === REMOTE_POLICY_REMOTE ||
   (NON_REMOTE_POLICIES_KEPT_IN_BRAZIL.has(remotePolicy ?? '') &&
     countries.includes(BRAZIL_COUNTRY));
+
+/**
+ * Brazilian boards often name only the office ("Osasco, Sao Paulo, Brazil").
+ * Such a role is not remote; without a stated model it is filed as on-site,
+ * the conservative reading. Elsewhere an unstated model stays unknown.
+ */
+export const defaultWorkModel = (
+  countries: readonly string[],
+): string | undefined =>
+  countries.includes(BRAZIL_COUNTRY) ? ONSITE_POLICY : undefined;

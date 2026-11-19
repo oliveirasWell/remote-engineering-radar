@@ -26,6 +26,14 @@ remote, on 2026-11-19).
 - `pnpm metrics:sources` adds the database size and active jobs per work
   model, to compare storage before and after.
 
+## Follow-up (same day)
+
+The first production run kept only 38 Brazilian hybrid/on-site roles: iFood
+and C6 Bank name no work model ("Osasco, Sao Paulo, Brazil"), and Wellhub
+and Nubank write "Brazil (São Paulo - Hybrid)" or "São Paulo". With the
+location and default rules above, the same boards keep about 360 roles
+(C6 Bank 139, Stone 102, Wellhub 44, iFood 32, Nubank 28, Jusbrasil 15).
+
 ## Verification
 
 - Ingest: a hybrid role in Osasco and an on-site role in São Paulo are kept;
@@ -36,5 +44,11 @@ remote, on 2026-11-19).
 ## Known debt
 
 - The newsletter and the members area lanes stay remote-only.
-- Brazil is detected from the resolved location countries; a Brazilian role
-  whose board omits the country is dropped.
+- A Brazilian role whose board states no work model is filed as on-site
+  (`defaultWorkModel`); some of those are hybrid in practice.
+- Brazil is detected from the resolved location countries. Locations are also
+  split on parentheses, and the common Brazilian cities and state codes
+  (São Paulo, SP, Rio de Janeiro, RJ, Belo Horizonte, MG, Osasco, Barueri,
+  Campinas, Curitiba, Porto Alegre, Florianópolis, Recife, Brasília,
+  Salvador, Fortaleza) resolve to Brazil; other cities without the country
+  are still missed.

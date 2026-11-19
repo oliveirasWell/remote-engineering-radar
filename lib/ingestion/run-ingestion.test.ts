@@ -648,6 +648,49 @@ describe('runIngestion', () => {
     ).toEqual([]);
   });
 
+  it('stores a Brazilian role that names no work model as on-site', async () => {
+    const db = await createTestDb();
+    const unknownBrazil = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'br-unknown',
+      title: 'Senior Frontend Engineer',
+      url: 'https://example.com/jobs/br-unknown',
+      location: 'Osasco, Sao Paulo, Brazil',
+      remotePolicy: undefined,
+      description: 'React TypeScript Senior frontend',
+    });
+    const unknownBerlin = makeJob({
+      source: 'greenhouse',
+      sourceJobId: 'de-unknown',
+      title: 'Senior Frontend Engineer',
+      url: 'https://example.com/jobs/de-unknown',
+      location: 'Berlin, Germany',
+      remotePolicy: undefined,
+      description: 'React TypeScript Senior frontend',
+    });
+
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'greenhouse',
+          fetchJobs: async () => ({
+            complete: true,
+            jobs: [unknownBrazil, unknownBerlin],
+          }),
+        },
+      ],
+    });
+
+    const repository = createJobsRepository(db);
+    await expect(
+      repository.findBySourceJobId('greenhouse', 'br-unknown'),
+    ).resolves.toMatchObject({ isActive: true, remotePolicy: 'onsite' });
+    await expect(
+      repository.findBySourceJobId('greenhouse', 'de-unknown'),
+    ).resolves.toBeNull();
+  });
+
   it('is idempotent across duplicate executions', async () => {
     const db = await createTestDb();
     const source: JobSource = {

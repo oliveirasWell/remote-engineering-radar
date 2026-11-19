@@ -91,4 +91,21 @@ describe('resolveJobCountries', () => {
       }),
     ).toEqual(['brazil', 'chile']);
   });
+
+  it.each([
+    'Brazil (São Paulo - Hybrid)',
+    'São Paulo',
+    'Híbrido, Rio de Janeiro',
+    'Osasco, Sao Paulo, Brazil',
+    'Belo Horizonte, MG',
+    'Sao Paulo, SP',
+  ])('resolves the Brazilian location %s to Brazil', (location) => {
+    expect(resolveJobCountries({ location })).toContain('brazil');
+  });
+
+  it('does not read a Brazilian city name into a foreign location', () => {
+    expect(resolveJobCountries({ location: 'Berlin, Germany' })).not.toContain(
+      'brazil',
+    );
+  });
 });

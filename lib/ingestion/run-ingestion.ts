@@ -17,7 +17,10 @@ import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
 import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
 import { median } from '@/lib/ingestion/median/median';
-import { isKeptWorkModel } from '@/lib/jobs/work-model/is-kept-work-model';
+import {
+  defaultWorkModel,
+  isKeptWorkModel,
+} from '@/lib/jobs/work-model/is-kept-work-model';
 import { resolveJobCountries } from '@/lib/jobs/countries';
 import {
   JOB_MAX_AGE_MS,
@@ -80,12 +83,15 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
     technologies: job.technologies,
   });
   const scored = scoreClassifiedJob(classification, job.seniority);
-  const remotePolicy = classification.remotePolicy ?? job.remotePolicy;
   const geographies = classification.geography;
   const countries = resolveJobCountries({
     sourceCountries: job.countries,
     location: job.location,
   });
+  const remotePolicy =
+    classification.remotePolicy ??
+    job.remotePolicy ??
+    defaultWorkModel(countries);
 
   return {
     ...job,
