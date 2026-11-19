@@ -142,11 +142,13 @@ const main = async () => {
         : []),
       createGetOnBrdAdapter(),
       createHackerNewsAdapter(),
-      createHimalayasAdapter(),
       createJobicyAdapter(),
       createFrontendBrAdapter({ token: process.env.GITHUB_TOKEN }),
       createQuaveAdapter({ token: process.env.GITHUB_TOKEN }),
       createYCombinatorAdapter(),
+      // Last on purpose: in-run dedupe keeps the first copy it sees, so every
+      // other source wins over Himalayas, which only fills the gaps.
+      createHimalayasAdapter(),
     ];
     const result = await runIngestion({ db, sources });
     console.log(JSON.stringify(result, null, 2));

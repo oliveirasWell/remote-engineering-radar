@@ -3,6 +3,13 @@ import type { Db } from '../client';
 
 export type Ats = 'greenhouse' | 'ashby' | 'lever';
 
+/**
+ * Evidence that a company hires is any active job not already read from its
+ * own board. Not only aggregators: once a Himalayas copy retires because
+ * another source lists it (SPEC-036), that copy is the evidence left.
+ */
+const DIRECT_BOARD_SOURCES: readonly Ats[] = ['greenhouse', 'ashby', 'lever'];
+
 type BoardCandidate = { id: string; name: string };
 type VerifiedBoard = {
   ats: Ats;
@@ -23,7 +30,7 @@ export const createAtsBoardsRepository = (db: Db) => ({
         AND EXISTS (
           SELECT 1 FROM jobs evidence
           WHERE evidence.company_id = c.id AND evidence.is_active
-            AND evidence.source IN ('himalayas', 'jobicy')
+            AND evidence.source NOT IN (${Prisma.join(DIRECT_BOARD_SOURCES)})
             AND evidence.role_focus @> '["software"]'::jsonb
         )
       GROUP BY c.id
@@ -36,7 +43,7 @@ export const createAtsBoardsRepository = (db: Db) => ({
         where: {
           companyId,
           isActive: true,
-          source: { in: ['himalayas', 'jobicy'] },
+          source: { notIn: [...DIRECT_BOARD_SOURCES] },
           roleFocus: { array_contains: ['software'] },
         },
         select: { title: true },

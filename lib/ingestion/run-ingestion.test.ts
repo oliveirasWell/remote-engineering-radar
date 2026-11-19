@@ -390,6 +390,57 @@ describe('runIngestion', () => {
     ).resolves.toMatchObject({ isActive: true });
   });
 
+  it('retires a Himalayas copy when a non-board source lists the role on a later day', async () => {
+    const db = await createTestDb();
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'himalayas',
+          fetchJobs: async () => ({
+            complete: false,
+            jobs: [
+              makeJob({
+                source: 'himalayas',
+                sourceJobId: 'older',
+                title: 'Senior React Engineer',
+                url: 'https://himalayas.app/jobs/older',
+              }),
+            ],
+          }),
+        },
+      ],
+    });
+
+    await runIngestion({
+      db,
+      sources: [
+        {
+          name: 'getonbrd',
+          fetchJobs: async () => ({
+            complete: false,
+            jobs: [
+              makeJob({
+                source: 'getonbrd',
+                sourceJobId: 'newer',
+                title: 'Senior React Engineer',
+                url: 'https://www.getonbrd.com/jobs/newer',
+              }),
+            ],
+          }),
+        },
+      ],
+    });
+
+    const repository = createJobsRepository(db);
+    await expect(
+      repository.findBySourceJobId('himalayas', 'older'),
+    ).resolves.toMatchObject({ isActive: false });
+    await expect(
+      repository.findBySourceJobId('getonbrd', 'newer'),
+    ).resolves.toMatchObject({ isActive: true });
+  });
+
   it('removes only verified boards that return 404', async () => {
     const db = await createTestDb();
     const company = await createCompaniesRepository(db).create({

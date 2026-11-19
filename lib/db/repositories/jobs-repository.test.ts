@@ -223,6 +223,63 @@ describe('createJobsRepository', () => {
     ).resolves.toMatchObject({ isActive: true });
   });
 
+  it('retires a Himalayas copy when any other source lists the same role', async () => {
+    const db = await createTestDb();
+    const jobs = createJobsRepository(db);
+    const company = await createCompaniesRepository(db).create(TEST_COMPANY);
+    const input = {
+      ...TEST_JOB,
+      technologies: [...TEST_JOB.technologies],
+      companyId: company.id,
+    };
+    const twin = await jobs.create({
+      ...input,
+      source: 'himalayas',
+      sourceJobId: 'twin',
+      title: 'Senior React Engineer',
+    });
+    const otherSource = await jobs.create({
+      ...input,
+      source: 'getonbrd',
+      sourceJobId: 'getonbrd-copy',
+      title: 'senior react engineer!',
+    });
+    const onlyOnHimalayas = await jobs.create({
+      ...input,
+      source: 'himalayas',
+      sourceJobId: 'only',
+      title: 'Staff Platform Engineer',
+    });
+    const ambiguous = await Promise.all(
+      ['first', 'second'].map((sourceJobId) =>
+        jobs.create({
+          ...input,
+          source: 'himalayas',
+          sourceJobId,
+          title: 'Mobile Engineer',
+        }),
+      ),
+    );
+    await jobs.create({
+      ...input,
+      source: 'jobicy',
+      sourceJobId: 'jobicy-mobile',
+      title: 'Mobile Engineer',
+    });
+
+    expect(await jobs.deactivateHimalayasTwins()).toEqual([
+      { companyId: company.id },
+    ]);
+    await expect(jobs.findById(twin.id)).resolves.toMatchObject({
+      isActive: false,
+    });
+    for (const job of [otherSource, onlyOnHimalayas, ...ambiguous]) {
+      await expect(jobs.findById(job.id)).resolves.toMatchObject({
+        isActive: true,
+      });
+    }
+  });
+
   it('deactivates unambiguous aggregator twins only for verified ATS boards', async () => {
     const db = await createTestDb();
     const companies = createCompaniesRepository(db);
