@@ -98,6 +98,8 @@ jobs:
           NODE_ENV: production
       - name: Report source metrics
         if: steps.ingest.outcome == 'success'
+        # Reporting only: a failure here must not skip the digest below.
+        continue-on-error: true
         run: pnpm --silent metrics:sources >> "$GITHUB_STEP_SUMMARY"
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
