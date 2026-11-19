@@ -35,6 +35,23 @@ const COUNTRY_ALIASES: Readonly<Record<string, string>> = {
   pk: 'pakistan',
   pak: 'pakistan',
   paquistao: 'pakistan',
+  // Brazilian cities and states boards name without the country (SPEC-037).
+  'sao paulo': 'brazil',
+  sp: 'brazil',
+  'rio de janeiro': 'brazil',
+  rj: 'brazil',
+  'belo horizonte': 'brazil',
+  mg: 'brazil',
+  osasco: 'brazil',
+  barueri: 'brazil',
+  campinas: 'brazil',
+  curitiba: 'brazil',
+  'porto alegre': 'brazil',
+  florianopolis: 'brazil',
+  recife: 'brazil',
+  brasilia: 'brazil',
+  salvador: 'brazil',
+  fortaleza: 'brazil',
   latam: 'latam',
   'latin america': 'latam',
   'america latina': 'latam',
@@ -65,7 +82,8 @@ export const resolveJobCountries = (input: {
 }): string[] => {
   const candidates = [
     ...(input.sourceCountries ?? []),
-    ...(input.location?.split(/[,|/]|\s*-\s*/) ?? []),
+    // Parentheses too: "Brazil (São Paulo - Hybrid)".
+    ...(input.location?.split(/[,|/()]|\s*-\s*/) ?? []),
   ];
 
   return [

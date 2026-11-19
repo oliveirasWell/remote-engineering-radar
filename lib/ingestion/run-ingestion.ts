@@ -17,7 +17,10 @@ import { deduplicateJobs } from '@/lib/deduplication/deduplicate-jobs';
 import { detectHiringSignals } from '@/lib/hiring-signals/detect-hiring-signals';
 import { INGESTION_TRANSACTION_TIMEOUT_MS } from '@/lib/ingestion/constants';
 import { median } from '@/lib/ingestion/median/median';
-import { isKeptWorkModel } from '@/lib/jobs/work-model/is-kept-work-model';
+import {
+  defaultWorkModel,
+  isKeptWorkModel,
+} from '@/lib/jobs/work-model/is-kept-work-model';
 import { resolveJobCountries } from '@/lib/jobs/countries';
 import {
   JOB_MAX_AGE_MS,
@@ -79,13 +82,19 @@ const enrichJob = (job: NormalizedJob, now: Date): EnrichedJob => {
     remotePolicy: job.remotePolicy,
     technologies: job.technologies,
   });
-  const scored = scoreClassifiedJob(classification, job.seniority);
-  const remotePolicy = classification.remotePolicy ?? job.remotePolicy;
   const geographies = classification.geography;
   const countries = resolveJobCountries({
     sourceCountries: job.countries,
     location: job.location,
   });
+  // Resolve the work model before scoring, so a role filed as on-site by
+  // default carries the same on-site penalty the detail page applies.
+  const workModel = classification.remotePolicy ?? defaultWorkModel(countries);
+  const scored = scoreClassifiedJob(
+    { ...classification, remotePolicy: workModel },
+    job.seniority,
+  );
+  const remotePolicy = workModel ?? job.remotePolicy;
 
   return {
     ...job,
