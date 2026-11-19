@@ -4,6 +4,7 @@ import type {
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
   REACT_ROLE_FOCUS,
+  RECRUITING_ROLE_FOCUS,
 } from '../constants';
 
 /** Accent-folded text, as `classifyJob` already prepared it. */
@@ -20,7 +21,8 @@ export type LaneRoleFocus =
   | typeof MOBILE_ROLE_FOCUS
   | typeof PLATFORM_ROLE_FOCUS
   | typeof PRODUCT_ROLE_FOCUS
-  | typeof DATA_ANNOTATION_ROLE_FOCUS;
+  | typeof DATA_ANNOTATION_ROLE_FOCUS
+  | typeof RECRUITING_ROLE_FOCUS;
 
 /** A job is on the lane only when every rule passes. */
 export type LaneStrategy = {

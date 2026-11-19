@@ -66,6 +66,11 @@ export const PT_VOCABULARY: ClassificationVocabulary = {
     /\bgestao\s+de\s+produtos?\b/i,
     /\bdono\s+do\s+produto\b/i,
   ],
+  recruitingTitle: [
+    /\brecrutador(?:a|\(a\))?(?=\W|$)/i,
+    /\brecrutamento\b/i,
+    /\b(?:aquisicao|atracao)\s+de\s+talentos\b/i,
+  ],
   softwareTitle: [
     /\bdesenvolvedor(?:a|\(a\))?(?=\W|$)/i,
     /\bprogramador(?:a|\(a\))?(?=\W|$)/i,
@@ -77,7 +82,6 @@ export const PT_VOCABULARY: ClassificationVocabulary = {
     /\bvendedor(?:a|\(a\))?(?=\W|$)/i,
     /\bconsultor(?:a|\(a\))?\s+comercial\b/i,
     /\bexecutiv[oa](?:\(a\))?\s+de\s+(?:vendas|contas)\b/i,
-    /\brecrutador(?:a|\(a\))?(?=\W|$)/i,
     /\bsucesso\s+do\s+cliente\b/i,
   ],
   nonTechTitle: [

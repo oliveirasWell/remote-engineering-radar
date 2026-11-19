@@ -4,6 +4,7 @@ import {
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
   REACT_ROLE_FOCUS,
+  RECRUITING_ROLE_FOCUS,
 } from '../constants';
 import { VOCABULARY } from '../vocabulary/vocabulary';
 import { anyOf } from './any-of';
@@ -19,6 +20,7 @@ import {
   REACT_SUPPORT_TERMS,
   REACT_TITLE_ANCHORS,
   REACT_TITLE_VETOES,
+  RECRUITING_TITLE_VETOES,
 } from './constants';
 import { titleAnchorOrBodyPlusN } from './title-anchor-or-body-plus-n';
 import { titleMatchesNone } from './title-matches-none';
@@ -26,11 +28,18 @@ import type { LaneInput, LaneRoleFocus, LaneStrategy } from './types';
 
 /**
  * First lane whose rules all pass wins. Order is narrowest claim first: a
- * product or annotation posting names its own job, a cloud posting needs its
+ * recruiting, product or annotation posting names its own job, a cloud posting needs its
  * tools, and React is what is left of the software jobs. Adding a lane is one
  * row here; adding a condition is one rule in that row.
  */
 const LANE_STRATEGIES: readonly LaneStrategy[] = [
+  {
+    roleFocus: RECRUITING_ROLE_FOCUS,
+    rules: [
+      anyOf({ terms: VOCABULARY.recruitingTitle, titleOnly: true }),
+      titleMatchesNone(RECRUITING_TITLE_VETOES),
+    ],
+  },
   {
     roleFocus: PRODUCT_ROLE_FOCUS,
     rules: [anyOf({ terms: VOCABULARY.productTitle, titleOnly: true })],

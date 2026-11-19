@@ -56,6 +56,7 @@ Open:
 - [SPEC-031](031-area-link.md) — header link to the members area
 - [SPEC-033](033-save-job-link.md) — "Save to my area" link on the job detail page
 - [SPEC-034](034-member-newsletter-api.md) — newsletter subscriptions for members-area users
+- [SPEC-035](035-recruiting-lane.md) — recruiting lane, recruiter sources and its eval
 
 ---
 

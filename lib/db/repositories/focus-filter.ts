@@ -5,6 +5,7 @@ import {
   PLATFORM_ROLE_FOCUS,
   PRODUCT_ROLE_FOCUS,
   REACT_ROLE_FOCUS,
+  RECRUITING_ROLE_FOCUS,
 } from '@/lib/classification/constants';
 import type { LaneRoleFocus } from '@/lib/classification/lanes/types';
 import {
@@ -13,6 +14,7 @@ import {
   JOB_FOCUS_ENGINEERING,
   JOB_FOCUS_MOBILE,
   JOB_FOCUS_PRODUCT,
+  JOB_FOCUS_RECRUITING,
   type JobFocusSlug,
 } from '@/lib/jobs/constants';
 
@@ -27,6 +29,7 @@ const TRACK_ROLE_FOCUS: Readonly<Record<JobFocusSlug, LaneRoleFocus>> = {
   [JOB_FOCUS_MOBILE]: MOBILE_ROLE_FOCUS,
   [JOB_FOCUS_DATA_ANNOTATION]: DATA_ANNOTATION_ROLE_FOCUS,
   [JOB_FOCUS_PRODUCT]: PRODUCT_ROLE_FOCUS,
+  [JOB_FOCUS_RECRUITING]: RECRUITING_ROLE_FOCUS,
 };
 
 export const focusFilter = (

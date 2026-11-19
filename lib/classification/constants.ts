@@ -74,6 +74,9 @@ export const DATA_ANNOTATION_ROLE_FOCUS = 'annotation' as const;
  */
 export const SOFTWARE_ROLE_FOCUS = 'software' as const;
 
+/** The role-focus value that marks the Recruiting track. */
+export const RECRUITING_ROLE_FOCUS = 'recruiting' as const;
+
 /** The role-focus value that marks the Product track. */
 export const PRODUCT_ROLE_FOCUS = 'product' as const;
 
