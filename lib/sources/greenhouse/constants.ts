@@ -22,3 +22,13 @@ export const GREENHOUSE_BOARD_TOKENS: readonly string[] = [
   'ifoodcarreiras',
   'ifoodcampanhas',
 ];
+
+/** Company names for seeds whose board token is not the company's name. */
+export const GREENHOUSE_SEED_COMPANY_NAMES: Readonly<Record<string, string>> = {
+  gympass: 'Wellhub',
+  ifoodcarreiras: 'iFood',
+  ifoodcampanhas: 'iFood',
+  wildlifestudios: 'Wildlife Studios',
+  rdstation: 'RD Station',
+  c6bank: 'C6 Bank',
+};

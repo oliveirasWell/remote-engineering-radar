@@ -40,4 +40,28 @@ describe('buildFetchSet', () => {
       /At most 1 boards/,
     );
   });
+
+  it('names unverified seeds from the seed catalog, and lets a verified board win', () => {
+    const boards = buildFetchSet(
+      'greenhouse',
+      ['gympass', 'ifoodcarreiras', 'ifoodcampanhas', 'plain'],
+      [
+        {
+          ats: 'greenhouse',
+          slug: 'ifoodcarreiras',
+          companyName: 'iFood Verified',
+          softwareCount: 3,
+        },
+      ],
+      10,
+      { gympass: 'Wellhub', ifoodcarreiras: 'iFood', ifoodcampanhas: 'iFood' },
+    );
+
+    expect(boards).toEqual([
+      { slug: 'gympass', companyName: 'Wellhub' },
+      { slug: 'ifoodcarreiras', companyName: 'iFood Verified' },
+      { slug: 'ifoodcampanhas', companyName: 'iFood' },
+      { slug: 'plain' },
+    ]);
+  });
 });
