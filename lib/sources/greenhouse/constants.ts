@@ -11,4 +11,24 @@ export const GREENHOUSE_BOARD_TOKENS: readonly string[] = [
   'vtex',
   'doximity',
   'grafanalabs',
+  // Brazilian tech companies with public boards, checked 2026-11-19.
+  'gympass',
+  'jusbrasil',
+  'wildlifestudios',
+  'ebanx',
+  'rdstation',
+  'stone',
+  'c6bank',
+  'ifoodcarreiras',
+  'ifoodcampanhas',
 ];
+
+/** Company names for seeds whose board token is not the company's name. */
+export const GREENHOUSE_SEED_COMPANY_NAMES: Readonly<Record<string, string>> = {
+  gympass: 'Wellhub',
+  ifoodcarreiras: 'iFood',
+  ifoodcampanhas: 'iFood',
+  wildlifestudios: 'Wildlife Studios',
+  rdstation: 'RD Station',
+  c6bank: 'C6 Bank',
+};

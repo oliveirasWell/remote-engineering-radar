@@ -8,11 +8,17 @@ type VerifiedBoard = {
 };
 export type FetchBoard = { slug: string; companyName?: string };
 
+/**
+ * `seedCompanyNames` names seeds the discovery has not verified yet, so a
+ * board token such as `gympass` joins the company other sources call
+ * "Wellhub" instead of creating a second one. A verified board's name wins.
+ */
 export const buildFetchSet = (
   ats: Ats,
   seeds: readonly string[],
   verified: VerifiedBoard[],
   maximum: number,
+  seedCompanyNames: Readonly<Record<string, string>> = {},
 ): FetchBoard[] => {
   if (seeds.length > maximum) {
     throw new Error(`At most ${maximum} boards may be configured`);
@@ -30,8 +36,8 @@ export const buildFetchSet = (
   const slugs = [
     ...new Set([...seeds, ...ranked.map((board) => board.slug)]),
   ].slice(0, maximum);
-  return slugs.map((slug) => ({
-    slug,
-    ...(bySlug.has(slug) ? { companyName: bySlug.get(slug) } : {}),
-  }));
+  return slugs.map((slug) => {
+    const companyName = bySlug.get(slug) ?? seedCompanyNames[slug];
+    return companyName ? { slug, companyName } : { slug };
+  });
 };

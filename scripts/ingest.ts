@@ -13,7 +13,10 @@ import {
 import { createFrontendBrAdapter } from '../lib/sources/frontendbr/frontendbr-adapter';
 import { createGetOnBrdAdapter } from '../lib/sources/getonbrd/getonbrd-adapter';
 import { createGreenhouseAdapter } from '../lib/sources/greenhouse/greenhouse-adapter';
-import { GREENHOUSE_BOARD_TOKENS } from '../lib/sources/greenhouse/constants';
+import {
+  GREENHOUSE_BOARD_TOKENS,
+  GREENHOUSE_SEED_COMPANY_NAMES,
+} from '../lib/sources/greenhouse/constants';
 import { createHackerNewsAdapter } from '../lib/sources/hackernews/hackernews-adapter';
 import { createHimalayasAdapter } from '../lib/sources/himalayas/himalayas-adapter';
 import { createJobicyAdapter } from '../lib/sources/jobicy/jobicy-adapter';
@@ -102,6 +105,7 @@ const main = async () => {
       GREENHOUSE_BOARD_TOKENS,
       verified,
       MAX_CONFIGURED_BOARDS,
+      GREENHOUSE_SEED_COMPANY_NAMES,
     );
     const ashbyBoards = buildFetchSet(
       'ashby',
