@@ -132,6 +132,36 @@ const SubscribeLane = ({
   );
 };
 
+/**
+ * The members area signs the reader in and manages the digest; this link
+ * carries the lane the reader is looking at. A plain anchor: another app.
+ */
+const AreaLaneEmailLink = ({
+  areaUrl,
+  focus,
+  country,
+}: {
+  areaUrl: string;
+  focus: JobFocusSlug;
+  country: JobCountrySlug | undefined;
+}) => {
+  const { locale, messages } = useI18n();
+  const url = new URL('/newsletter', areaUrl);
+  url.searchParams.set('focus', focus);
+  if (country) {
+    url.searchParams.set('country', country);
+  }
+  url.searchParams.set('locale', locale);
+  return (
+    <a
+      href={url.toString()}
+      className="inline-flex min-h-[44px] items-center self-start font-medium text-foreground underline underline-offset-2"
+    >
+      {messages.newsletter.emailInArea}
+    </a>
+  );
+};
+
 export const CompaniesReport = ({
   data,
   newsletterEnabled = false,
@@ -140,7 +170,30 @@ export const CompaniesReport = ({
   newsletterEnabled?: boolean;
 }) => {
   const { locale, messages } = useI18n();
+  // Inlined at build time; set only where the members area is live.
+  const areaUrl = process.env.NEXT_PUBLIC_AREA_URL;
   const [sort, setSort] = useState<CompanySort>('default');
+  const laneEmail = (() => {
+    if (!data.focus) {
+      return null;
+    }
+    if (areaUrl) {
+      return (
+        <AreaLaneEmailLink
+          areaUrl={areaUrl}
+          focus={data.focus}
+          country={data.country}
+        />
+      );
+    }
+    return newsletterEnabled ? (
+      <SubscribeLane
+        key={`${data.focus}:${data.country ?? ''}`}
+        focus={data.focus}
+        country={data.country}
+      />
+    ) : null;
+  })();
   const companies = [...data.companies].sort(COMPANY_SORTS[sort]);
   const scope = [
     data.focus ? messages.focus[data.focus] : null,
@@ -196,13 +249,7 @@ export const CompaniesReport = ({
           </Link>
         ))}
       </nav>
-      {newsletterEnabled && data.focus ? (
-        <SubscribeLane
-          key={`${data.focus}:${data.country ?? ''}`}
-          focus={data.focus}
-          country={data.country}
-        />
-      ) : null}
+      {laneEmail}
       <section aria-labelledby="companies-to-watch">
         <header className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
           <h2 id="companies-to-watch" className="text-xl font-semibold">
