@@ -20,6 +20,7 @@ import {
 import { createHackerNewsAdapter } from '../lib/sources/hackernews/hackernews-adapter';
 import { createHimalayasAdapter } from '../lib/sources/himalayas/himalayas-adapter';
 import { createJobicyAdapter } from '../lib/sources/jobicy/jobicy-adapter';
+import { createJoobleAdapter } from '../lib/sources/jooble/jooble-adapter';
 import { createLeverAdapter } from '../lib/sources/lever/lever-adapter';
 import { LEVER_BOARD_SLUGS } from '../lib/sources/lever/constants';
 import { createQuaveAdapter } from '../lib/sources/quave/quave-adapter';
@@ -150,6 +151,10 @@ const main = async () => {
       createFrontendBrAdapter({ token: process.env.GITHUB_TOKEN }),
       createQuaveAdapter({ token: process.env.GITHUB_TOKEN }),
       createYCombinatorAdapter(),
+      // Brazilian recruiting roles; only with a Brazil partner key.
+      ...(process.env.JOOBLE_API_KEY
+        ? [createJoobleAdapter({ apiKey: process.env.JOOBLE_API_KEY })]
+        : []),
       // Last on purpose: in-run dedupe keeps the first copy it sees, so every
       // other source wins over Himalayas, which only fills the gaps.
       createHimalayasAdapter(),

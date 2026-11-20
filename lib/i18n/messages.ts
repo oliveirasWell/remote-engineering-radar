@@ -299,6 +299,11 @@ export const EN_MESSAGES = {
         description:
           'Public Work at a Startup listing pages for remote software-engineering roles.',
       },
+      {
+        name: 'Jooble',
+        description:
+          'Jooble partner API for recruiting roles in Brazil; each role links to its Jooble page.',
+      },
     ],
     freshnessTitle: 'Freshness and scope',
     freshness:
@@ -619,6 +624,11 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
         name: 'Y Combinator',
         description:
           'Páginas públicas do Work at a Startup com vagas remotas de software engineering.',
+      },
+      {
+        name: 'Jooble',
+        description:
+          'API de parceiros do Jooble para vagas de recrutamento no Brasil; cada vaga leva à página dela no Jooble.',
       },
     ],
     freshnessTitle: 'Atualização e escopo',

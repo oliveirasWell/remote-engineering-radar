@@ -1,0 +1,53 @@
+{
+  "totalCount": 5,
+  "jobs": [
+    {
+      "id": 1001,
+      "title": "Tech Recruiter Sênior",
+      "location": "São Paulo, SP",
+      "snippet": "Atuar com <b>recrutamento</b> de perfis de tecnologia.",
+      "salary": "",
+      "source": "example.com.br",
+      "type": "Tempo integral",
+      "link": "https://br.jooble.org/desc/1001",
+      "company": "Acme Tecnologia",
+      "updated": "2026-11-19T10:00:00.0000000"
+    },
+    {
+      "id": 1002,
+      "title": "Recrutador(a) Remoto",
+      "location": "Brasil",
+      "snippet": "Vaga 100% remota.",
+      "link": "https://br.jooble.org/desc/1002",
+      "company": "Gente RH",
+      "updated": "2026-11-20T08:00:00.0000000"
+    },
+    {
+      "id": 1003,
+      "title": "Senior Tech Recruiter",
+      "location": "Brasil",
+      "snippet": "Auxílio home office incluso.",
+      "link": "https://br.jooble.org/desc/1003",
+      "company": "Talentos SA",
+      "updated": "2026-11-20T09:00:00.0000000"
+    },
+    {
+      "id": 1004,
+      "title": "Analista Administrativo",
+      "location": "Curitiba, PR",
+      "snippet": "Rotinas administrativas.",
+      "link": "https://br.jooble.org/desc/1004",
+      "company": "Escritório Central",
+      "updated": "2026-11-19T12:00:00.0000000"
+    },
+    {
+      "id": 1005,
+      "title": "Recrutador De Clientes",
+      "location": "São Paulo, SP",
+      "snippet": "Captação de clientes.",
+      "link": "https://br.jooble.org/desc/1005",
+      "company": "Imobiliária X",
+      "updated": "2026-11-19T12:00:00.0000000"
+    }
+  ]
+}
