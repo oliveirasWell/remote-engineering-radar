@@ -18,6 +18,8 @@ overrides:
   '@opentelemetry/api': 1.9.1
   # Keep patched transitive versions until upstream minimums include the fixes.
   'brace-expansion@<1.1.21': 1.1.21
+  # GHSA-7589-6fvf-x4pw (ReDoS) via prisma > @prisma/config.
+  'effect@<3.22.1': 3.22.1
   'brace-expansion@>=5.0.0 <5.0.12': 5.0.12
   'smol-toml@<1.9.0': 1.9.0
   'fast-uri@>=3.0.0 <3.1.9': 3.1.9
