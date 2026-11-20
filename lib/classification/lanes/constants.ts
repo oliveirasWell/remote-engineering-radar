@@ -78,6 +78,10 @@ export const RECRUITING_TITLE_VETOES = [
   /\bdesigner\b/i,
   /\bmarketing\b/i,
   /\bbrand\b/i,
+  // "Recrutador de Clientes" recruits buyers: a sales role (Jooble, 2026-11-20).
+  /\bde\s+clientes\b/i,
+  // "Operations Manager, ... Talent Acquisition" names the team, not the job.
+  /\boperations\s+manager\b/i,
 ] as const;
 
 /** Positions that test software rather than build it. */

@@ -10,7 +10,13 @@ export type RecruitingLaneCase = {
   description?: string;
   recruiting: boolean;
   source:
-    'greenhouse' | 'ashby' | 'jobicy' | 'getonbrd' | 'himalayas' | 'synthetic';
+    | 'greenhouse'
+    | 'ashby'
+    | 'jobicy'
+    | 'getonbrd'
+    | 'himalayas'
+    | 'jooble'
+    | 'synthetic';
 };
 
 export const RECRUITING_LANE_CASES: readonly RecruitingLaneCase[] = [
@@ -232,6 +238,60 @@ export const RECRUITING_LANE_CASES: readonly RecruitingLaneCase[] = [
     title: 'Consultant en recrutement indépendant H/F - Rennes',
     recruiting: false,
     source: 'himalayas',
+  },
+
+  // Brazilian titles from the Jooble partner API, 2026-11-20.
+  {
+    title:
+      'Analista de Recrutamento e Seleção Jr./Pleno (PcD) - Tech Recruiter - SP',
+    recruiting: true,
+    source: 'jooble',
+  },
+  {
+    title: 'Assistente de Recrutamento e Seleção',
+    recruiting: true,
+    source: 'jooble',
+  },
+  {
+    title: 'Estágio em Recrutamento e Seleção',
+    recruiting: true,
+    source: 'jooble',
+  },
+  {
+    title: 'Headhunter - Recrutamento e Seleção',
+    recruiting: true,
+    source: 'jooble',
+  },
+  {
+    title: 'Talent Acquisition (Recruiter) Expert',
+    recruiting: true,
+    source: 'jooble',
+  },
+  {
+    title: 'Tech Recruiter Sênior - 90 - MG',
+    recruiting: true,
+    source: 'jooble',
+  },
+  {
+    title: 'Recrutador(a) Freelance PJ',
+    recruiting: true,
+    source: 'jooble',
+  },
+  {
+    title: 'Recrutador De Clientes',
+    recruiting: false,
+    source: 'jooble',
+  },
+  {
+    title: 'Recrutador De Clientes Presencial',
+    recruiting: false,
+    source: 'jooble',
+  },
+  {
+    title:
+      'MBA Pathways Operations Manager - 2027, Amazon University Talent Acquisition',
+    recruiting: false,
+    source: 'jooble',
   },
 
   // Engineering jobs whose product or team is recruiting.
