@@ -26,8 +26,17 @@ describe('normalizeJoobleJob', () => {
       location: 'São Paulo, SP',
       description: 'Atuar com recrutamento de perfis de tecnologia.',
       technologies: [],
+      countries: ['Brazil'],
       postedAt: new Date('2026-11-19T10:00:00.000Z'),
     });
+  });
+
+  it('tags every role as Brazilian, since the feed is Brazil only', () => {
+    // "Joinville, SC" is not on the Brazilian city list the location
+    // resolver knows, so the source has to say the country.
+    expect(
+      normalizeJoobleJob({ ...cityJob, location: 'Joinville, SC' })?.countries,
+    ).toEqual(['Brazil']);
   });
 
   it('reads remote from the title, never from the snippet', () => {

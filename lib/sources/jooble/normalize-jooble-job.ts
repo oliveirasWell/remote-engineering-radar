@@ -29,6 +29,7 @@ const asString = (value: unknown): string | undefined => {
 const REMOTE_PATTERN =
   /\bremot[oa]s?\b|\bremote\b|\bhome office\b|\bteletrabalho\b/;
 const COUNTRY_ONLY = new Set(['brasil', 'brazil']);
+const BRAZIL = 'Brazil';
 
 /** `updated` has no zone ("2026-11-19T10:00:00.0000000"); Jooble means UTC. */
 const readUpdated = (value: unknown): Date | undefined => {
@@ -75,6 +76,9 @@ export const normalizeJoobleJob = (
     ...(remote ? { remotePolicy: 'remote' } : {}),
     description: snippet ? stripHtml(snippet) : undefined,
     technologies: [],
+    // br.jooble.org only lists Brazilian roles; locations often omit the
+    // country ("Joinville, SC"), so the source names it.
+    countries: [BRAZIL],
     postedAt: readUpdated(record.updated),
   };
 };
