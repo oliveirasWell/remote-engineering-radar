@@ -5,6 +5,7 @@ import { GREENHOUSE_SOURCE_NAME } from '@/lib/sources/greenhouse/constants';
 import { HACKER_NEWS_SOURCE_NAME } from '@/lib/sources/hackernews/constants';
 import { HIMALAYAS_SOURCE_NAME } from '@/lib/sources/himalayas/constants';
 import { JOBICY_SOURCE_NAME } from '@/lib/sources/jobicy/constants';
+import { JOOBLE_SOURCE_NAME } from '@/lib/sources/jooble/constants';
 import { LEVER_SOURCE_NAME } from '@/lib/sources/lever/constants';
 import { QUAVE_SOURCE_NAME } from '@/lib/sources/quave/constants';
 import { YCOMBINATOR_SOURCE_NAME } from '@/lib/sources/ycombinator/constants';
@@ -18,6 +19,7 @@ const SOURCE_NAMES = [
   HACKER_NEWS_SOURCE_NAME,
   HIMALAYAS_SOURCE_NAME,
   JOBICY_SOURCE_NAME,
+  JOOBLE_SOURCE_NAME,
   FRONTENDBR_SOURCE_NAME,
   QUAVE_SOURCE_NAME,
   YCOMBINATOR_SOURCE_NAME,

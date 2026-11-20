@@ -6,6 +6,7 @@ const JOB_SOURCE_LABELS: Record<string, string> = {
   hackernews: 'Hacker News',
   himalayas: 'Himalayas',
   jobicy: 'Jobicy',
+  jooble: 'Jooble',
   frontendbr: 'frontendbr',
   quave: 'quave',
   ycombinator: 'Y Combinator',

@@ -92,6 +92,7 @@ jobs:
         run: pnpm ingest
         if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.operation == 'ingest')
         env:
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           GITHUB_TOKEN: ${{ github.token }}
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
