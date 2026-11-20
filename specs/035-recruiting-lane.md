@@ -17,7 +17,8 @@ queried for engineering categories only.
   headhunter, plus the Spanish `reclutador`/`reclutamiento` and French
   `recrutement` that GetOnBrd and Himalayas return; pt: recrutador(a),
   recrutamento, aquisição/atração de talentos) and none of
-  `RECRUITING_TITLE_VETOES` (engineer, developer, designer, marketing, brand),
+  `RECRUITING_TITLE_VETOES` (engineer, developer, designer, marketing, brand,
+  "de clientes", operations manager),
   so "Software Engineer, Recruiting Platform" and "Product Marketing Manager -
   Recruitment Cloud" stay off.
 - Recruiting terms leave `unrelatedRoleTitle`; "People Partner" stays there,
@@ -35,8 +36,8 @@ queried for engineering categories only.
 
 ## Eval
 
-`lib/classification/evals/recruiting-lane/` holds 65 labeled titles (35
-recruiting, 30 not) collected on 2026-11-18 from the Greenhouse and Ashby seed
+`lib/classification/evals/recruiting-lane/` holds 75 labeled titles (42
+recruiting, 33 not) collected on 2026-11-18 and 2026-11-20 (Jooble Brazil) from the Greenhouse and Ashby seed
 boards, Jobicy `hr`, GetOnBrd `hr` and Himalayas, plus synthetic Brazilian and
 engineering-team cases. A title is predicted on the lane when the ingest
 persists it and `roleFocus` contains `recruiting`. The suite fails below 0.95
