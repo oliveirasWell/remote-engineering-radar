@@ -108,6 +108,10 @@ jobs:
           NODE_ENV: production
       - name: Send morning lane digest
         if: github.event_name == 'schedule' && steps.ingest.outcome == 'success'
+        # The digest must not mark a successful ingest as failed. Without a
+        # verified Resend domain, broadcasts are refused (403); the step still
+        # shows as failed on its own.
+        continue-on-error: true
         run: |
           if [[ -z "$RESEND_API_KEY" || -z "$RESEND_FROM" || -z "$RESEND_SEGMENT_ID" ]]; then
             echo "Newsletter not configured; skipping."
