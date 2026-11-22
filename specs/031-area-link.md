@@ -13,7 +13,7 @@ project) from the radar's header.
   inactive tab. It is a plain anchor rather than `next/link` because the target
   is another application.
 - When it is unset or empty, no link renders.
-- Copy: `navigation.area` — en `Sign in`, pt-BR `Entrar`.
+- Copy: `navigation.area` — en `Area`, pt-BR `Área`.
 
 ## Verification
 
@@ -24,5 +24,3 @@ navigation and points at the configured URL when set, and is absent when unset.
 
 - `NEXT_PUBLIC_*` values are inlined at build time: changing the area URL needs a
   new radar deployment.
-- The label says "Sign in" even for a signed-in reader; the radar has no session
-  and cannot tell.
