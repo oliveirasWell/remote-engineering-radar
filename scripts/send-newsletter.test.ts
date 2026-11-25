@@ -2,10 +2,15 @@ import type { RootDb } from '../lib/db/client';
 import { resendRequest } from '../lib/newsletter/resend';
 import { digestText, sendNewsletter } from './send-newsletter';
 
+const { DIGEST_FROM, DIGEST_SEGMENT_ID } = vi.hoisted(() => ({
+  DIGEST_FROM: 'Jobs <jobs@example.com>',
+  DIGEST_SEGMENT_ID: 'test-segment',
+}));
+
 vi.mock('../lib/newsletter/resend', () => ({
   resendConfig: () => ({
-    from: 'Jobs <jobs@example.com>',
-    segmentId: 'test-segment',
+    from: DIGEST_FROM,
+    segmentId: DIGEST_SEGMENT_ID,
   }),
   resendRequest: vi.fn(),
 }));
@@ -68,6 +73,16 @@ it('uses the saved lane/country and updates the personalized digest before sendi
       body: {
         properties: { daily_jobs: expect.stringContaining('Remote React') },
       },
+    }),
+  );
+  expect(resendRequest).toHaveBeenCalledWith(
+    '/broadcasts',
+    expect.objectContaining({
+      method: 'POST',
+      body: expect.objectContaining({
+        from: DIGEST_FROM,
+        segment_id: DIGEST_SEGMENT_ID,
+      }),
     }),
   );
   expect(mockDb.newsletterDispatch.create).toHaveBeenCalledWith({

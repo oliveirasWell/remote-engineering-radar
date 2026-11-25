@@ -61,6 +61,7 @@ Open:
 - [SPEC-037](037-brazil-hybrid-onsite.md) — hybrid and on-site roles in Brazil behind the work model filter
 - [SPEC-038](038-remove-adsense.md) — remove Google AdSense (supersedes 028)
 - [SPEC-039](039-jooble-brazil-recruiting.md) — Jooble partner API for Brazilian recruiting roles
+- [SPEC-040](040-email-sending-domain.md) — verified sending domain for the daily job email
 
 ---
 
