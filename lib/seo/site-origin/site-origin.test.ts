@@ -1,4 +1,4 @@
-import { CANONICAL_SITE_ORIGIN, SITE_URL_ERROR } from '../constants';
+import { DEFAULT_SITE_ORIGIN, SITE_URL_ERROR } from '../constants';
 import { siteOrigin } from './site-origin';
 
 const CUSTOM_ORIGIN = 'https://radar.example.com';
@@ -21,7 +21,7 @@ describe('siteOrigin', () => {
     (value) => {
       vi.stubEnv('SITE_URL', value);
       vi.stubEnv('VERCEL_URL', 'untrusted-preview.example.com');
-      expect(siteOrigin().origin).toBe(CANONICAL_SITE_ORIGIN);
+      expect(siteOrigin().origin).toBe(DEFAULT_SITE_ORIGIN);
     },
   );
 
@@ -32,12 +32,6 @@ describe('siteOrigin', () => {
       expect(siteOrigin().origin).toBe(origin);
     },
   );
-
-  it('pins production to the canonical origin whatever SITE_URL says', () => {
-    vi.stubEnv('VERCEL_ENV', 'production');
-    vi.stubEnv('SITE_URL', CUSTOM_ORIGIN);
-    expect(siteOrigin().origin).toBe(CANONICAL_SITE_ORIGIN);
-  });
 
   it.each(INVALID_ORIGINS)(
     'rejects invalid/non-origin SITE_URL %s',

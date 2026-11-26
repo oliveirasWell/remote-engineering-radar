@@ -63,8 +63,7 @@ with Resend's unsubscribe link. Push and manual ingests do not send email.
 Set up your **own dedicated** Resend account, verify a sending domain, create one segment
 used only by this feature, and create a string contact property named
 `daily_jobs`. Configure `RESEND_API_KEY` (server-only) and `RESEND_FROM` in
-Vercel; production always uses https://remote-engineering-radar.me and ignores
-`SITE_URL`, and production `*.vercel.app` hosts redirect there (308). Configure the same key as
+Vercel, and set `SITE_URL` to the production origin. Configure the same key as
 a GitHub Actions secret and `RESEND_FROM`, `RESEND_SEGMENT_ID`, and `SITE_URL`
 as GitHub Actions variables on the `production-ingestion` environment. Also
 set `RESEND_SEGMENT_ID` in Vercel. Without these values, signups fail closed.
