@@ -122,6 +122,14 @@ secret unset until the beta flow has been verified and the PR is approved.
 - [Prisma data layer](specs/014-prisma-data-layer.md) — production baseline,
   migration rollout, and rollback instructions.
 
+## Google Analytics
+
+Human page views can be counted with Google Analytics 4. Set
+`NEXT_PUBLIC_GA_MEASUREMENT_ID` to a web stream measurement id in Vercel
+**Production** only. Leave it unset locally and on preview deployments; the
+tag is also skipped unless `VERCEL_ENV` is `production`. Without the variable,
+the site renders as usual and loads no Analytics script.
+
 ## AdSense
 
 The public publisher ID, the header unit, and [`public/ads.txt`](public/ads.txt)

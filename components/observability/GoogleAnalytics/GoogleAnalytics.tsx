@@ -1,23 +1,24 @@
 import Script from 'next/script';
-import { GA_MEASUREMENT_ID, GA_SCRIPT_ID } from './constants';
+import { GA_SCRIPT_ID, gaMeasurementId } from './constants';
 
 /**
- * The measurement id names one production property, so preview deployments and
- * local runs would report their own traffic as real. Only production loads it.
+ * Loads GA4 only when NEXT_PUBLIC_GA_MEASUREMENT_ID is set. Preview and local
+ * runs stay out of the production property even if the id is present.
  */
 export const GoogleAnalytics = () => {
-  if (process.env.VERCEL_ENV !== 'production') {
+  const measurementId = gaMeasurementId();
+  if (!measurementId || process.env.VERCEL_ENV !== 'production') {
     return null;
   }
 
   return (
     <>
       <Script
-        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
         strategy="afterInteractive"
       />
       <Script id={GA_SCRIPT_ID} strategy="afterInteractive">
-        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}');`}
+        {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${measurementId}');`}
       </Script>
     </>
   );
