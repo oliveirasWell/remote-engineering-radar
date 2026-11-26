@@ -4,7 +4,7 @@ import {
   RESEND_SEGMENT_ID_ENV,
   newsletterRequiresMessage,
 } from './constants';
-import { resendConfig, resendSegmentId } from './resend';
+import { resendConfig } from './resend';
 
 const API_KEY = 'test-api-key';
 const SEGMENT_ID = 'test-segment';
@@ -53,13 +53,5 @@ describe('resendConfig', () => {
         RESEND_SEGMENT_ID_ENV,
       ]),
     );
-  });
-});
-
-describe('resendSegmentId', () => {
-  it('reads the segment without a sender', () => {
-    vi.stubEnv(RESEND_SEGMENT_ID_ENV, ` ${SEGMENT_ID} `);
-
-    expect(resendSegmentId()).toBe(SEGMENT_ID);
   });
 });

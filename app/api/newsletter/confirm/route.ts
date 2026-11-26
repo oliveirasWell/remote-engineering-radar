@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { getDb } from '@/lib/db/client';
 import { optInContact } from '@/lib/newsletter/opt-in-contact';
 import { resendConfig } from '@/lib/newsletter/resend';
+import { digestLocale } from '@/lib/newsletter/segment-for-locale/segment-for-locale';
 
 const tokenPattern = /^[A-Za-z0-9_-]{43}$/;
 const tokenHash = (token: string) =>
@@ -56,8 +57,11 @@ export const POST = async (request: Request) => {
     });
   }
   try {
-    const { segmentId } = resendConfig();
-    await optInContact(subscription.email, segmentId);
+    resendConfig();
+    await optInContact(
+      subscription.email,
+      digestLocale(subscription.pendingLocale),
+    );
     await db.newsletterSubscription.updateMany({
       where: { email: subscription.email, tokenHash: subscription.tokenHash },
       data: {

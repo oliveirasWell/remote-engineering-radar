@@ -11,14 +11,16 @@ magic-link sign-in, so there is no confirmation email.
 - `GET ?email=` → `{ subscribed: false }` or
   `{ subscribed: true, focus, country, locale }`.
 - `PUT { email, focus, country, locale }` → validated with the public
-  signup's rules, opts the contact into the Resend segment first, then upserts
-  a confirmed `newsletter_subscriptions` row and clears any pending token.
+  signup's rules, opts the contact into the Resend segment for that locale
+  first, then upserts a confirmed `newsletter_subscriptions` row and clears
+  any pending token.
 - `DELETE { email }` → marks the Resend contact unsubscribed, then clears
   `confirmedAt`.
-- Contact operations need only `RESEND_API_KEY` and `RESEND_SEGMENT_ID`.
-  `RESEND_FROM` is needed only to send (public confirmation emails and the
-  daily broadcast). Leaving `RESEND_FROM` unset in Vercel keeps the public
-  signup form hidden while members can still subscribe.
+- Contact operations need `RESEND_API_KEY`, `RESEND_SEGMENT_ID` (English), and
+  `RESEND_SEGMENT_ID_PT_BR` when the locale is `pt-BR`. `RESEND_FROM` is needed
+  only to send (public confirmation emails and the daily broadcast). Leaving
+  `RESEND_FROM` unset in Vercel keeps the public signup form hidden while
+  members can still subscribe.
 
 ## Known debt
 
