@@ -10,6 +10,11 @@ import {
 import { formatUpdatedLabel } from '@/lib/report/format';
 import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { DATABASE_URL_ENV } from '@/lib/db/constants';
+import {
+  RESEND_API_KEY_ENV,
+  RESEND_FROM_ENV,
+  RESEND_SEGMENT_ID_ENV,
+} from '@/lib/newsletter/constants';
 import { TEST_REPORT_ERROR_MESSAGE } from '@/lib/report/test-fixtures';
 import { resolvePageSection } from '@/test/render-helpers/resolve-page-section';
 import { APP_DESCRIPTION, APP_NAME, FOCUS_TECHNOLOGIES } from './constants';
@@ -54,6 +59,37 @@ const UPDATED_AT = new Date('2026-09-01T12:00:00Z');
 
 const AREA_URL = 'https://area.example';
 const AREA_NEWSLETTER_PATH = '/newsletter';
+const DIGEST_SENDER = 'Remote Engineering Radar <digest@mail.example.test>';
+const AREA_URL_ENV = 'NEXT_PUBLIC_AREA_URL';
+
+const NEWSLETTER_API_KEY = 'test-api-key';
+const NEWSLETTER_SEGMENT_ID = 'test-segment';
+const VERCEL_ENV_NAME = 'VERCEL_ENV';
+const PRODUCTION_ENV = 'production';
+
+const enableNewsletterSending = () => {
+  vi.stubEnv(RESEND_API_KEY_ENV, NEWSLETTER_API_KEY);
+  vi.stubEnv(RESEND_FROM_ENV, DIGEST_SENDER);
+  vi.stubEnv(RESEND_SEGMENT_ID_ENV, NEWSLETTER_SEGMENT_ID);
+  vi.stubEnv(VERCEL_ENV_NAME, PRODUCTION_ENV);
+};
+
+const [BRAZIL] = JOB_COUNTRY_FILTER_OPTIONS;
+const laneSearch = { focus: JOB_FOCUS_CLOUD_OPS, country: BRAZIL.slug };
+
+const renderConfiguredHome = async () => {
+  vi.mocked(getCompaniesPageData).mockResolvedValueOnce({
+    companies: [],
+    focus: JOB_FOCUS_CLOUD_OPS,
+    country: BRAZIL.slug,
+    updatedAt: null,
+  });
+  render(
+    await resolvePageSection(
+      Home({ searchParams: Promise.resolve(laneSearch) }),
+    ),
+  );
+};
 
 describe('lane email link to the members area', () => {
   const renderLane = () =>
@@ -75,7 +111,7 @@ describe('lane email link to the members area', () => {
   });
 
   it('opens the members area with the selected lane, country and language', () => {
-    vi.stubEnv('NEXT_PUBLIC_AREA_URL', AREA_URL);
+    vi.stubEnv(AREA_URL_ENV, AREA_URL);
     renderLane();
 
     const link = screen.getByRole('link', {
@@ -93,7 +129,7 @@ describe('lane email link to the members area', () => {
   });
 
   it('shows no link when the members area is not configured', () => {
-    vi.stubEnv('NEXT_PUBLIC_AREA_URL', '');
+    vi.stubEnv(AREA_URL_ENV, '');
     renderLane();
 
     expect(
@@ -101,6 +137,47 @@ describe('lane email link to the members area', () => {
         name: messagesFor('pt-BR').newsletter.emailInArea,
       }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('radar signup form', () => {
+  const emailField = EN_MESSAGES.newsletter.email;
+
+  it('shows the form once RESEND_FROM is set and the members area is unset', async () => {
+    vi.stubEnv(AREA_URL_ENV, '');
+    enableNewsletterSending();
+    await renderConfiguredHome();
+
+    expect(
+      screen.getByRole('textbox', { name: emailField }),
+    ).toBeInTheDocument();
+  });
+
+  it.each(['', '   '])(
+    'hides the form when RESEND_FROM is blank (%j)',
+    async (from) => {
+      vi.stubEnv(AREA_URL_ENV, '');
+      enableNewsletterSending();
+      vi.stubEnv(RESEND_FROM_ENV, from);
+      await renderConfiguredHome();
+
+      expect(
+        screen.queryByRole('textbox', { name: emailField }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it('keeps subscriptions on the members area when that URL is set', async () => {
+    vi.stubEnv(AREA_URL_ENV, AREA_URL);
+    enableNewsletterSending();
+    await renderConfiguredHome();
+
+    expect(
+      screen.queryByRole('textbox', { name: emailField }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: EN_MESSAGES.newsletter.emailInArea }),
+    ).toHaveAttribute('href', expect.stringContaining(AREA_URL));
   });
 });
 
