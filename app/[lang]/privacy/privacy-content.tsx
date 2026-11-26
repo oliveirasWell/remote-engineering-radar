@@ -3,7 +3,7 @@
 import { useI18n } from '@/components/i18n/I18nProvider/I18nProvider';
 import { editorialFor } from '@/lib/i18n/editorial';
 import { LOCALE_COOKIE } from '@/lib/i18n/messages';
-import { GA_MEASUREMENT_ID } from '@/components/observability/GoogleAnalytics/constants';
+import { gaMeasurementId } from '@/components/observability/GoogleAnalytics/constants';
 import { CONTACT_EMAIL } from '@/components/site/constants';
 import { PageTitle } from '@oliveiraswell/ds';
 
@@ -12,9 +12,12 @@ const TEXT_LINK = 'text-muted-foreground underline underline-offset-2';
 export const PrivacyContent = () => {
   const { locale, messages } = useI18n();
   const { privacy } = editorialFor(locale);
+  const measurementId = gaMeasurementId();
   const facts = [
     { label: privacy.cookieLabel, value: LOCALE_COOKIE },
-    { label: privacy.analyticsLabel, value: GA_MEASUREMENT_ID },
+    ...(measurementId
+      ? [{ label: privacy.analyticsLabel, value: measurementId }]
+      : []),
     { label: messages.about.contactEmailLabel, value: CONTACT_EMAIL },
   ];
 

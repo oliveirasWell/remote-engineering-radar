@@ -122,7 +122,7 @@ const EN_EDITORIAL: Editorial = {
       {
         title: 'Measurement',
         paragraphs: [
-          'Google Analytics counts page views. The measurement id is listed below. This site does not sell a separate export of your identity.',
+          'Google Analytics counts page views when a measurement id is configured. That id is listed below when present. This site does not sell a separate export of your identity.',
         ],
       },
       {
@@ -221,7 +221,7 @@ const PT_EDITORIAL: Editorial = {
       {
         title: 'Medição',
         paragraphs: [
-          'O Google Analytics conta visualizações de página. O id de medição está listado abaixo. Este site não vende uma exportação separada da sua identidade.',
+          'O Google Analytics conta visualizações de página quando um id de medição está configurado. Esse id aparece abaixo quando estiver presente. Este site não vende uma exportação separada da sua identidade.',
         ],
       },
       {
