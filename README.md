@@ -58,22 +58,31 @@ The selected focus and country on the home page can be subscribed to by email.
 Subscribers confirm their address before joining one dedicated Resend segment.
 The scheduled ingest runs at **11:00 UTC (08:00 São Paulo)**; after a successful
 scheduled ingest, it prepares each contact's job list and sends one broadcast
-with Resend's unsubscribe link. Push and manual ingests do not send email.
+with Resend's unsubscribe link. The digest runs only on that scheduled cron.
+Push to `main` and a manual `workflow_dispatch` do not send email (SPEC-040).
 
 Set up your **own dedicated** Resend account, verify a sending domain, create one segment
 used only by this feature, and create a string contact property named
-`daily_jobs`. Configure `RESEND_API_KEY` (server-only) and `RESEND_FROM` in
-Vercel, and set `SITE_URL` to the production origin. Configure the same key as
-a GitHub Actions secret and `RESEND_FROM`, `RESEND_SEGMENT_ID`, and `SITE_URL`
-as GitHub Actions variables on the `production-ingestion` environment. Also
-set `RESEND_SEGMENT_ID` in Vercel. Without these values, signups fail closed.
-Sending to arbitrary subscribers requires a domain you control; the Resend
-free tier does not cover buying a domain if you do not already have one.
+`daily_jobs`. The sending domain is `mail.remote-engineering-radar.me`
+(`remote-engineering-radar.me` uses Vercel DNS; the Resend records are created
+separately). The sender is `RESEND_FROM`, for example
+`Remote Engineering Radar <digest@mail.remote-engineering-radar.me>`.
+Confirmation mail and the daily broadcast both use it. Sending fails with an
+error that names `RESEND_FROM` when that variable is missing.
+
+Configure `RESEND_API_KEY` (server-only) in Vercel, and set `SITE_URL` to the
+production origin. Configure the same key as a GitHub Actions secret, and
+`RESEND_FROM`, `RESEND_SEGMENT_ID`, and `SITE_URL` as GitHub Actions variables
+on the `production-ingestion` environment. Also set `RESEND_SEGMENT_ID` in
+Vercel. Without the API key or the segment id, signups fail closed.
 
 Members of the area can subscribe without the public form through the
 token-protected `/api/newsletter/members` (SPEC-034). It needs only
-`RESEND_API_KEY` and `RESEND_SEGMENT_ID` in Vercel; leave `RESEND_FROM` unset
-there to keep the public form hidden until a sending domain is verified.
+`RESEND_API_KEY` and `RESEND_SEGMENT_ID` in Vercel. Leave `RESEND_FROM` unset
+in Vercel production so the radar's own signup form stays hidden and
+subscriptions stay on the area. The form appears when `RESEND_FROM` is set,
+together with the other newsletter settings, and `NEXT_PUBLIC_AREA_URL` is
+unset.
 
 The [Resend Free plan](https://resend.com/pricing) currently allows 1,000 marketing contacts and broadcasts;
 confirmation emails use its transactional allowance (100/day, 3,000/month).

@@ -5,6 +5,12 @@ import { getCompaniesPageData } from '@/lib/report/get-companies-page-data';
 import { reportDatabaseConfigured } from '@/lib/report/report-database-configured';
 import type { CompaniesPageOptions } from '@/lib/report/get-companies-page-data';
 import { REPORT_CACHE_LIFE } from '@/lib/report/constants';
+import { DATABASE_URL_ENV } from '@/lib/db/constants';
+import {
+  RESEND_API_KEY_ENV,
+  RESEND_FROM_ENV,
+  RESEND_SEGMENT_ID_ENV,
+} from '@/lib/newsletter/constants';
 import type { JobCountrySlug, JobFocusSlug } from '@/lib/jobs/constants';
 import { routeLocale } from '@/lib/i18n/route-locale/route-locale';
 import { searchMetadata } from '@/lib/seo/search-metadata/search-metadata';
@@ -63,11 +69,11 @@ const CompaniesSection = async ({ searchParams }: HomeProps) => {
       focus: parseFocusFilter(params.focus),
     },
     Boolean(
-      process.env.DATABASE_URL &&
-      process.env.RESEND_API_KEY &&
-      process.env.RESEND_FROM &&
-      process.env.RESEND_SEGMENT_ID &&
-      (process.env.VERCEL_ENV !== 'preview' || process.env.SITE_URL),
+      process.env[DATABASE_URL_ENV]?.trim() &&
+      process.env[RESEND_API_KEY_ENV]?.trim() &&
+      process.env[RESEND_FROM_ENV]?.trim() &&
+      process.env[RESEND_SEGMENT_ID_ENV]?.trim() &&
+      (process.env.VERCEL_ENV !== 'preview' || process.env.SITE_URL?.trim()),
     ),
   );
 };
