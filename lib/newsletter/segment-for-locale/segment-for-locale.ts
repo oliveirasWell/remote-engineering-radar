@@ -1,7 +1,8 @@
 import { DEFAULT_LOCALE, isLocale, type Locale } from '@/lib/i18n/messages';
+import { RESEND_SEGMENT_ID_ENV, newsletterRequiresMessage } from '../constants';
 
 export const SEGMENT_ENV_BY_LOCALE = {
-  en: 'RESEND_SEGMENT_ID',
+  en: RESEND_SEGMENT_ID_ENV,
   'pt-BR': 'RESEND_SEGMENT_ID_PT_BR',
 } as const satisfies Record<Locale, string>;
 
@@ -13,7 +14,7 @@ export const segmentIdForLocale = (locale: Locale): string => {
   const name = SEGMENT_ENV_BY_LOCALE[locale];
   const segmentId = process.env[name]?.trim();
   if (!segmentId) {
-    throw new Error(`Newsletter requires ${name}`);
+    throw new Error(newsletterRequiresMessage([name]));
   }
   return segmentId;
 };
@@ -26,6 +27,6 @@ export const otherSegmentId = (locale: Locale): string | null => {
 
 export const configuredSegmentIds = (): string[] => {
   const english = segmentIdForLocale('en');
-  const portuguese = process.env.RESEND_SEGMENT_ID_PT_BR?.trim();
+  const portuguese = process.env[SEGMENT_ENV_BY_LOCALE['pt-BR']]?.trim();
   return portuguese ? [english, portuguese] : [english];
 };

@@ -60,30 +60,37 @@ language of the page they signed up on (`en` or `pt-BR`). That locale is stored
 on `newsletter_subscriptions` and is what the digest reads; an unknown value is
 sent in English. The scheduled ingest runs at **11:00 UTC (08:00 São Paulo)**;
 after a successful scheduled ingest, it prepares each contact's job list and
-sends one HTML broadcast per language, with Resend's unsubscribe link. Push and
-manual ingests do not send email.
+sends one HTML broadcast per language, with Resend's unsubscribe link. The
+digest runs only on that scheduled cron. Push to `main` and a manual
+`workflow_dispatch` do not send email (SPEC-040).
 
 Set up your **own dedicated** Resend account, verify a sending domain, and
 create two segments used only by this feature: one for English
 (`RESEND_SEGMENT_ID`) and one for Portuguese (`RESEND_SEGMENT_ID_PT_BR`). The
 digest creates the string contact properties `daily_jobs`, `daily_jobs_html`,
-and `digest_lane_url` when they are missing. Configure `RESEND_API_KEY`
-(server-only) and `RESEND_FROM` in Vercel, and set `SITE_URL` to the production
-origin. Configure the same key as a GitHub Actions secret and `RESEND_FROM`,
-`RESEND_SEGMENT_ID`, `RESEND_SEGMENT_ID_PT_BR`, and `SITE_URL` as GitHub Actions
-variables on the `production-ingestion` environment. Also set both segment ids
-in Vercel so confirmation and the members API join the right segment. Without
-the English segment, signups fail closed. Without the Portuguese segment,
-Portuguese confirmation and any digest that includes a `pt-BR` subscriber fail
-closed instead of sending English copy. Sending to arbitrary subscribers
-requires a domain you control; the Resend free tier does not cover buying a
-domain if you do not already have one.
+and `digest_lane_url` when they are missing. The sending domain is
+`mail.remote-engineering-radar.me` (`remote-engineering-radar.me` uses Vercel
+DNS; the Resend records are created separately). The sender is `RESEND_FROM`,
+for example `Remote Engineering Radar <digest@mail.remote-engineering-radar.me>`.
+Confirmation mail and the daily broadcasts both use it. Sending fails with an
+error that names `RESEND_FROM` when that variable is missing.
+
+Configure `RESEND_API_KEY` (server-only) in Vercel, and set `SITE_URL` to the
+production origin. Configure the same key as a GitHub Actions secret, and
+`RESEND_FROM`, `RESEND_SEGMENT_ID`, `RESEND_SEGMENT_ID_PT_BR`, and `SITE_URL` as
+GitHub Actions variables on the `production-ingestion` environment. Also set
+both segment ids in Vercel so confirmation and the members API join the right
+segment. Without the API key or the English segment, signups fail closed.
+Without the Portuguese segment, Portuguese confirmation and any digest that
+includes a `pt-BR` subscriber fail closed instead of sending English copy.
 
 Members of the area can subscribe without the public form through the
-token-protected `/api/newsletter/members` (SPEC-034). It needs
-`RESEND_API_KEY`, `RESEND_SEGMENT_ID`, and `RESEND_SEGMENT_ID_PT_BR` in Vercel;
-leave `RESEND_FROM` unset there to keep the public form hidden until a sending
-domain is verified.
+token-protected `/api/newsletter/members` (SPEC-034). It needs only
+`RESEND_API_KEY`, `RESEND_SEGMENT_ID`, and `RESEND_SEGMENT_ID_PT_BR` in Vercel.
+Leave `RESEND_FROM` unset in Vercel production so the radar's own signup form
+stays hidden and subscriptions stay on the area. The form appears when
+`RESEND_FROM` is set, together with the other newsletter settings, and
+`NEXT_PUBLIC_AREA_URL` is unset.
 
 The [Resend Free plan](https://resend.com/pricing) currently allows 1,000 marketing contacts and broadcasts;
 confirmation emails use its transactional allowance (100/day, 3,000/month).

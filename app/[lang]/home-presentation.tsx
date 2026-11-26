@@ -155,6 +155,7 @@ const AreaLaneEmailLink = ({
   return (
     <a
       href={url.toString()}
+      rel="nofollow"
       className="inline-flex min-h-[44px] items-center self-start font-medium text-foreground underline underline-offset-2"
     >
       {messages.newsletter.emailInArea}

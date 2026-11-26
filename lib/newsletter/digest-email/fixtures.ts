@@ -18,6 +18,8 @@ export const DIGEST_SEGMENT_EN = 'segment-en';
 
 export const DIGEST_SEGMENT_PT = 'segment-pt';
 
+export const DIGEST_FROM = 'Jobs <jobs@example.com>';
+
 export const DIGEST_JOBS = [
   {
     id: '00000000-0000-0000-0000-000000000001',

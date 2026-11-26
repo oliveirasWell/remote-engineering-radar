@@ -1,6 +1,19 @@
 import 'server-only';
+import {
+  RESEND_API_KEY_ENV,
+  RESEND_FROM_ENV,
+  RESEND_SEGMENT_ID_ENV,
+  newsletterRequiresMessage,
+} from './constants';
 
 const API = 'https://api.resend.com';
+const SENDING_ENV = [
+  RESEND_API_KEY_ENV,
+  RESEND_FROM_ENV,
+  RESEND_SEGMENT_ID_ENV,
+] as const;
+
+const readEnv = (name: string) => process.env[name]?.trim() ?? '';
 
 export class ResendError extends Error {
   constructor(readonly status: number) {
@@ -9,13 +22,17 @@ export class ResendError extends Error {
 }
 
 export const resendConfig = () => {
-  const key = process.env.RESEND_API_KEY;
-  const from = process.env.RESEND_FROM;
-  const segmentId = process.env.RESEND_SEGMENT_ID;
-  if (!key || !from || !segmentId) {
-    throw new Error(
-      'Newsletter requires RESEND_API_KEY, RESEND_FROM and RESEND_SEGMENT_ID',
-    );
+  const key = readEnv(RESEND_API_KEY_ENV);
+  const from = readEnv(RESEND_FROM_ENV);
+  const segmentId = readEnv(RESEND_SEGMENT_ID_ENV);
+  const configured = {
+    [RESEND_API_KEY_ENV]: key,
+    [RESEND_FROM_ENV]: from,
+    [RESEND_SEGMENT_ID_ENV]: segmentId,
+  };
+  const missing = SENDING_ENV.filter((name) => configured[name] === '');
+  if (missing.length > 0) {
+    throw new Error(newsletterRequiresMessage(missing));
   }
   return { key, from, segmentId };
 };
@@ -24,9 +41,9 @@ export const resendRequest = async <T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
 ): Promise<T> => {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    throw new Error('Newsletter requires RESEND_API_KEY');
+  const key = readEnv(RESEND_API_KEY_ENV);
+  if (key === '') {
+    throw new Error(newsletterRequiresMessage([RESEND_API_KEY_ENV]));
   }
   const response = await fetch(`${API}${path}`, {
     method: options.method ?? 'GET',

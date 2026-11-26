@@ -10,11 +10,16 @@ import {
   DIGEST_EMAIL,
   DIGEST_EMAIL_SECOND,
   DIGEST_FOCUS,
+  DIGEST_FROM,
   DIGEST_JOBS,
   DIGEST_ORIGIN,
   DIGEST_SEGMENT_EN,
   DIGEST_SEGMENT_PT,
 } from '../lib/newsletter/digest-email/fixtures';
+import {
+  RESEND_API_KEY_ENV,
+  RESEND_FROM_ENV,
+} from '../lib/newsletter/constants';
 import { resendRequest } from '../lib/newsletter/resend';
 import { SEGMENT_ENV_BY_LOCALE } from '../lib/newsletter/segment-for-locale/segment-for-locale';
 import { sendNewsletter } from './send-newsletter';
@@ -97,8 +102,8 @@ const mockResend = () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.stubEnv('RESEND_API_KEY', 'test-key');
-  vi.stubEnv('RESEND_FROM', 'Jobs <jobs@example.com>');
+  vi.stubEnv(RESEND_API_KEY_ENV, 'test-key');
+  vi.stubEnv(RESEND_FROM_ENV, DIGEST_FROM);
   vi.stubEnv('SITE_URL', DIGEST_ORIGIN);
   vi.stubEnv(SEGMENT_ENV_BY_LOCALE.en, DIGEST_SEGMENT_EN);
   vi.stubEnv(SEGMENT_ENV_BY_LOCALE['pt-BR'], DIGEST_SEGMENT_PT);
@@ -144,6 +149,7 @@ it('sends one localized broadcast after storing the lane digest', async () => {
     expect.objectContaining({
       method: 'POST',
       body: expect.objectContaining({
+        from: DIGEST_FROM,
         segment_id: DIGEST_SEGMENT_PT,
         subject: digest.subject,
         html: expect.stringMatching(/<table[\s\S]*\n/),

@@ -56,7 +56,7 @@ const NavigationLinks = ({ pathname }: { pathname?: string | null }) => {
         );
       })}
       {areaUrl ? (
-        <a href={areaUrl} className={LINK_CLASS_NAME}>
+        <a href={areaUrl} rel="nofollow" className={LINK_CLASS_NAME}>
           {messages.navigation.area}
         </a>
       ) : null}
