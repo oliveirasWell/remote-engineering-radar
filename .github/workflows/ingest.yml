@@ -107,17 +107,14 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           NODE_ENV: production
       - name: Send morning lane digest
+        # Scheduled cron only. Push and workflow_dispatch do not send the digest.
         if: github.event_name == 'schedule' && steps.ingest.outcome == 'success'
-        # The digest must not mark a successful ingest as failed. Without a
-        # verified Resend domain, broadcasts are refused (403); the step still
-        # shows as failed on its own.
+        # TODO(SPEC-040): remove continue-on-error after the first successful
+        # scheduled cron once mail.remote-engineering-radar.me is verified.
+        # Until then a missing RESEND_FROM or a refused broadcast must not
+        # fail the ingest. The step still fails on its own.
         continue-on-error: true
-        run: |
-          if [[ -z "$RESEND_API_KEY" || -z "$RESEND_FROM" || -z "$RESEND_SEGMENT_ID" ]]; then
-            echo "Newsletter not configured; skipping."
-            exit 0
-          fi
-          pnpm newsletter:send
+        run: pnpm newsletter:send
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

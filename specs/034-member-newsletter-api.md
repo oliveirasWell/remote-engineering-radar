@@ -25,8 +25,8 @@ magic-link sign-in, so there is no confirmation email.
 - `GET` reads the database only; a reader who unsubscribed through the
   broadcast's Resend link still shows as subscribed until they toggle it in the
   area.
-- Without a verified Resend domain, broadcasts from `onboarding@resend.dev`
-  only reach the Resend account owner.
+- The digest sender is `RESEND_FROM` on `mail.remote-engineering-radar.me`
+  (SPEC-040). Until that domain accepts mail, broadcasts are refused.
 
 ## Verification
 

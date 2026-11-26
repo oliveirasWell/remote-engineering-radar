@@ -268,24 +268,28 @@ describe('save to the members area', () => {
     vi.unstubAllEnvs();
   });
 
-  it('links to the area save route for this job when configured', async () => {
+  it('submits this job to the area save route without a crawlable link', async () => {
     vi.stubEnv('NEXT_PUBLIC_AREA_URL', AREA_URL);
     await renderDetail();
 
-    expect(
-      screen.getByRole('link', { name: messagesFor('pt-BR').jobDetail.save }),
-    ).toHaveAttribute(
-      'href',
-      `${AREA_URL}${AREA_SAVE_PATH}?job=${detailJob.id}`,
-    );
+    const { save } = messagesFor('pt-BR').jobDetail;
+    expect(screen.queryByRole('link', { name: save })).not.toBeInTheDocument();
+    const { form } = screen.getByRole<HTMLButtonElement>('button', {
+      name: save,
+    });
+    expect(form).toHaveAttribute('action', `${AREA_URL}${AREA_SAVE_PATH}`);
+    expect(form).toHaveAttribute('method', 'get');
+    expect(Object.fromEntries(new FormData(form ?? undefined))).toStrictEqual({
+      job: detailJob.id,
+    });
   });
 
-  it('renders no save link when the area is not configured', async () => {
+  it('renders no save button when the area is not configured', async () => {
     vi.stubEnv('NEXT_PUBLIC_AREA_URL', '');
     await renderDetail();
 
     expect(
-      screen.queryByRole('link', {
+      screen.queryByRole('button', {
         name: messagesFor('pt-BR').jobDetail.save,
       }),
     ).not.toBeInTheDocument();
