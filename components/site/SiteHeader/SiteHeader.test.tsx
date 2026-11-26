@@ -117,6 +117,7 @@ describe('SiteHeader navigation tabs', () => {
       ).getAllByRole('link');
       expect(links.at(-1)).toHaveAccessibleName(navigation.area);
       expect(links.at(-1)).toHaveAttribute('href', AREA_URL);
+      expect(links.at(-1)).toHaveAttribute('rel', 'nofollow');
     });
 
     it('renders no area link when unset', () => {

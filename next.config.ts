@@ -4,6 +4,7 @@ import {
   LOCALE_REDIRECTS,
   LOCALE_REWRITES,
 } from './lib/i18n/locale-routes/locale-routes';
+import { canonicalHostRedirects } from './lib/seo/canonical-host-redirects/canonical-host-redirects';
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
@@ -11,7 +12,10 @@ const nextConfig: NextConfig = {
   htmlLimitedBots: /.*/,
   reactCompiler: true,
   poweredByHeader: false,
-  redirects: async () => LOCALE_REDIRECTS,
+  redirects: async () => [
+    ...canonicalHostRedirects(process.env.VERCEL_ENV),
+    ...LOCALE_REDIRECTS,
+  ],
   rewrites: async () => ({
     beforeFiles: LOCALE_REWRITES,
     afterFiles: [],

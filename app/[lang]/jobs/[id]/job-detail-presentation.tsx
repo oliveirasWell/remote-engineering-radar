@@ -48,12 +48,16 @@ export const JobDetailReport = ({
         {jobDetail.score(data.job.score)}
       </p>
       {areaUrl ? (
-        <a
-          href={`${areaUrl}/save?job=${encodeURIComponent(data.job.id)}`}
-          className="inline-flex min-h-[44px] items-center font-medium text-foreground underline underline-offset-2"
-        >
-          {jobDetail.save}
-        </a>
+        // A GET form, not a link: crawlers follow one unique href per job.
+        <form action={`${areaUrl}/save`} method="get">
+          <input type="hidden" name="job" value={data.job.id} />
+          <button
+            type="submit"
+            className="inline-flex min-h-[44px] cursor-pointer items-center font-medium text-foreground underline underline-offset-2"
+          >
+            {jobDetail.save}
+          </button>
+        </form>
       ) : null}
       <JobCard job={data.job} />
       {data.job.reasons.length > 0 ? (

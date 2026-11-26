@@ -10,7 +10,7 @@ import {
   REMOTE_POLICY_REMOTE,
 } from '@/lib/jobs/constants';
 import {
-  DEFAULT_SITE_ORIGIN,
+  CANONICAL_SITE_ORIGIN,
   GUIDE_PATH,
   MIN_INDEXABLE_JOBS,
   PRIVACY_PATH,
@@ -30,10 +30,10 @@ const PORTUGUESE_PREFIX = '/pt-BR';
 
 /** Both language versions of a page, each listing both as alternates. */
 const entriesFor = (path: string) => {
-  const english = new URL(path, DEFAULT_SITE_ORIGIN).href;
+  const english = new URL(path, CANONICAL_SITE_ORIGIN).href;
   const portuguese = new URL(
     path === '/' ? PORTUGUESE_PREFIX : `${PORTUGUESE_PREFIX}${path}`,
-    DEFAULT_SITE_ORIGIN,
+    CANONICAL_SITE_ORIGIN,
   ).href;
   const alternates = { languages: { en: english, 'pt-BR': portuguese } };
   return [
@@ -144,7 +144,7 @@ describe('sitemap', () => {
         `/pt-BR?country=${brazil.slug}`,
         `/jobs?country=${brazil.slug}`,
         `/pt-BR/jobs?country=${brazil.slug}`,
-      ].map((path) => new URL(path, DEFAULT_SITE_ORIGIN).href),
+      ].map((path) => new URL(path, CANONICAL_SITE_ORIGIN).href),
     );
   });
 });
