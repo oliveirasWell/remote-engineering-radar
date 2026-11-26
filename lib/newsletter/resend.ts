@@ -20,15 +20,6 @@ export const resendConfig = () => {
   return { key, from, segmentId };
 };
 
-/** Contact and segment operations; sending email also needs `RESEND_FROM`. */
-export const resendSegmentId = () => {
-  const segmentId = process.env.RESEND_SEGMENT_ID;
-  if (!segmentId) {
-    throw new Error('Newsletter requires RESEND_SEGMENT_ID');
-  }
-  return segmentId;
-};
-
 export const resendRequest = async <T>(
   path: string,
   options: { method?: string; body?: unknown } = {},
@@ -54,3 +45,10 @@ export const resendRequest = async <T>(
   }
   return (await response.json()) as T;
 };
+
+export const pauseResend = (paceMs: number) =>
+  paceMs > 0
+    ? new Promise((resolve) => {
+        setTimeout(resolve, paceMs);
+      })
+    : Promise.resolve();

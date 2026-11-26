@@ -1,10 +1,14 @@
 import { getDb } from '@/lib/db/client';
+import {
+  DIGEST_SEGMENT_EN,
+  DIGEST_SEGMENT_PT,
+} from '@/lib/newsletter/digest-email/fixtures';
 import { resendRequest } from '@/lib/newsletter/resend';
+import { SEGMENT_ENV_BY_LOCALE } from '@/lib/newsletter/segment-for-locale/segment-for-locale';
 import { DELETE, GET, PUT } from './route';
 
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
 vi.mock('@/lib/newsletter/resend', () => ({
-  resendSegmentId: () => SEGMENT_ID,
   resendRequest: vi.fn(async () => ({ id: 'contact' })),
   ResendError: class extends Error {
     constructor(readonly status: number) {
@@ -13,7 +17,6 @@ vi.mock('@/lib/newsletter/resend', () => ({
   },
 }));
 
-const SEGMENT_ID = 'segment';
 const TOKEN = 'radar-api-token';
 const ORIGIN = 'https://radar.example';
 const PATH = '/api/newsletter/members';
@@ -51,6 +54,8 @@ const call = (
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('RADAR_API_TOKEN', TOKEN);
+  vi.stubEnv(SEGMENT_ENV_BY_LOCALE.en, DIGEST_SEGMENT_EN);
+  vi.stubEnv(SEGMENT_ENV_BY_LOCALE['pt-BR'], DIGEST_SEGMENT_PT);
   vi.mocked(getDb).mockReturnValue(db as never);
 });
 
@@ -93,9 +98,13 @@ describe('/api/newsletter/members', () => {
         method: 'POST',
         body: expect.objectContaining({
           email: EMAIL,
-          segments: [{ id: SEGMENT_ID }],
+          segments: [{ id: DIGEST_SEGMENT_PT }],
         }),
       }),
+    );
+    expect(resendRequest).toHaveBeenCalledWith(
+      `/contacts/${encodeURIComponent(EMAIL)}/segments/${DIGEST_SEGMENT_EN}`,
+      { method: 'DELETE' },
     );
     expect(resendRequest).not.toHaveBeenCalledWith(
       '/emails',

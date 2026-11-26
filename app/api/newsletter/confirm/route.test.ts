@@ -1,6 +1,11 @@
 import { createHash } from 'node:crypto';
 import { getDb } from '@/lib/db/client';
+import {
+  DIGEST_SEGMENT_EN,
+  DIGEST_SEGMENT_PT,
+} from '@/lib/newsletter/digest-email/fixtures';
 import { resendRequest } from '@/lib/newsletter/resend';
+import { SEGMENT_ENV_BY_LOCALE } from '@/lib/newsletter/segment-for-locale/segment-for-locale';
 import { GET, POST } from './route';
 
 vi.mock('@/lib/db/client', () => ({ getDb: vi.fn() }));
@@ -30,9 +35,17 @@ const db = {
   },
 };
 
+const ADDRESS = 'person@example.com';
+
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.stubEnv(SEGMENT_ENV_BY_LOCALE.en, DIGEST_SEGMENT_EN);
+  vi.stubEnv(SEGMENT_ENV_BY_LOCALE['pt-BR'], DIGEST_SEGMENT_PT);
   vi.mocked(getDb).mockReturnValue(db as never);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 it('shows a confirmation form without activating the subscription on GET', async () => {
@@ -60,10 +73,14 @@ it('confirms ownership before adding a contact to the broadcast', async () => {
     '/contacts',
     expect.objectContaining({
       body: expect.objectContaining({
-        email: 'person@example.com',
-        segments: [{ id: 'segment' }],
+        email: ADDRESS,
+        segments: [{ id: DIGEST_SEGMENT_PT }],
       }),
     }),
+  );
+  expect(resendRequest).toHaveBeenCalledWith(
+    `/contacts/${encodeURIComponent(ADDRESS)}/segments/${DIGEST_SEGMENT_EN}`,
+    { method: 'DELETE' },
   );
   expect(db.newsletterSubscription.updateMany).toHaveBeenCalledWith(
     expect.objectContaining({

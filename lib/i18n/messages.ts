@@ -34,6 +34,15 @@ export const EN_MESSAGES = {
     sent: 'Check your inbox for the confirmation link.',
     error: 'Could not subscribe right now. Please try again later.',
     emailInArea: 'Get these jobs by email',
+    digest: {
+      subject: "Today's remote jobs",
+      preview: 'New remote jobs for your saved lane.',
+      intro: 'Jobs for your saved lane',
+      empty: 'No new jobs today.',
+      seeAll: 'See all jobs in this lane',
+      home: 'Home',
+      unsubscribe: 'Unsubscribe',
+    },
   },
   home: {
     subtitle:
@@ -359,6 +368,15 @@ export const PT_BR_MESSAGES: typeof EN_MESSAGES = {
     sent: 'Confira o link de confirmação no seu e-mail.',
     error: 'Não foi possível assinar agora. Tente novamente mais tarde.',
     emailInArea: 'Receber essas vagas por email',
+    digest: {
+      subject: 'Vagas remotas de hoje',
+      preview: 'Vagas remotas novas da sua lane.',
+      intro: 'Vagas da sua lane',
+      empty: 'Sem vagas novas hoje.',
+      seeAll: 'Ver todas as vagas desta lane',
+      home: 'Início',
+      unsubscribe: 'Descadastrar',
+    },
   },
   home: {
     subtitle:

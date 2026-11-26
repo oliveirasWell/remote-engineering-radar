@@ -55,41 +55,52 @@ See [`package.json`](package.json) for all scripts.
 ## Lane email alerts (optional)
 
 The selected focus and country on the home page can be subscribed to by email.
-Subscribers confirm their address before joining one dedicated Resend segment.
-The scheduled ingest runs at **11:00 UTC (08:00 São Paulo)**; after a successful
-scheduled ingest, it prepares each contact's job list and sends one broadcast
-with Resend's unsubscribe link. Push and manual ingests do not send email.
+Subscribers confirm their address before joining the Resend segment for the
+language of the page they signed up on (`en` or `pt-BR`). That locale is stored
+on `newsletter_subscriptions` and is what the digest reads; an unknown value is
+sent in English. The scheduled ingest runs at **11:00 UTC (08:00 São Paulo)**;
+after a successful scheduled ingest, it prepares each contact's job list and
+sends one HTML broadcast per language, with Resend's unsubscribe link. Push and
+manual ingests do not send email.
 
-Set up your **own dedicated** Resend account, verify a sending domain, create one segment
-used only by this feature, and create a string contact property named
-`daily_jobs`. Configure `RESEND_API_KEY` (server-only) and `RESEND_FROM` in
-Vercel, and set `SITE_URL` to the production origin. Configure the same key as
-a GitHub Actions secret and `RESEND_FROM`, `RESEND_SEGMENT_ID`, and `SITE_URL`
-as GitHub Actions variables on the `production-ingestion` environment. Also
-set `RESEND_SEGMENT_ID` in Vercel. Without these values, signups fail closed.
-Sending to arbitrary subscribers requires a domain you control; the Resend
-free tier does not cover buying a domain if you do not already have one.
+Set up your **own dedicated** Resend account, verify a sending domain, and
+create two segments used only by this feature: one for English
+(`RESEND_SEGMENT_ID`) and one for Portuguese (`RESEND_SEGMENT_ID_PT_BR`). The
+digest creates the string contact properties `daily_jobs`, `daily_jobs_html`,
+and `digest_lane_url` when they are missing. Configure `RESEND_API_KEY`
+(server-only) and `RESEND_FROM` in Vercel, and set `SITE_URL` to the production
+origin. Configure the same key as a GitHub Actions secret and `RESEND_FROM`,
+`RESEND_SEGMENT_ID`, `RESEND_SEGMENT_ID_PT_BR`, and `SITE_URL` as GitHub Actions
+variables on the `production-ingestion` environment. Also set both segment ids
+in Vercel so confirmation and the members API join the right segment. Without
+the English segment, signups fail closed. Without the Portuguese segment,
+Portuguese confirmation and any digest that includes a `pt-BR` subscriber fail
+closed instead of sending English copy. Sending to arbitrary subscribers
+requires a domain you control; the Resend free tier does not cover buying a
+domain if you do not already have one.
 
 Members of the area can subscribe without the public form through the
-token-protected `/api/newsletter/members` (SPEC-034). It needs only
-`RESEND_API_KEY` and `RESEND_SEGMENT_ID` in Vercel; leave `RESEND_FROM` unset
-there to keep the public form hidden until a sending domain is verified.
+token-protected `/api/newsletter/members` (SPEC-034). It needs
+`RESEND_API_KEY`, `RESEND_SEGMENT_ID`, and `RESEND_SEGMENT_ID_PT_BR` in Vercel;
+leave `RESEND_FROM` unset there to keep the public form hidden until a sending
+domain is verified.
 
 The [Resend Free plan](https://resend.com/pricing) currently allows 1,000 marketing contacts and broadcasts;
 confirmation emails use its transactional allowance (100/day, 3,000/month).
 The app caps new confirmations at 80/day. No emails are sent when there are no
-new matching jobs for anyone. Because one broadcast serves every lane, a
-subscriber with no matches receives a short “no new jobs today” notice when
-other lanes do have matches. A broadcast draft is recorded before sending, so an
-uncertain send failure requires manual review in Resend rather than an
+new matching jobs for anyone. Each language is its own broadcast, so a language
+with no matches is skipped. Inside a language that does send, a subscriber with
+no matches still receives a short “no new jobs today” notice, because a
+broadcast goes to the whole segment. Draft ids are recorded before sending, so
+an uncertain send failure requires manual review in Resend rather than an
 automatic retry that could duplicate emails.
 
 ### Beta verification before production
 
 For a PR preview, configure `DATABASE_URL`, `RESEND_API_KEY`, `RESEND_FROM`,
-`RESEND_SEGMENT_ID`, and `SITE_URL` **only for the preview branch** in Vercel.
-Use a separate beta database and a dedicated beta Resend segment; do not copy
-production credentials or subscribers. `SITE_URL` must equal the HTTPS origin
+`RESEND_SEGMENT_ID`, `RESEND_SEGMENT_ID_PT_BR`, and `SITE_URL` **only for the
+preview branch** in Vercel. Use a separate beta database and dedicated beta
+Resend segments; do not copy production credentials or subscribers. `SITE_URL` must equal the HTTPS origin
 used to open the preview, or signup fails closed rather than sending a
 confirmation link to production. Apply the Prisma migrations to the beta
 database before testing. Test the selected lane and country with an address

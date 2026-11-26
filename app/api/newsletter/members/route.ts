@@ -1,7 +1,7 @@
 import { isAuthorizedRequest } from '@/lib/api/is-authorized-request';
 import { getDb } from '@/lib/db/client';
 import { optInContact } from '@/lib/newsletter/opt-in-contact';
-import { resendRequest, resendSegmentId } from '@/lib/newsletter/resend';
+import { resendRequest } from '@/lib/newsletter/resend';
 import {
   normalizeEmail,
   validEmail,
@@ -58,7 +58,7 @@ export const PUT = async (request: Request) => {
   const email = normalizeEmail(input.email);
   try {
     // Resend first: a failure leaves no confirmed row without a contact.
-    await optInContact(email, resendSegmentId());
+    await optInContact(email, locale);
     const lane = { focus, country, locale, confirmedAt: new Date() };
     await getDb().newsletterSubscription.upsert({
       where: { email },
