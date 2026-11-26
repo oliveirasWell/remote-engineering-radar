@@ -117,6 +117,7 @@ describe('lane email link to the members area', () => {
     const link = screen.getByRole('link', {
       name: messagesFor('pt-BR').newsletter.emailInArea,
     });
+    expect(link).toHaveAttribute('rel', 'nofollow');
     const url = new URL(link.getAttribute('href') ?? '');
     expect(`${url.origin}${url.pathname}`).toBe(
       `${AREA_URL}${AREA_NEWSLETTER_PATH}`,
